@@ -19,17 +19,17 @@ class LoaderMixin:
             # convertir datetime
             df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
 
-            # convertir concentration (gere les cases vides)
+            # convertir concentration + gere les cases vides
             df["cpc_conc"] = pd.to_numeric(df["cpc_conc"], errors="coerce")
 
             # convertir (gere les cases vides)
             df["smps_concTotal"] = pd.to_numeric(df["smps_concTotal"], errors="coerce")
 
-            #Convertit les 133 colonnes de bins en nombres , leCSV a toutes ces colonnes vides sur les premières lignes. 
+            #Convertit les 133 colonnes de bins en nombres , leCSV a toutes ces colonnes vides sur les premiere lignes. 
             bin_cols = [c for c in df.columns if c.startswith("smps_d_")]
             df[bin_cols] = df[bin_cols].apply(pd.to_numeric, errors="coerce")
 
-            #Crée les colonnes de flags si elles n'existent pas dans le CSV
+            #Crée les colonnes de flags si elles nexistent pas dans le CSV
             if "smps_flag" not in df.columns: df["smps_flag"] = 0
             if "pollution_flag" not in df.columns: df["pollution_flag"] = 0
 
