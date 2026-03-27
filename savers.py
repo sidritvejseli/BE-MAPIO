@@ -1,0 +1,24 @@
+import os
+from tkinter import filedialog, messagebox
+
+
+class SaversMixin:
+    """Sauvegarde simple des données."""
+
+    def save_csv(self):
+        if self.df is None:
+            messagebox.showwarning("Attention", "Aucune donnée a sauvegarder")
+            return
+
+        path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")]
+        )
+        if not path:
+            return
+
+        try:
+            self.df.to_csv(path, index=False)
+            print("Fichier sauvegardé :", os.path.basename(path))
+        except Exception as e:
+            messagebox.showerror("Erreur", str(e))
