@@ -71,4 +71,4 @@ class LoaderMixin:
     
     def close_file(self):
         self.df = self.df_original = self.current_file = None
-        print("Fichier fermé")      
+        print("Fichier ferme")      
