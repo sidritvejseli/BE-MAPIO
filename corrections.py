@@ -1,4 +1,3 @@
-
 from tkinter import simpledialog, messagebox  
 
 class CorrectionsMixin:
