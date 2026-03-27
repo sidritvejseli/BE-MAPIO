@@ -3,11 +3,11 @@ from tkinter import filedialog, messagebox
 
 
 class SaversMixin:
-    """Sauvegarde simple des données."""
+    #sauvg donne
 
     def save_csv(self):
         if self.df is None:
-            messagebox.showwarning("Attention", "Aucune donnée a sauvegarder")
+            messagebox.showwarning("Attention", "Aucune donnee a sauvegarder")
             return
 
         path = filedialog.asksaveasfilename(
@@ -19,6 +19,6 @@ class SaversMixin:
 
         try:
             self.df.to_csv(path, index=False)
-            print("Fichier sauvegardé :", os.path.basename(path))
+            print("Fichier sauvegarde :", os.path.basename(path))
         except Exception as e:
             messagebox.showerror("Erreur", str(e))
