@@ -43,6 +43,7 @@ class LoaderMixin:
             self.current_file = path
 
             print("Fichier chargé :", os.path.basename(path))
+            
 
         except Exception as e:
             messagebox.showerror("Erreur", str(e))
@@ -71,3 +72,5 @@ class LoaderMixin:
     def close_file(self):
         self.df = self.df_original = self.current_file = None
         print("Fichier ferme")      
+
+LoaderMixin
