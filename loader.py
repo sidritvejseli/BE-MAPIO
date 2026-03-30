@@ -5,10 +5,12 @@ from tkinter import filedialog, messagebox
 
 class LoaderMixin:
     #Charge, recharge ou ferme un fichier CSV SMPS.
-    def load_csv(self):
-        
+    def load_csv(self, dossier_defaut=""):
+        self.withdraw()   # cache la fenetre pour que la boite de dialogue passe devant
         path = filedialog.askopenfilename(
+            initialdir=dossier_defaut if dossier_defaut else None,
             filetypes=[("CSV files", "*.csv"), ("All", "*.*")])
+        self.deiconify()  # reaffiche la fenetre
         if not path:
             return
         
