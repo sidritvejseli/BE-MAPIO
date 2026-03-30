@@ -74,7 +74,6 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         self.canvas = FigureCanvasTkAgg(self.plotter.fig, master=self.frame_graphe2d)
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
 
-        self.plotter.fig
 
     # ----------------------------------------------------------------
     # chargement de la config yaml

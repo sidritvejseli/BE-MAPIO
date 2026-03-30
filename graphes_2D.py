@@ -16,17 +16,18 @@ class Graphe2D:
         df_day = df[df["datetime"].dt.date == day]
 
         self.ax.clear()
-        self.ax.scatter(df_day["datetime"], df_day["smps_concTotal"])
-        self.ax.set_title(f"Jour : {day}")
+        self.ax.set_title(f"Jour : {day}", fontsize = 12)
         self.ax.tick_params(axis='x', rotation=45)
 
         self.ax.scatter(
             df_day["datetime"],
             df_day["smps_concTotal"],
             s=1,
-            alpha=0.7,
-            color="tab:blue"
+            color="blue"
         )
+
+        self.ax.set_xlabel("Date et heure", fontsize=5)
+        self.ax.set_ylabel("Concentration totale", fontsize=5)
 
         self.ax.grid(True, linestyle="--")
         self.fig.autofmt_xdate()
