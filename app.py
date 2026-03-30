@@ -116,8 +116,8 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         # menu Navigation (sera complete avec les graphes)
         menu_nav = tk.Menu(menubar, tearoff=0)
         menu_nav.add_command(label="Premier jour",   command=self._non_dispo)
-        menu_nav.add_command(label="Jour precedent", command=self.prev_day)
-        menu_nav.add_command(label="Jour suivant",   command=self.next_day)
+        menu_nav.add_command(label="Jour precedent", command=self.jour_precedent)
+        menu_nav.add_command(label="Jour suivant",   command=self.jour_suivant)
         #menu_nav.add_command(label="Dernier jour",   command=self._non_dispo)
         menubar.add_cascade(label="Navigation", menu=menu_nav)
 
@@ -137,8 +137,8 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
 
         # boutons de navigation, seront relies aux graphes plus tard
         tk.Button(toolbar, text="|◀ Premier",  command = self.premier_jour ).pack(side=tk.LEFT, padx=2, pady=2)
-        tk.Button(toolbar, text="◀ Precedent", command=self.prev_day).pack(side=tk.LEFT, padx=2, pady=2)
-        tk.Button(toolbar, text="Suivant ▶",   command=self.next_day).pack(side=tk.LEFT, padx=2, pady=2)
+        tk.Button(toolbar, text="◀ Precedent", command=self.jour_precedent).pack(side=tk.LEFT, padx=2, pady=2)
+        tk.Button(toolbar, text="Suivant ▶",   command=self.jour_suivant).pack(side=tk.LEFT, padx=2, pady=2)
         tk.Button(toolbar, text="Dernier ▶|",  state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
 
         tk.Label(toolbar, text="  |  ").pack(side=tk.LEFT)
@@ -233,7 +233,7 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
 
 #fonctions pour modifier le jour courant 
 
-    def next_day(self):
+    def jour_suivant(self):
         if self.df is None:
             return
 
@@ -242,7 +242,7 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
             self.current_day += pd.Timedelta(days=1)
             self.afficher_graphe()
 
-    def prev_day(self):
+    def jour_precedent(self):
         if self.df is None:
             return
 
