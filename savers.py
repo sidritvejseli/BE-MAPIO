@@ -22,3 +22,5 @@ class SaversMixin:
             print("Fichier sauvegarde :", os.path.basename(path))
         except Exception as e:
             messagebox.showerror("Erreur", str(e))
+
+#à faire: ajout de la sauvegarde separee du fichier filtre et des flags 
