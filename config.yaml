@@ -1,0 +1,28 @@
+# Fichier de configuration de l'outil SMPS - MAP-IO
+# On stocke ici les chemins et parametres principaux pour pas avoir a les changer dans le code
+
+# Dossiers utilises par l'application
+repertoires:
+  donnees: "data/"             # dossier ou se trouve le fichier CSV brut
+  resultats: "resultats/"      # dossier ou on sauvegarde le fichier filtre
+  flags: "resultats/flags/"    # dossier ou on sauvegarde les donnees invalidees
+
+# Parametres de la fenetre principale
+affichage:
+  titre: "Outil de validation SMPS - MAP-IO"
+  largeur: 1400
+  hauteur: 800
+
+# Nombre max d'annulations possibles (Ctrl+Z)
+correction:
+  max_annulations: 15
+
+# Noms des colonnes importantes dans le CSV
+# (au cas ou ca change dans une future version du fichier)
+colonnes:
+  datetime: "datetime"
+  pollution_flag: "pollution_flag"   # 0 = pas de pollution, 1 = donnee polluee
+  smps_flag: "smps_flag"             # 0 = valide, 1 = invalide par l'utilisateur
+  smps_concTotal: "smps_concTotal"
+  cpc_concTotal: "cpc_conc"
+  prefixe_bins: "smps_d_"            # toutes les colonnes de taille commencent par ca
