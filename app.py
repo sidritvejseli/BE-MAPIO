@@ -2,9 +2,13 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import yaml
 import os
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import pandas as pd
 
 from loader import LoaderMixin
 from savers import SaversMixin
+
+from graphes_2D import Graphe2D
 
 # les imports suivants seront actives au fur et a mesure
 # from corrections import CorrectionsMixin
@@ -26,6 +30,8 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         self.current_file = None    # chemin du fichier charge
         self.current_day  = None    # jour affiche sur les graphes
 
+        #frame afin d'ajouter les graphes
+
         # ces variables seront utiles quand on ajoutera les corrections et filtres
         # self.annuler_stack = []
         # self.sel_x1 = self.sel_x2 = None
@@ -39,10 +45,36 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         self.geometry(f"{w}x{h}")
         self.resizable(True, True)
 
+        self.plotter = Graphe2D()
+
         # construction de l'interface
         self._build_menu()
         self._build_toolbar()
         self._build_tabs()
+
+        #affichage du graphe
+
+        #frame principal de l'app : graphe2d, graphe3d, log
+# Frame principal
+        self.main_frame = tk.Frame(self.tab_particules)
+        self.main_frame.pack(fill="both", expand=True)
+
+        # Configurer les lignes : ligne 0 = 50%, ligne 1 = 50%
+        self.main_frame.rowconfigure(0, weight=1)
+        self.main_frame.rowconfigure(1, weight=1)
+        self.main_frame.columnconfigure(0, weight=1)
+
+        self.main_frame.rowconfigure(0, weight=1, minsize=300)
+        self.main_frame.rowconfigure(1, weight=1, minsize=300)
+
+        # GRAPHE 2D 
+        self.frame_graphe2d = tk.Frame(self.main_frame)
+        self.frame_graphe2d.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+
+        self.canvas = FigureCanvasTkAgg(self.plotter.fig, master=self.frame_graphe2d)
+        self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
+
+        self.plotter.fig
 
     # ----------------------------------------------------------------
     # chargement de la config yaml
@@ -85,8 +117,8 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         # menu Navigation (sera complete avec les graphes)
         menu_nav = tk.Menu(menubar, tearoff=0)
         menu_nav.add_command(label="Premier jour",   command=self._non_dispo)
-        menu_nav.add_command(label="Jour precedent", command=self._non_dispo)
-        menu_nav.add_command(label="Jour suivant",   command=self._non_dispo)
+        menu_nav.add_command(label="Jour precedent", command=self.prev_day)
+        menu_nav.add_command(label="Jour suivant",   command=self.next_day)
         #menu_nav.add_command(label="Dernier jour",   command=self._non_dispo)
         menubar.add_cascade(label="Navigation", menu=menu_nav)
 
@@ -105,9 +137,9 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
         # boutons de navigation, seront relies aux graphes plus tard
-        tk.Button(toolbar, text="|◀ Premier",  state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
-        tk.Button(toolbar, text="◀ Precedent", state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
-        tk.Button(toolbar, text="Suivant ▶",   state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
+        tk.Button(toolbar, text="|◀ Premier",  command = self.premier_jour ).pack(side=tk.LEFT, padx=2, pady=2)
+        tk.Button(toolbar, text="◀ Precedent", command=self.prev_day).pack(side=tk.LEFT, padx=2, pady=2)
+        tk.Button(toolbar, text="Suivant ▶",   command=self.next_day).pack(side=tk.LEFT, padx=2, pady=2)
         tk.Button(toolbar, text="Dernier ▶|",  state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
 
         tk.Label(toolbar, text="  |  ").pack(side=tk.LEFT)
@@ -165,6 +197,10 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
     def _action_charger(self):
         dossier_defaut = self.config.get("repertoires", {}).get("donnees", "")
         self.load_csv(dossier_defaut)
+
+        #apres avoir chargées les données, initialiser le jour courant pour l'affichage
+        self.current_day = self.df["datetime"].dt.date.min()
+        self.afficher_graphe()
         if self.df is not None:
             self.current_day = self.df["datetime"].dt.date.min()
             self.label_jour.config(text=f"Jour affiche : {self.current_day}")
@@ -188,6 +224,39 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
             self.destroy()
 
+#fonction utilisée dans le app pour afficher le graphe
+    def afficher_graphe(self):
+        if self.df is None or self.current_day is None:
+            return
+
+        self.plotter.plot_day(self.df, self.current_day)
+        self.canvas.draw()
+
+#fonctions pour modifier le jour courant 
+
+    def next_day(self):
+        if self.df is None:
+            return
+
+        max_day = self.df["datetime"].dt.date.max()
+        if self.current_day < max_day:
+            self.current_day += pd.Timedelta(days=1)
+            self.afficher_graphe()
+
+    def prev_day(self):
+        if self.df is None:
+            return
+
+        min_day = self.df["datetime"].dt.date.min()
+        if self.current_day > min_day:
+            self.current_day -= pd.Timedelta(days=1)
+            self.afficher_graphe()
+
+    def premier_jour(self):
+        if self.df is None:
+            return
+        self.current_day = self.df["datetime"].dt.date.min()
+        
 
 # point d'entree
 if __name__ == "__main__":
