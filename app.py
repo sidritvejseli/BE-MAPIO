@@ -1,43 +1,31 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 import yaml
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
-
 from loader import LoaderMixin
 from savers import SaversMixin
-
-from graphes_2D import Graphe2D
-
-# les imports suivants seront actives au fur et a mesure
-# from corrections import CorrectionsMixin
-# from filters import FiltersMixin
+from graphes_2D import Graphe2D, Heatmap
+from graphe_3D import Heatmap3d
+from menu import build_menu, build_toolbar, build_tabs, show_placeholder
 
 
-# classe principale qui assemble les mixins
 class App(tk.Tk, LoaderMixin, SaversMixin):
 
     def __init__(self):
         super().__init__()
 
-        # on charge la config pour avoir les chemins et parametres
+        #configuration
         self.config = self._load_config("config.yaml")
 
-        # variables globales de l'application
-        self.df           = None    # dataframe courant
-        self.df_original  = None    # copie pour le reset
-        self.current_file = None    # chemin du fichier charge
-        self.current_day  = None    # jour affiche sur les graphes
+        #variable : 
+        self.df = None
+        self.df_original = None
+        self.current_file = None
+        self.current_day = None
 
-        #frame afin d'ajouter les graphes
-
-        # ces variables seront utiles quand on ajoutera les corrections et filtres
-        # self.annuler_stack = []
-        # self.sel_x1 = self.sel_x2 = None
-        # self.click_n = 0
-
-        # configuration de la fenetre
+        #la fentre
         cfg_aff = self.config.get("affichage", {})
         self.title(cfg_aff.get("titre", "Outil SMPS - MAP-IO"))
         w = cfg_aff.get("largeur", 1400)
@@ -45,40 +33,52 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         self.geometry(f"{w}x{h}")
         self.resizable(True, True)
 
+        #les graphes
         self.plotter = Graphe2D()
+        self.heatmap = Heatmap()
 
-        # construction de l'interface
-        self._build_menu()
-        self._build_toolbar()
-        self._build_tabs()
+        
+        build_menu(self)
+        self.label_jour = build_toolbar(self)
 
-        #affichage du graphe
+        self.notebook, self.tab_particules, self.tab_fonctionnement, self.tab_heatmap_3d = build_tabs(self)
 
-        #frame principal de l'app : graphe2d, graphe3d, log
-# Frame principal
+        show_placeholder(self.tab_particules)
+        show_placeholder(self.tab_fonctionnement)
+
+        self.heatmap3d = Heatmap3d(self.tab_heatmap_3d)
+
+       
+        self._build_graph_area()
+
+   
+    # graphes 
+    def _build_graph_area(self):
+
         self.main_frame = tk.Frame(self.tab_particules)
         self.main_frame.pack(fill="both", expand=True)
 
-        # Configurer les lignes : ligne 0 = 50%, ligne 1 = 50%
-        self.main_frame.rowconfigure(0, weight=1)
-        self.main_frame.rowconfigure(1, weight=1)
-        self.main_frame.columnconfigure(0, weight=1)
-
         self.main_frame.rowconfigure(0, weight=1, minsize=300)
         self.main_frame.rowconfigure(1, weight=1, minsize=300)
+        self.main_frame.columnconfigure(0, weight=1)
 
-        # GRAPHE 2D 
+        # GRAPHE 2D
         self.frame_graphe2d = tk.Frame(self.main_frame)
         self.frame_graphe2d.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
         self.canvas = FigureCanvasTkAgg(self.plotter.fig, master=self.frame_graphe2d)
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
 
+        # HEATMAP
+        self.frame_heatmap = tk.Frame(self.main_frame)
+        self.frame_heatmap.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
 
-    # ----------------------------------------------------------------
-    # chargement de la config yaml
-    # ----------------------------------------------------------------
+        self.canvas_heat = FigureCanvasTkAgg(self.heatmap.fig, master=self.frame_heatmap)
+        self.canvas_heat.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
 
+    
+    # config yaml
+    
     def _load_config(self, path):
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as f:
@@ -86,124 +86,30 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         print(f"config.yaml introuvable : {path}")
         return {}
 
-    # ----------------------------------------------------------------
-    # menu principal
-    # ----------------------------------------------------------------
-
-    def _build_menu(self):
-        menubar = tk.Menu(self)
-
-        # menu Fichier
-        menu_fichier = tk.Menu(menubar, tearoff=0)
-        menu_fichier.add_command(label="Charger un fichier",      command=self._action_charger)
-        menu_fichier.add_command(label="Fermer sans sauvegarder", command=self._action_fermer)
-        menu_fichier.add_separator()
-        menu_fichier.add_command(label="Sauvegarder",             command=self._action_sauvegarder)
-        menu_fichier.add_separator()
-        menu_fichier.add_command(label="Quitter",                 command=self._action_quitter)
-        menubar.add_cascade(label="Fichier", menu=menu_fichier)
-
-        # menu Actions (sera complete avec corrections et filtres)
-        menu_actions = tk.Menu(menubar, tearoff=0)
-        menu_actions.add_command(label="Invalider toutes les donnees",       command=self._non_dispo)
-        menu_actions.add_command(label="Invalider les donnees du jour",      command=self._non_dispo)
-        menu_actions.add_separator()
-        menu_actions.add_command(label="Annuler (Ctrl+Z)",                   command=self._non_dispo)
-        menu_actions.add_separator()
-        menu_actions.add_command(label="Appliquer un facteur de correction", command=self._non_dispo)
-        menubar.add_cascade(label="Actions", menu=menu_actions)
-
-        # menu Navigation (sera complete avec les graphes)
-        menu_nav = tk.Menu(menubar, tearoff=0)
-        menu_nav.add_command(label="Premier jour",   command=self._non_dispo)
-        menu_nav.add_command(label="Jour precedent", command=self.jour_precedent)
-        menu_nav.add_command(label="Jour suivant",   command=self.jour_suivant)
-        #menu_nav.add_command(label="Dernier jour",   command=self._non_dispo)
-        menubar.add_cascade(label="Navigation", menu=menu_nav)
-
-        self.configure(menu=menubar)
-
+    
+    # fonctions utilitaires (inchangé)
+    
     def _non_dispo(self):
-        # fonction temporaire pour les boutons pas encore implementes
         messagebox.showinfo("Info", "Fonctionnalite pas encore disponible")
 
-    # ----------------------------------------------------------------
-    # barre d'outils (navigation desactivee pour l'instant)
-    # ----------------------------------------------------------------
-
-    def _build_toolbar(self):
-        toolbar = tk.Frame(self, bd=1, relief=tk.RAISED)
-        toolbar.pack(side=tk.TOP, fill=tk.X)
-
-        # boutons de navigation, seront relies aux graphes plus tard
-        tk.Button(toolbar, text="|◀ Premier",  command = self.premier_jour ).pack(side=tk.LEFT, padx=2, pady=2)
-        tk.Button(toolbar, text="◀ Precedent", command=self.jour_precedent).pack(side=tk.LEFT, padx=2, pady=2)
-        tk.Button(toolbar, text="Suivant ▶",   command=self.jour_suivant).pack(side=tk.LEFT, padx=2, pady=2)
-        tk.Button(toolbar, text="Dernier ▶|",  state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
-
-        tk.Label(toolbar, text="  |  ").pack(side=tk.LEFT)
-
-        tk.Button(toolbar, text="Invalider jour", state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
-        tk.Button(toolbar, text="Annuler (Z)",    state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
-
-        # label qui affiche le jour courant
-        self.label_jour = tk.Label(toolbar, text="Aucun fichier charge", font=("Arial", 10, "bold"))
-        self.label_jour.pack(side=tk.RIGHT, padx=10)
-
-    # ----------------------------------------------------------------
-    # onglets
-    # ----------------------------------------------------------------
-
-    def _build_tabs(self):
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(fill=tk.BOTH, expand=True)
-
-        # onglet 1 : particules
-        self.tab_particules = ttk.Frame(self.notebook)
-        self.notebook.add(self.tab_particules, text="  Particules  ")
-
-        # onglet 2 : fonctionnement
-        self.tab_fonctionnement = ttk.Frame(self.notebook)
-        self.notebook.add(self.tab_fonctionnement, text="  Fonctionnement  ")
-
-        self._show_placeholder(self.tab_particules)
-        self._show_placeholder(self.tab_fonctionnement)
-
-    def _show_placeholder(self, parent):
-        tk.Label(
-            parent,
-            text="Chargez un fichier CSV via Fichier → Charger un fichier",
-            font=("Arial", 13), fg="grey"
-        ).place(relx=0.5, rely=0.5, anchor="center")
-
-    # ----------------------------------------------------------------
-    # refresh : sera complete quand les graphes seront prets
-    # ----------------------------------------------------------------
-
+    
+    # refresh (inchangé)
+    
     def _refresh_all(self):
         if self.df is None:
             return
         if self.current_day is not None:
             self.label_jour.config(text=f"Jour affiche : {self.current_day}")
-        # self._plot_conc_total()
-        # self._plot_3D()
-        # self._plot_correlation()
 
-    # ----------------------------------------------------------------
-    # actions menu Fichier
-    # ----------------------------------------------------------------
-
+    
     def _action_charger(self):
         dossier_defaut = self.config.get("repertoires", {}).get("donnees", "")
         self.load_csv(dossier_defaut)
 
-        #apres avoir chargées les données, initialiser le jour courant pour l'affichage
-        self.current_day = self.df["datetime"].dt.date.min()
-        self.afficher_graphe()
         if self.df is not None:
             self.current_day = self.df["datetime"].dt.date.min()
+            self.afficher_graphe()
             self.label_jour.config(text=f"Jour affiche : {self.current_day}")
-            # self._build_graphes()
 
     def _action_fermer(self):
         if self.df is None:
@@ -216,14 +122,16 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
     def _action_sauvegarder(self):
         cfg_rep = self.config.get("repertoires", {})
         dossier_resultats = cfg_rep.get("resultats", "resultats/")
-        dossier_flags     = cfg_rep.get("flags", "resultats/flags/")
+        dossier_flags = cfg_rep.get("flags", "resultats/flags/")
         self.save_csv(dossier_resultats, dossier_flags)
 
     def _action_quitter(self):
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
             self.destroy()
 
-#fonction utilisée dans le app pour afficher le graphe
+    
+    # affichage graphe
+    
     def afficher_graphe(self):
         if self.df is None or self.current_day is None:
             return
@@ -231,8 +139,17 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         self.plotter.plot_day(self.df, self.current_day)
         self.canvas.draw()
 
-#fonctions pour modifier le jour courant 
+        self.heatmap.plot_day(self.df, self.current_day)
+        self.canvas_heat.draw()
 
+        if hasattr(self, 'heatmap3d'):
+            self.heatmap3d.plot_day(self.df, self.current_day)
+
+        self.label_jour.config(text=f"Jour affiche : {self.current_day}")
+
+    
+    # navigation jours 
+    
     def jour_suivant(self):
         if self.df is None:
             return
@@ -255,9 +172,3 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         if self.df is None:
             return
         self.current_day = self.df["datetime"].dt.date.min()
-        
-
-# point d'entree
-if __name__ == "__main__":
-    app = App()
-    app.mainloop()
