@@ -5,6 +5,12 @@ import pandas as pd
 
 class Donnees:
 
+    def __init__(self):
+
+        self.donnees = None
+        self.chemin_absolu = None
+        self.nom_fichier = None
+
     def charger_fichier_csv(self, chemin_initial=""):
 
         self.chemin_absolu = filedialog.askopenfilename(
