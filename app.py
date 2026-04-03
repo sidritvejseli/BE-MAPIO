@@ -5,8 +5,7 @@ import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
 from donnees import Donnees
-from graphes_2D import Graphe2D, Heatmap
-from graphe_3D import Heatmap3d
+from graphes import Graphe2D, Heatmap, Heatmap3d
 from menu import build_menu, build_toolbar, build_tabs, show_placeholder
 
 

@@ -1,8 +1,10 @@
-from pandas import DataFrame
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
+import tkinter as tk
 
 
 class Graphe2D:
@@ -118,3 +120,28 @@ class Heatmap:
 
         # Ajuste automatiquement les dates pour qu'elles ne se chevauchent pas
         self.fig.autofmt_xdate()
+
+
+class Heatmap3d:
+
+    def __init__(self, parent):
+        # onglet
+        self.parent = parent
+        # création de l'objet Heatmap
+        self.heatmap = Heatmap()
+
+        # Frame principal qui va contenir le graphique
+        self.frame = tk.Frame(parent)
+        self.frame.pack(fill="both", expand=True)
+
+        # Création du canvas matplotlib dans Tkinter
+        self.canvas = FigureCanvasTkAgg(self.heatmap.fig, master=self.frame)
+        self.canvas.get_tk_widget().pack(fill="both", expand=True)
+
+    def tracer_jour(self, donnees: DataFrame, jour):
+        if donnees is None or jour is None:
+            return
+        # On demande à la classe Heatmap de dessiner le graphique
+        self.heatmap.tracer_jour(donnees, jour)
+        # On met à jour l'affichage dans Tkinter
+        self.canvas.draw()
