@@ -4,8 +4,8 @@ import yaml
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
-from loader import ChargementDonnees
-from savers import SaversMixin
+from donnees_chargement import ChargementDonnees
+from donnees_sauvegarde import SaversMixin
 from graphes_2D import Graphe2D, Heatmap
 from graphe_3D import Heatmap3d
 from menu import build_menu, build_toolbar, build_tabs, show_placeholder

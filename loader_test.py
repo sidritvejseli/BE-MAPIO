@@ -1,5 +1,5 @@
 import tkinter as tk
-from loader import ChargementDonnees
+from donnees_chargement import ChargementDonnees
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.widgets import Button
