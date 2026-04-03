@@ -4,28 +4,28 @@ import yaml
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
-from loader import LoaderMixin
+from loader import ChargementDonnees
 from savers import SaversMixin
 from graphes_2D import Graphe2D, Heatmap
 from graphe_3D import Heatmap3d
 from menu import build_menu, build_toolbar, build_tabs, show_placeholder
 
 
-class App(tk.Tk, LoaderMixin, SaversMixin):
+class App(tk.Tk, ChargementDonnees, SaversMixin):
 
     def __init__(self):
         super().__init__()
 
-        #configuration
+        # configuration
         self.config = self._load_config("config.yaml")
 
-        #variable : 
-        self.df = None
-        self.df_original = None
+        # variable :
+        self.donnees = None
+        self.donnees_original = None
         self.current_file = None
         self.current_day = None
 
-        #la fentre
+        # la fentre
         cfg_aff = self.config.get("affichage", {})
         self.title(cfg_aff.get("titre", "Outil SMPS - MAP-IO"))
         w = cfg_aff.get("largeur", 1400)
@@ -33,26 +33,28 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         self.geometry(f"{w}x{h}")
         self.resizable(True, True)
 
-        #les graphes
+        # les graphes
         self.plotter = Graphe2D()
         self.heatmap = Heatmap()
 
-        
         build_menu(self)
         self.label_jour = build_toolbar(self)
 
-        self.notebook, self.tab_particules, self.tab_fonctionnement, self.tab_heatmap_3d = build_tabs(self)
+        (
+            self.notebook,
+            self.tab_particules,
+            self.tab_fonctionnement,
+            self.tab_heatmap_3d,
+        ) = build_tabs(self)
 
         show_placeholder(self.tab_particules)
         show_placeholder(self.tab_fonctionnement)
 
         self.heatmap3d = Heatmap3d(self.tab_heatmap_3d)
 
-       
         self._build_graph_area()
 
-   
-    # graphes 
+    # graphes
     def _build_graph_area(self):
 
         self.main_frame = tk.Frame(self.tab_particules)
@@ -73,12 +75,15 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         self.frame_heatmap = tk.Frame(self.main_frame)
         self.frame_heatmap.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
 
-        self.canvas_heat = FigureCanvasTkAgg(self.heatmap.fig, master=self.frame_heatmap)
-        self.canvas_heat.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
+        self.canvas_heat = FigureCanvasTkAgg(
+            self.heatmap.fig, master=self.frame_heatmap
+        )
+        self.canvas_heat.get_tk_widget().pack(
+            fill="both", expand=True, padx=20, pady=20
+        )
 
-    
     # config yaml
-    
+
     def _load_config(self, path):
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as f:
@@ -86,36 +91,33 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         print(f"config.yaml introuvable : {path}")
         return {}
 
-    
     # fonctions utilitaires (inchangé)
-    
+
     def _non_dispo(self):
         messagebox.showinfo("Info", "Fonctionnalite pas encore disponible")
 
-    
     # refresh (inchangé)
-    
+
     def _refresh_all(self):
-        if self.df is None:
+        if self.donnees is None:
             return
         if self.current_day is not None:
             self.label_jour.config(text=f"Jour affiche : {self.current_day}")
 
-    
     def _action_charger(self):
         dossier_defaut = self.config.get("repertoires", {}).get("donnees", "")
-        self.load_csv(dossier_defaut)
+        self.charger_fichier_csv(dossier_defaut)
 
-        if self.df is not None:
-            self.current_day = self.df["datetime"].dt.date.min()
+        if self.donnees is not None:
+            self.current_day = self.donnees["datetime"].dt.date.min()
             self.afficher_graphe()
             self.label_jour.config(text=f"Jour affiche : {self.current_day}")
 
     def _action_fermer(self):
-        if self.df is None:
+        if self.donnees is None:
             return
         if messagebox.askyesno("Confirmer", "Fermer sans sauvegarder ?"):
-            self.close_file()
+            self.fermer_fichier_csv()
             self.current_day = None
             self.label_jour.config(text="Aucun fichier charge")
 
@@ -129,46 +131,44 @@ class App(tk.Tk, LoaderMixin, SaversMixin):
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
             self.destroy()
 
-    
     # affichage graphe
-    
+
     def afficher_graphe(self):
-        if self.df is None or self.current_day is None:
+        if self.donnees is None or self.current_day is None:
             return
 
-        self.plotter.plot_day(self.df, self.current_day)
+        self.plotter.plot_day(self.donnees, self.current_day)
         self.canvas.draw()
 
-        self.heatmap.plot_day(self.df, self.current_day)
+        self.heatmap.plot_day(self.donnees, self.current_day)
         self.canvas_heat.draw()
 
-        if hasattr(self, 'heatmap3d'):
-            self.heatmap3d.plot_day(self.df, self.current_day)
+        if hasattr(self, "heatmap3d"):
+            self.heatmap3d.plot_day(self.donnees, self.current_day)
 
         self.label_jour.config(text=f"Jour affiche : {self.current_day}")
 
-    
-    # navigation jours 
-    
+    # navigation jours
+
     def jour_suivant(self):
-        if self.df is None:
+        if self.donnees is None:
             return
 
-        max_day = self.df["datetime"].dt.date.max()
+        max_day = self.donnees["datetime"].dt.date.max()
         if self.current_day < max_day:
             self.current_day += pd.Timedelta(days=1)
             self.afficher_graphe()
 
     def jour_precedent(self):
-        if self.df is None:
+        if self.donnees is None:
             return
 
-        min_day = self.df["datetime"].dt.date.min()
+        min_day = self.donnees["datetime"].dt.date.min()
         if self.current_day > min_day:
             self.current_day -= pd.Timedelta(days=1)
             self.afficher_graphe()
 
     def premier_jour(self):
-        if self.df is None:
+        if self.donnees is None:
             return
-        self.current_day = self.df["datetime"].dt.date.min()
+        self.current_day = self.donnees["datetime"].dt.date.min()

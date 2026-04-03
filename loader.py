@@ -1,78 +1,53 @@
+from tkinter import filedialog
 import os
 import pandas as pd
-from tkinter import filedialog, messagebox
 
 
-class LoaderMixin:
-    #Charge, recharge ou ferme un fichier CSV SMPS.
-    def load_csv(self, dossier_defaut=""):
-        self.withdraw()   # cache la fenetre pour que la boite de dialogue passe devant
-        path = filedialog.askopenfilename(
-            initialdir=dossier_defaut if dossier_defaut else None,
-            filetypes=[("CSV files", "*.csv"), ("All", "*.*")])
-        self.deiconify()  # reaffiche la fenetre
-        if not path:
+class ChargementDonnees:
+
+    def charger_fichier_csv(self, chemin_initial=""):
+
+        self.chemin_absolu = filedialog.askopenfilename(
+            initialdir=chemin_initial,
+            filetypes=[("CSV files", "*.csv"), ("All", "*.*")],
+        )
+
+        if not self.chemin_absolu:
             return
-        
-        try:
-            df = pd.read_csv(path)
 
-            # convertir datetime
-            df["datetime"] = pd.to_datetime(df["datetime"], errors="coerce")
+        self.nom_fichier = os.path.basename(self.chemin_absolu)
 
-            # convertir concentration + gere les cases vides
-            df["cpc_conc"] = pd.to_numeric(df["cpc_conc"], errors="coerce")
+        self.donnees = pd.read_csv(self.chemin_absolu)
 
-            # convertir (gere les cases vides)
-            df["smps_concTotal"] = pd.to_numeric(df["smps_concTotal"], errors="coerce")
+        # Transtypage des chaînes de caractères en leur bon type.
+        # En cas d'erreur, la chaîne de caractère est remplacée par Not A Time ou Not A Number, en raison du drapeau "coerce".
+        self.donnees["datetime"] = pd.to_datetime(
+            self.donnees["datetime"], errors="coerce"
+        )
 
-            #Convertit les 133 colonnes de bins en nombres , leCSV a toutes ces colonnes vides sur les premiere lignes. 
-            bin_cols = [c for c in df.columns if c.startswith("smps_d_")]
-            df[bin_cols] = df[bin_cols].apply(pd.to_numeric, errors="coerce")
+        for colonne in self.donnees.columns:
 
-            #Crée les colonnes de flags si elles nexistent pas dans le CSV
-            if "smps_flag" not in df.columns: df["smps_flag"] = 0
-            if "pollution_flag" not in df.columns: df["pollution_flag"] = 0
+            if colonne == "datetime":
+                continue
 
-            #Supprime les lignes sans date valide
-            df = df.dropna(subset=["datetime"])   # date valide
-            df = df[df["pollution_flag"] == 0]    # enlever pollution
+            self.donnees[colonne] = pd.to_numeric(
+                self.donnees[colonne], errors="coerce"
+            )
 
+        # Création de deux colonnes pour les drapeaux.
 
-            # sauvegarde
-            self.df = df
-            self.df_original = df.copy()
-            self.current_file = path
+        if "smps_flag" not in self.donnees.columns:
+            self.donnees["smps_flag"] = 0
 
-            print("Fichier chargé :", os.path.basename(path))
-            
+        if "pollution_flag" not in self.donnees.columns:
+            self.donnees["pollution_flag"] = 0
 
-        except Exception as e:
-            messagebox.showerror("Erreur", str(e))
+        print(f"Fichier {self.nom_fichier} chargé.")
 
+    def fermer_fichier_csv(self):
 
-    def reload_csv(self):   
-        if not self.current_file:
-            return
-        try:
-            df = pd.read_csv(self.current_file)
-            df["datetime"]       = pd.to_datetime(df["datetime"], errors="coerce")
-            df["cpc_conc"]       = pd.to_numeric(df["cpc_conc"], errors="coerce")
-            df["smps_concTotal"] = pd.to_numeric(df["smps_concTotal"], errors="coerce")
-            bin_cols = [c for c in df.columns if c.startswith("smps_d_")]
-            df[bin_cols] = df[bin_cols].apply(pd.to_numeric, errors="coerce")
-            df = df.dropna(subset=["datetime"])
-            df = df[df["pollution_flag"] == 0]
-            self.df = df
-            self.df_original = df.copy()
-            print("Fichier rechargé :", os.path.basename(self.current_file))
-        except Exception as e:
-            messagebox.showerror("Erreur", str(e))
+        print(f"Fichier {self.nom_fichier} fermé.")
 
-    
-    
-    def close_file(self):
-        self.df = self.df_original = self.current_file = None
-        print("Fichier ferme")      
-
-LoaderMixin
+        self.donnees = None
+        self.chemin_absolu = None
+        self.nom_fichier = None
