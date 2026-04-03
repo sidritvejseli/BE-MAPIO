@@ -4,14 +4,13 @@ import yaml
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
-from donnees_chargement import ChargementDonnees
-from donnees_sauvegarde import SaversMixin
+from donnees import Donnees
 from graphes_2D import Graphe2D, Heatmap
 from graphe_3D import Heatmap3d
 from menu import build_menu, build_toolbar, build_tabs, show_placeholder
 
 
-class App(tk.Tk, ChargementDonnees, SaversMixin):
+class App(tk.Tk, Donnees):
 
     def __init__(self):
         super().__init__()
@@ -125,7 +124,7 @@ class App(tk.Tk, ChargementDonnees, SaversMixin):
         cfg_rep = self.config.get("repertoires", {})
         dossier_resultats = cfg_rep.get("resultats", "resultats/")
         dossier_flags = cfg_rep.get("flags", "resultats/flags/")
-        self.save_csv(dossier_resultats, dossier_flags)
+        self.sauvegarder_fichier_csv()
 
     def _action_quitter(self):
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):

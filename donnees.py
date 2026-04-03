@@ -1,9 +1,9 @@
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import os
 import pandas as pd
 
 
-class ChargementDonnees:
+class Donnees:
 
     def charger_fichier_csv(self, chemin_initial=""):
 
@@ -21,6 +21,7 @@ class ChargementDonnees:
 
         # Transtypage des chaînes de caractères en leur bon type.
         # En cas d'erreur, la chaîne de caractère est remplacée par Not A Time ou Not A Number, en raison du drapeau "coerce".
+
         self.donnees["datetime"] = pd.to_datetime(
             self.donnees["datetime"], errors="coerce"
         )
@@ -51,3 +52,24 @@ class ChargementDonnees:
         self.donnees = None
         self.chemin_absolu = None
         self.nom_fichier = None
+
+    def sauvegarder_fichier_csv(self):
+
+        if self.donnees is None:
+            messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
+            return
+
+        chemin_absolu_sauvegarde = filedialog.asksaveasfilename(
+            defaultextension=".csv", filetypes=[("CSV files", "*.csv")]
+        )
+
+        if not chemin_absolu_sauvegarde:
+            return
+
+        self.donnees.to_csv(chemin_absolu_sauvegarde, index=False)
+
+        nom_fichier = os.path.basename(chemin_absolu_sauvegarde)
+
+        print(f"Fichier {nom_fichier} sauvegardé.")
+
+    # TODO : Ajout de la sauvegarde séparée du fichier "filtre" et des drapeaux.

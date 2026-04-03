@@ -1,5 +1,5 @@
 import tkinter as tk
-from donnees_chargement import ChargementDonnees
+from donnees import Donnees
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.widgets import Button
@@ -8,7 +8,7 @@ from matplotlib.widgets import Button
 # app.py fonctionne similairement
 
 
-class App(tk.Tk, ChargementDonnees):
+class App(tk.Tk, Donnees):
     def __init__(self):
         super().__init__()
         self.title("Test Loader")
