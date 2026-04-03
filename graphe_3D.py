@@ -4,10 +4,9 @@ from graphes_2D import Heatmap
 
 
 class Heatmap3d:
-    
 
     def __init__(self, parent):
-        #onglet
+        # onglet
         self.parent = parent
         # création de l'objet Heatmap
         self.heatmap = Heatmap()
@@ -24,6 +23,6 @@ class Heatmap3d:
         if df is None or day is None:
             return
         # On demande à la classe Heatmap de dessiner le graphique
-        self.heatmap.plot_day(df, day)
+        self.heatmap.tracer_jour(df, day)
         # On met à jour l'affichage dans Tkinter
         self.canvas.draw()

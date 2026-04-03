@@ -136,10 +136,10 @@ class App(tk.Tk, Donnees):
         if self.donnees is None or self.current_day is None:
             return
 
-        self.plotter.plot_day(self.donnees, self.current_day)
+        self.plotter.tracer_jour(self.donnees, self.current_day)
         self.canvas.draw()
 
-        self.heatmap.plot_day(self.donnees, self.current_day)
+        self.heatmap.tracer_jour(self.donnees, self.current_day)
         self.canvas_heat.draw()
 
         if hasattr(self, "heatmap3d"):
