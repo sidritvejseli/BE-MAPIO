@@ -52,6 +52,7 @@ class App(tk.Tk, Donnees):
 
         self._build_graph_area()
 
+
     # graphes
     def _build_graph_area(self):
 
@@ -166,7 +167,23 @@ class App(tk.Tk, Donnees):
             self.current_day -= pd.Timedelta(days=1)
             self.afficher_graphe()
 
+
+    #fonction auxiliaire pour calculer la difference des jours dans un dataframe
+    def difference_jours(self, jour1, jour2):
+        difference = jour1 - jour2
+        return abs(difference.days)
+
     def premier_jour(self):
         if self.donnees is None:
             return
-        self.current_day = self.donnees["datetime"].dt.date.min()
+        premier_j = self.donnees["datetime"].dt.date.min()
+        self.current_day = premier_j
+        self.afficher_graphe()
+
+    def dernier_jour(self):
+        if self.donnees is None:
+            return
+        dernier_j = self.donnees["datetime"].dt.date.max()
+        self.current_day = dernier_j
+        self.afficher_graphe()
+

@@ -41,7 +41,7 @@ def build_toolbar(app):
     tk.Button(toolbar, text="|◀ Premier",  command=app.premier_jour).pack(side=tk.LEFT, padx=2, pady=2)
     tk.Button(toolbar, text="◀ Precedent", command=app.jour_precedent).pack(side=tk.LEFT, padx=2, pady=2)
     tk.Button(toolbar, text="Suivant ▶",   command=app.jour_suivant).pack(side=tk.LEFT, padx=2, pady=2)
-    tk.Button(toolbar, text="Dernier ▶|",  state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
+    tk.Button(toolbar, text="Dernier ▶|",  command=app.dernier_jour).pack(side=tk.LEFT, padx=2, pady=2)
 
     tk.Label(toolbar, text="  |  ").pack(side=tk.LEFT)
 
