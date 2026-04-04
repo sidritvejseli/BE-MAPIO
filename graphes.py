@@ -57,18 +57,20 @@ class Graphe3D:
 
         self.effacer_jour()
 
-        donnees = donnees[donnees["datetime"].dt.date == jour]
-        donnees = donnees.set_index("datetime")
-        donnees = donnees.loc[:, donnees.columns.str.startswith("smps_d")]
+        donnees_jour = donnees[donnees["datetime"].dt.date == jour]
+        donnees_jour = donnees_jour.set_index("datetime")
+        donnees_jour = donnees_jour.loc[
+            :, donnees_jour.columns.str.startswith("smps_d")
+        ]
 
         carte_thermique = self.ax.imshow(
-            donnees.T, aspect="auto", origin="lower", cmap="RdYlBu"
+            donnees_jour.T, aspect="auto", origin="lower", cmap="RdYlBu"
         )
 
         # TODO : Affichage des couleurs logarithmique, à la place de linéaire.
 
-        self.legender_abscisses(donnees)
-        self.legender_ordonnees(donnees)
+        self.legender_abscisses(donnees_jour)
+        self.legender_ordonnees(donnees_jour)
         self.legender_barre_couleurs(carte_thermique)
 
     def effacer_jour(self):
@@ -79,26 +81,26 @@ class Graphe3D:
 
         self.ax.clear()
 
-    def legender_abscisses(self, donnees: DataFrame, nombre_graduations=12):
+    def legender_abscisses(self, donnees_jour: DataFrame, nombre_graduations=12):
 
         self.ax.set_xlabel("Heure")
 
         graduations_abscisse = np.linspace(
-            0, len(donnees) - 1, nombre_graduations
+            0, len(donnees_jour) - 1, nombre_graduations
         ).astype(int)
-        libelles_abscisse = donnees.index[graduations_abscisse].strftime("%H:%M")
+        libelles_abscisse = donnees_jour.index[graduations_abscisse].strftime("%H:%M")
 
         self.ax.set_xticks(graduations_abscisse)
         self.ax.set_xticklabels(libelles_abscisse, rotation=45, ha="right")
 
-    def legender_ordonnees(self, donnees: DataFrame, nombre_graduations=10):
+    def legender_ordonnees(self, donnees_jour: DataFrame, nombre_graduations=10):
 
         self.ax.set_ylabel("Taille des particules (nanomètres)")
 
         graduations_ordonnee = np.linspace(
-            0, len(donnees.columns) - 1, nombre_graduations
+            0, len(donnees_jour.columns) - 1, nombre_graduations
         ).astype(int)
-        libelles_ordonnee = [donnees.columns[i] for i in graduations_ordonnee]
+        libelles_ordonnee = [donnees_jour.columns[i] for i in graduations_ordonnee]
         libelles_ordonnee = np.array(
             [float(colonne.split("_")[2]) for colonne in libelles_ordonnee]
         )
