@@ -1,8 +1,6 @@
-import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
-import pandas as pd
 from pandas import DataFrame
 import tkinter as tk
 
@@ -48,7 +46,7 @@ class Graphe2D:
         self.fig.autofmt_xdate()
 
 
-class Heatmap:
+class Graphe3D:
 
     def __init__(self):
 
@@ -57,69 +55,61 @@ class Heatmap:
 
     def tracer_jour(self, donnees: DataFrame, jour):
 
-        donnees_jour = donnees[donnees["datetime"].dt.date == jour]
+        self.effacer_jour()
 
-        # Séparation des données valides aux données invalides.
+        donnees = donnees[donnees["datetime"].dt.date == jour]
+        donnees = donnees.set_index("datetime")
+        donnees = donnees.loc[:, donnees.columns.str.startswith("smps_d")]
 
-        donnees_valides = donnees_jour[donnees_jour["smps_flag"] == 0]
+        carte_thermique = self.ax.imshow(
+            donnees.T, aspect="auto", origin="lower", cmap="RdYlBu"
+        )
 
-        colonnes = sorted(donnees.columns[donnees.columns.str.startswith("smps_d_")])
+        # TODO : Affichage des couleurs logarithmique, à la place de linéaire.
 
-        taille_colonne = np.array([float(c.split("_")[2]) for c in colonnes])
+        self.legender_abscisses(donnees)
+        self.legender_ordonnees(donnees)
+        self.legender_barre_couleurs(carte_thermique)
 
-        # Suppression de l'ancienne barre de couleurs.
+    def effacer_jour(self):
 
         if self.colorbar is not None:
             self.colorbar.remove()
             self.colorbar = None
 
-        # Nettoyage du graphe.
-
         self.ax.clear()
-        self.ax.set_title(f"Heatmap - {jour}")
-        self.ax.set_xlabel("Temps")
-        self.ax.set_ylabel("Taille (nm)")
 
-        # On construit une matrice :
-        # lignes = tailles
-        # colonnes = temps
+    def legender_abscisses(self, donnees: DataFrame, nombre_graduations=12):
 
-        data = np.array(donnees_valides[colonnes]).T
+        self.ax.set_xlabel("Heure")
 
-        # Nettoyage simple.
+        graduations_abscisse = np.linspace(
+            0, len(donnees) - 1, nombre_graduations
+        ).astype(int)
+        libelles_abscisse = donnees.index[graduations_abscisse].strftime("%H:%M")
 
-        data = np.where(data <= 0, np.nan, data)
+        self.ax.set_xticks(graduations_abscisse)
+        self.ax.set_xticklabels(libelles_abscisse, rotation=45, ha="right")
 
-        # Calcul des bornes pour la couleur
-        vmin = max(np.nanpercentile(data, 2), 1)
-        vmax = np.nanpercentile(data, 99)
+    def legender_ordonnees(self, donnees: DataFrame, nombre_graduations=10):
 
-        # Heatmap
-        im = self.ax.pcolormesh(
-            np.array(donnees_valides["datetime"]),  # axe X = temp
-            taille_colonne,  # axe Y = tailles
-            data,  # matrice des valeurs
-            norm=mcolors.LogNorm(vmin=vmin, vmax=vmax),  # échelle
-            cmap="Spectral_r",  # palette de couleurs
-            shading="auto",
+        self.ax.set_ylabel("Taille des particules (nanomètres)")
+
+        graduations_ordonnee = np.linspace(
+            0, len(donnees.columns) - 1, nombre_graduations
+        ).astype(int)
+        libelles_ordonnee = [donnees.columns[i] for i in graduations_ordonnee]
+        libelles_ordonnee = np.array(
+            [float(colonne.split("_")[2]) for colonne in libelles_ordonnee]
         )
 
-        # Axe log (important pour SMPS)
-        self.ax.set_yscale("log")
-        self.ax.set_ylim(taille_colonne[0], taille_colonne[-1])
-        self.ax.tick_params(axis="x", rotation=45)
+        self.ax.set_yticks(graduations_ordonnee)
+        self.ax.set_yticklabels(libelles_ordonnee)
 
-        # On crée la colorbar (échelle des couleurs)
-        self.colorbar = self.fig.colorbar(im, ax=self.ax, fraction=0.02, pad=0.02)
-        self.colorbar.set_label("Concentration")
+    def legender_barre_couleurs(self, carte_thermique):
 
-        # Vérifier données
-        if len(donnees_jour) == 0:
-            self.ax.text(0.5, 0.5, "Pas de données", ha="center")
-            return
-
-        # Ajuste automatiquement les dates pour qu'elles ne se chevauchent pas
-        self.fig.autofmt_xdate()
+        self.colorbar = self.ax.figure.colorbar(carte_thermique, ax=self.ax)
+        self.colorbar.set_label("Teneur")
 
 
 class Heatmap3d:
@@ -128,7 +118,7 @@ class Heatmap3d:
         # onglet
         self.parent = parent
         # création de l'objet Heatmap
-        self.heatmap = Heatmap()
+        self.heatmap = Graphe3D()
 
         # Frame principal qui va contenir le graphique
         self.frame = tk.Frame(parent)

@@ -5,7 +5,7 @@ import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
 from donnees import Donnees
-from graphes import Graphe2D, Heatmap, Heatmap3d
+from graphes import Graphe2D, Graphe3D, Heatmap3d
 from menu import build_menu, build_toolbar, build_tabs, show_placeholder
 
 
@@ -33,7 +33,7 @@ class App(tk.Tk, Donnees):
 
         # les graphes
         self.plotter = Graphe2D()
-        self.heatmap = Heatmap()
+        self.heatmap = Graphe3D()
 
         build_menu(self)
         self.label_jour = build_toolbar(self)
@@ -142,7 +142,7 @@ class App(tk.Tk, Donnees):
         self.canvas_heat.draw()
 
         if hasattr(self, "heatmap3d"):
-            self.heatmap3d.plot_day(self.donnees, self.current_day)
+            self.heatmap3d.tracer_jour(self.donnees, self.current_day)
 
         self.label_jour.config(text=f"Jour affiche : {self.current_day}")
 

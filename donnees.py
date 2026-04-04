@@ -26,7 +26,7 @@ class Donnees:
         self.donnees = pd.read_csv(self.chemin_absolu)
 
         # Transtypage des chaînes de caractères en leur bon type.
-        # En cas d'erreur, la chaîne de caractère est remplacée par Not A Time ou Not A Number, en raison du drapeau "coerce".
+        # En cas d'erreur, la chaîne de caractères est remplacée par Not A Time ou Not A Number, en raison du drapeau "coerce".
 
         self.donnees["datetime"] = pd.to_datetime(
             self.donnees["datetime"], errors="coerce"
@@ -74,8 +74,8 @@ class Donnees:
 
         self.donnees.to_csv(chemin_absolu_sauvegarde, index=False)
 
-        nom_fichier = os.path.basename(chemin_absolu_sauvegarde)
+        nom_fichier_sauvegarde = os.path.basename(chemin_absolu_sauvegarde)
 
-        print(f"Fichier {nom_fichier} sauvegardé.")
+        print(f"Fichier {nom_fichier_sauvegarde} sauvegardé.")
 
     # TODO : Ajout de la sauvegarde séparée du fichier "filtre" et des drapeaux.
