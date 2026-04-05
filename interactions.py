@@ -1,6 +1,4 @@
 import matplotlib.dates as mdates
-
-
 class Interaction:
 
     def nombre_en_date(self, x):
