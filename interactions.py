@@ -1,46 +1,59 @@
 import matplotlib.dates as mdates
+import math
+import numpy as np
 class Interaction:
 
-    def nombre_en_date(self, x):
-        #Convertit la coordonnée X matplotlib (float) en datetime Python
-        return mdates.num2date(x).replace(tzinfo=None)
-        # mdates.num2date transforme un float matplotlib en datetime
-        #replace pour eviter les bud , enlever une inf qui est le fuseau horaire
-        
-
+    def calcul_distances(self, distances):
+        pass
 
     def info_point(self, event):
         #Affiche les infos du point le plus proche quand la souris bouge
-    
+
         # Si la souris n’est pas sur le graphe /pas de donnée / tooltip absent
         if event.inaxes != self.ax2d or event.xdata is None or self.tooltip is None:
             if self.tooltip:
                 self.tooltip.set_visible(False)  # cache le tooltip
                 self.canvas2d.draw_idle()        
             return
-
-        # Convertit la position souris en datetime
-        date_souris = self.nombre_en_date(event.xdata)
+        
 
         # Garde uniquement les points non supprimés
         points_valides = self.donnees[self.donnees["smps_flag"] == 0]
         if points_valides.empty:
             return
 
-        # Calcule la distance temporelle entre la souris et chaque point
-        ecarts = (points_valides["datetime"] - date_souris).abs()
+        #coordonnées des points des graphes
+        x_points = mdates.date2num(points_valides["datetime"])
+        y_points = points_valides["smps_concTotal"]
 
-        # Recup index du point le plus proche
-        idx = ecarts.idxmin()
+        #coordonnées de la souris
+        x_souris = event.xdata
+        y_souris = event.ydata
 
-        # Si le point est trop loin (> 5 minutes), on cache le tooltip
-        if ecarts[idx].total_seconds() > 300:
+        # poids pour équilibrer X et Y
+        xlim = self.ax2d.get_xlim()
+        ylim = self.ax2d.get_ylim()
+
+        # Normaliser par rapport aux limites VISIBLES (pas aux données)
+        echelle_x = 1 / (xlim[1] - xlim[0])
+        echelle_y = 1 / (ylim[1] - ylim[0])
+
+        distances = np.sqrt(
+            ((x_points - x_souris) * echelle_x)**2 +
+            ((y_points - y_souris) * echelle_y)**2
+        )
+
+        idx_min = distances.argmin()
+
+        # Seuil adaptatif (2% de la diagonale du graphe)
+        seuil = 0.02
+        if distances[idx_min] > seuil:
             self.tooltip.set_visible(False)
             self.canvas2d.draw_idle()
             return
 
         # Récupère la ligne correspondante
-        ligne = points_valides.loc[idx]
+        ligne = points_valides.loc[idx_min]
 
         # Texte affiché dans le tooltip
         self.tooltip.set_text(
@@ -57,6 +70,7 @@ class Interaction:
         # Rend visible le tooltip
         self.tooltip.set_visible(True)
         self.canvas2d.draw_idle()
+        
 
 
     def _au_clic(self, event):
