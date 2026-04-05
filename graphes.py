@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.widgets import Button
 import numpy as np
 from pandas import DataFrame
 import tkinter as tk
+
 
 
 class Graphe2D:
@@ -44,7 +46,7 @@ class Graphe2D:
 
         self.ax.grid(True, linestyle="--")
         self.fig.autofmt_xdate()
-
+        
 
 class Graphe3D:
 

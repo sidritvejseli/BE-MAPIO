@@ -1,28 +1,16 @@
 import matplotlib.dates as mdates
-import math
 import numpy as np
+import pandas as pd
+
+# TODO
+# Ajouter une fenêtre qui afficher l'option : effacer point a l'utilisateur 
+# quand on fait le clique droit.
+# Le code actuel efface les points directement avec un clique droit au lieu d'afficher les options sur ce point
+
 class Interaction:
 
-    def calcul_distances(self, distances):
-        pass
-
-    def info_point(self, event):
-        #Affiche les infos du point le plus proche quand la souris bouge
-
-        # Si la souris n’est pas sur le graphe /pas de donnée / tooltip absent
-        if event.inaxes != self.ax2d or event.xdata is None or self.tooltip is None:
-            if self.tooltip:
-                self.tooltip.set_visible(False)  # cache le tooltip
-                self.canvas2d.draw_idle()        
-            return
-        
-
-        # Garde uniquement les points non supprimés
-        points_valides = self.donnees[self.donnees["smps_flag"] == 0]
-        if points_valides.empty:
-            return
-
-        #coordonnées des points des graphes
+    #fonction de calcul de distances entres les points et la souris et les points valides
+    def calcul_distances(self, event, points_valides):
         x_points = mdates.date2num(points_valides["datetime"])
         y_points = points_valides["smps_concTotal"]
 
@@ -43,7 +31,30 @@ class Interaction:
             ((y_points - y_souris) * echelle_y)**2
         )
 
-        idx_min = distances.argmin()
+        distances = pd.Series(distances, index=points_valides.index)
+        return distances
+    
+
+    #Affiche les infos du point le plus proche quand la souris bouge
+    def info_point(self, event):
+        
+
+        # Si la souris n’est pas sur le graphe alors pas de donnée et le tooltip absent
+        if event.inaxes != self.ax2d or event.xdata is None or self.tooltip is None:
+            if self.tooltip:
+                self.tooltip.set_visible(False)  # cache le tooltip
+                self.canvas2d.draw_idle()        
+            return
+        
+
+        # Garde uniquement les points non supprimés
+        points_valides = self.donnees[self.donnees["smps_flag"] == 0]
+        if points_valides.empty:
+            return
+
+        
+        distances = self.calcul_distances(event, points_valides)
+        idx_min = distances.idxmin()
 
         # Seuil adaptatif (2% de la diagonale du graphe)
         seuil = 0.02
@@ -80,24 +91,22 @@ class Interaction:
         if event.inaxes != self.ax2d or event.xdata is None or event.button != 3:
             return
 
-        # Convertit position souris → datetime
-        date_clic = self.nombre_en_date(event.xdata)
-
         # Garde points valides
         points_valides = self.donnees[self.donnees["smps_flag"] == 0]
         if points_valides.empty:
             return
 
         # Trouve le point le plus proche
-        ecarts = (points_valides["datetime"] - date_clic).abs()
-        idx = ecarts.idxmin()
+        distances = self.calcul_distances(event, points_valides)
+        index_min = distances.idxmin()
 
-        # Trop loin → on ne fait rien
-        if ecarts[idx].total_seconds() > 300:
+        #si on depasse le seuil on ne peut plus selectionner le point
+        seuil = 0.02
+        if distances[index_min] > seuil:
             return
 
         #on supprime en mettant flag = 1
-        self.donnees.loc[idx, "smps_flag"] = 1
+        self.donnees.loc[index_min, "smps_flag"] = 1
 
         # Recharge le graphe pour voir la suppression
         self.afficher_graphe()

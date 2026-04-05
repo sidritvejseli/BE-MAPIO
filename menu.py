@@ -45,6 +45,8 @@ def build_toolbar(app):
 
     tk.Label(toolbar, text="  |  ").pack(side=tk.LEFT)
 
+    
+    tk.Button(toolbar, text="Actualiser", state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
     tk.Button(toolbar, text="Invalider jour", state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
     tk.Button(toolbar, text="Annuler (Z)",    state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
 

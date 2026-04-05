@@ -186,11 +186,6 @@ class App(tk.Tk, Donnees,Interaction):
             self.afficher_graphe()
 
 
-    #fonction auxiliaire pour calculer la difference des jours dans un dataframe
-    def difference_jours(self, jour1, jour2):
-        difference = jour1 - jour2
-        return abs(difference.days)
-
     def premier_jour(self):
         if self.donnees is None:
             return
