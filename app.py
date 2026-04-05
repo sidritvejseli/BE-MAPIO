@@ -7,9 +7,9 @@ import pandas as pd
 from donnees import Donnees
 from graphes import Graphe2D, Graphe3D, Heatmap3d
 from menu import build_menu, build_toolbar, build_tabs, show_placeholder
+from interactions import Interaction
 
-
-class App(tk.Tk, Donnees):
+class App(tk.Tk, Donnees,Interaction):
 
     def __init__(self):
         super().__init__()
@@ -22,6 +22,7 @@ class App(tk.Tk, Donnees):
         self.donnees_original = None
         self.current_file = None
         self.current_day = None
+        self.tooltip = None
 
         # la fentre
         cfg_aff = self.config.get("affichage", {})
@@ -70,6 +71,12 @@ class App(tk.Tk, Donnees):
         self.canvas = FigureCanvasTkAgg(self.plotter.fig, master=self.frame_graphe2d)
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
 
+        self.canvas2d = self.canvas
+        self.ax2d = self.plotter.ax
+        #quand l’utilisateur clique : appelle _au_clic
+        self.canvas2d.mpl_connect("button_press_event", self._au_clic)
+        self.canvas2d.mpl_connect("motion_notify_event", self.info_point)
+
         # HEATMAP
         self.frame_heatmap = tk.Frame(self.main_frame)
         self.frame_heatmap.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
@@ -90,12 +97,12 @@ class App(tk.Tk, Donnees):
         print(f"config.yaml introuvable : {path}")
         return {}
 
-    # fonctions utilitaires (inchangé)
+    # fonctions utilitaires 
 
     def _non_dispo(self):
         messagebox.showinfo("Info", "Fonctionnalite pas encore disponible")
 
-    # refresh (inchangé)
+    # refresh 
 
     def _refresh_all(self):
         if self.donnees is None:
@@ -138,6 +145,17 @@ class App(tk.Tk, Donnees):
 
         self.plotter.tracer_jour(self.donnees, self.current_day)
         self.canvas.draw()
+
+        #infos des points
+        self.tooltip = self.ax2d.annotate(
+            "",
+            xy=(0, 0),
+            xytext=(12, 12),
+            textcoords="offset points",
+            bbox=dict(boxstyle="round", fc="lightyellow", ec="orange", alpha=0.9),
+            fontsize=8,
+            visible=False
+        )
 
         self.heatmap.tracer_jour(self.donnees, self.current_day)
         self.canvas_heat.draw()
@@ -186,4 +204,3 @@ class App(tk.Tk, Donnees):
         dernier_j = self.donnees["datetime"].dt.date.max()
         self.current_day = dernier_j
         self.afficher_graphe()
-
