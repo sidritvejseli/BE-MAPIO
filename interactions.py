@@ -2,10 +2,6 @@ import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
 
-# TODO
-# Ajouter une fenêtre qui afficher l'option : effacer point a l'utilisateur 
-# quand on fait le clique droit.
-# Le code actuel efface les points directement avec un clique droit au lieu d'afficher les options sur ce point
 
 class Interaction:
 
@@ -109,4 +105,12 @@ class Interaction:
         self.donnees.loc[index_min, "smps_flag"] = 1
 
         # Recharge le graphe pour voir la suppression
+        self.afficher_graphe()
+        
+
+    def appliquer_facteur(self, facteur):
+        if self.donnees is None:
+                return
+        #multiplication des valeurs
+        self.donnees["smps_concTotal"] *= facteur
         self.afficher_graphe()

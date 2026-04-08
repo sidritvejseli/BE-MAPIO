@@ -8,6 +8,7 @@ from donnees import Donnees
 from graphes import Graphe2D, Graphe3D, Heatmap3d
 from menu import build_menu, build_toolbar, build_tabs, show_placeholder
 from interactions import Interaction
+from tkinter.simpledialog import askfloat
 
 class App(tk.Tk, Donnees,Interaction):
 
@@ -199,3 +200,13 @@ class App(tk.Tk, Donnees,Interaction):
         dernier_j = self.donnees["datetime"].dt.date.max()
         self.current_day = dernier_j
         self.afficher_graphe()
+
+
+
+    #demande du facteur
+    def demander_facteur(self):
+        facteur = askfloat("Facteur", "Multiplier par :")
+        if facteur is None:
+            return
+        #appel de la fonction interaction
+        self.appliquer_facteur(facteur)

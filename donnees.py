@@ -79,3 +79,7 @@ class Donnees:
         print(f"Fichier {nom_fichier_sauvegarde} sauvegardé.")
 
     # TODO : Ajout de la sauvegarde séparée du fichier "filtre" et des drapeaux.
+
+
+
+    
