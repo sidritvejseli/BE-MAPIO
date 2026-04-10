@@ -5,6 +5,7 @@ import numpy as np
 from pandas import DataFrame
 import tkinter as tk
 from donnees import Donnees
+import pandas as pd
 
 
 class Graphe2D:
@@ -15,25 +16,23 @@ class Graphe2D:
 
     def tracer_jour(self, donnees: Donnees, jour):
 
-        donnees_jour = donnees.obtenir_donnees_jour(jour)
+        donnees_jour = donnees.obtenir_donnees(jour, jour + pd.Timedelta(days=1))
 
         # Séparation des données valides aux données invalides.
 
-        donnees_invalides = donnees_jour[donnees_jour["smps_flag"] != 0]
+        donnees_invalides = donnees.obtenir_donnees_invalides(jour, jour + pd.Timedelta(days=1))
 
         self.ax.clear()
         self.ax.set_title(f"Jour : {jour}", fontsize=12)
         self.ax.tick_params(axis="x", rotation=45)
 
-        self.ax.scatter(
-            donnees_jour["datetime"], donnees_jour["smps_concTotal"], s=1, color="blue"
-        )
+        self.ax.scatter(donnees_jour.index, donnees_jour["smps_concTotal"], s=1, color="blue")
 
         # Traçage des données invalidées en rouge, afin de les différencier.
 
         if not donnees_invalides.empty:
             self.ax.scatter(
-                donnees_invalides["datetime"],
+                donnees_invalides.index,
                 donnees_invalides["smps_concTotal"],
                 s=8,
                 color="red",
@@ -59,15 +58,10 @@ class Graphe3D:
 
         self.effacer_jour()
 
-        donnees_jour = donnees.obtenir_donnees_jour(jour)
-        donnees_jour = donnees_jour.set_index("datetime")
-        donnees_jour = donnees_jour.loc[
-            :, donnees_jour.columns.str.startswith("smps_d")
-        ]
+        donnees_jour = donnees.obtenir_donnees(jour, jour + pd.Timedelta(days=1))
+        donnees_jour = donnees_jour.loc[:, donnees_jour.columns.str.startswith("smps_d")]
 
-        carte_thermique = self.ax.imshow(
-            donnees_jour.T, aspect="auto", origin="lower", cmap="RdYlBu"
-        )
+        carte_thermique = self.ax.imshow(donnees_jour.T, aspect="auto", origin="lower", cmap="RdYlBu")
 
         # TODO : Affichage des couleurs logarithmique, à la place de linéaire.
 
@@ -87,9 +81,7 @@ class Graphe3D:
 
         self.ax.set_xlabel("Heure")
 
-        graduations_abscisse = np.linspace(
-            0, len(donnees_jour) - 1, nombre_graduations
-        ).astype(int)
+        graduations_abscisse = np.linspace(0, len(donnees_jour) - 1, nombre_graduations).astype(int)
         libelles_abscisse = donnees_jour.index[graduations_abscisse].strftime("%H:%M")
 
         self.ax.set_xticks(graduations_abscisse)
@@ -99,13 +91,9 @@ class Graphe3D:
 
         self.ax.set_ylabel("Taille des particules (nanomètres)")
 
-        graduations_ordonnee = np.linspace(
-            0, len(donnees_jour.columns) - 1, nombre_graduations
-        ).astype(int)
+        graduations_ordonnee = np.linspace(0, len(donnees_jour.columns) - 1, nombre_graduations).astype(int)
         libelles_ordonnee = [donnees_jour.columns[i] for i in graduations_ordonnee]
-        libelles_ordonnee = np.array(
-            [float(colonne.split("_")[2]) for colonne in libelles_ordonnee]
-        )
+        libelles_ordonnee = np.array([float(colonne.split("_")[2]) for colonne in libelles_ordonnee])
 
         self.ax.set_yticks(graduations_ordonnee)
         self.ax.set_yticklabels(libelles_ordonnee)

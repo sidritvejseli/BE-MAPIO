@@ -7,11 +7,11 @@ import pandas as pd
 from donnees import Donnees
 from graphes import Graphe2D, Graphe3D, Heatmap3d
 from menu import build_menu, build_toolbar, build_tabs, show_placeholder
-from interactions import Interaction
+from interactions import Interactions
 from tkinter.simpledialog import askfloat
 
 
-class Interface(tk.Tk, Interaction):
+class Interface(tk.Tk, Interactions):
 
     def __init__(self):
 
@@ -22,9 +22,10 @@ class Interface(tk.Tk, Interaction):
 
         # variable :
         self.donnees = Donnees()
-        self.donnees_original = None
-        self.current_file = None
-        self.current_day = None
+        self.donnees_originales = Donnees()
+        self.fichier_courant = None
+        self.date_debut = None
+        self.date_fin = None
         self.tooltip = None
 
         # pour la plage
@@ -84,7 +85,7 @@ class Interface(tk.Tk, Interaction):
         self.ax2d = self.plotter.ax
         # quand l’utilisateur clique : appelle _au_clic
         self.canvas2d.mpl_connect("button_press_event", self._au_clic)
-        self.canvas2d.mpl_connect("motion_notify_event", self.info_point)
+        self.canvas2d.mpl_connect("motion_notify_event", self.afficher_informations_point)
 
         # HEATMAP
         self.frame_heatmap = tk.Frame(self.main_frame)
@@ -101,7 +102,7 @@ class Interface(tk.Tk, Interaction):
         # plage connex event souris
         # Quand l’utilisateur clique sur le graphe ça appelle la fonction _au_clic
         self.canvas2d.mpl_connect("button_press_event", self._au_clic)
-        self.canvas2d.mpl_connect("motion_notify_event", self.info_point)
+        self.canvas2d.mpl_connect("motion_notify_event", self.afficher_informations_point)
 
     # config yaml
 
@@ -122,24 +123,24 @@ class Interface(tk.Tk, Interaction):
     def _refresh_all(self):
         if self.donnees.est_vide():
             return
-        if self.current_day is not None:
-            self.label_jour.config(text=f"Jour affiche : {self.current_day}")
+        if self.date_debut is not None:
+            self.label_jour.config(text=f"Jour affiche : {self.date_debut}")
 
     def _action_charger(self):
         dossier_defaut = self.config.get("repertoires", {}).get("donnees", "")
         self.donnees.charger_fichier_csv(dossier_defaut)
 
         if not self.donnees.est_vide():
-            self.current_day = self.donnees.obtenir_jour_minimum()
+            self.date_debut = self.donnees.obtenir_jour_minimum()
             self.afficher_graphe()
-            self.label_jour.config(text=f"Jour affiche : {self.current_day}")
+            self.label_jour.config(text=f"Jour affiche : {self.date_debut}")
 
     def _action_fermer(self):
         if self.donnees.est_vide():
             return
         if messagebox.askyesno("Confirmer", "Fermer sans sauvegarder ?"):
             self.donnees.fermer_fichier_csv()
-            self.current_day = None
+            self.date_debut = None
             self.label_jour.config(text="Aucun fichier charge")
 
     def _action_sauvegarder(self):
@@ -155,10 +156,10 @@ class Interface(tk.Tk, Interaction):
     # affichage graphe
 
     def afficher_graphe(self):
-        if self.donnees.est_vide() or self.current_day is None:
+        if self.donnees.est_vide() or self.date_debut is None:
             return
 
-        self.plotter.tracer_jour(self.donnees, self.current_day)
+        self.plotter.tracer_jour(self.donnees, self.date_debut)
         self.canvas.draw()
 
         # infos des points
@@ -172,13 +173,13 @@ class Interface(tk.Tk, Interaction):
             visible=False,
         )
 
-        self.heatmap.tracer_jour(self.donnees, self.current_day)
+        self.heatmap.tracer_jour(self.donnees, self.date_debut)
         self.canvas_heat.draw()
 
         if hasattr(self, "heatmap3d"):
-            self.heatmap3d.tracer_jour(self.donnees, self.current_day)
+            self.heatmap3d.tracer_jour(self.donnees, self.date_debut)
 
-        self.label_jour.config(text=f"Jour affiche : {self.current_day}")
+        self.label_jour.config(text=f"Jour affiche : {self.date_debut}")
 
     # navigation jours
 
@@ -187,8 +188,8 @@ class Interface(tk.Tk, Interaction):
             return
 
         max_day = self.donnees.obtenir_jour_maximum()
-        if self.current_day < max_day:
-            self.current_day += pd.Timedelta(days=1)
+        if self.date_debut < max_day:
+            self.date_debut += pd.Timedelta(days=1)
             self.afficher_graphe()
 
     def jour_precedent(self):
@@ -196,22 +197,22 @@ class Interface(tk.Tk, Interaction):
             return
 
         min_day = self.donnees.obtenir_jour_minimum()
-        if self.current_day > min_day:
-            self.current_day -= pd.Timedelta(days=1)
+        if self.date_debut > min_day:
+            self.date_debut -= pd.Timedelta(days=1)
             self.afficher_graphe()
 
     def premier_jour(self):
         if self.donnees.est_vide():
             return
         premier_j = self.donnees.obtenir_jour_minimum()
-        self.current_day = premier_j
+        self.date_debut = premier_j
         self.afficher_graphe()
 
     def dernier_jour(self):
         if self.donnees.est_vide():
             return
         dernier_j = self.donnees.obtenir_jour_maximum()
-        self.current_day = dernier_j
+        self.date_debut = dernier_j
         self.afficher_graphe()
 
     # demande du facteur

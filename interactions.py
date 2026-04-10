@@ -3,11 +3,10 @@ import numpy as np
 import pandas as pd
 
 
-class Interaction:
-
+class Interactions:
     # fonction de calcul de distances entres les points et la souris et les points valides
-    def calcul_distances(self, event, points_valides):
-        x_points = mdates.date2num(points_valides["datetime"])
+    def calculer_distances(self, event, points_valides):
+        x_points = mdates.date2num(points_valides.index)
         y_points = points_valides["smps_concTotal"]
 
         # coordonnées de la souris
@@ -28,7 +27,7 @@ class Interaction:
         return distances
 
     # Affiche les infos du point le plus proche quand la souris bouge
-    def info_point(self, event):
+    def afficher_informations_point(self, event):
 
         # Si la souris n’est pas sur le graphe alors pas de donnée et le tooltip absent
         if event.inaxes != self.ax2d or event.xdata is None or self.tooltip is None:
@@ -41,11 +40,13 @@ class Interaction:
             return
 
         # Garde uniquement les points non supprimés
-        points_valides = self.donnees.obtenir_donnees_valides()
+        if not self.date_fin:
+            self.date_fin = self.date_debut + pd.Timedelta(days=1)
+        points_valides = self.donnees.obtenir_donnees_valides(self.date_debut, self.date_fin)
         if points_valides.empty:
             return
 
-        distances = self.calcul_distances(event, points_valides)
+        distances = self.calculer_distances(event, points_valides)
         idx_min = distances.idxmin()
 
         # Seuil adaptatif (2% de la diagonale du graphe)
@@ -59,11 +60,11 @@ class Interaction:
         ligne = points_valides.loc[idx_min]
 
         # Texte affiché dans le tooltip
-        self.tooltip.set_text(f"{ligne['datetime'].strftime('%d/%m %H:%M')}\n" f"Conc : {ligne['smps_concTotal']:.1f}")
+        self.tooltip.set_text(f"{ligne.name.strftime('%d/%m %H:%M')}\n" f"Conc : {ligne['smps_concTotal']:.1f}")
 
         # Position du tooltip sur le graphe
         self.tooltip.xy = (
-            mdates.date2num(ligne["datetime"]),
+            mdates.date2num(ligne.name),
             ligne["smps_concTotal"],
         )
 
@@ -111,12 +112,15 @@ class Interaction:
             return
 
         # Garde points valides
-        points_valides = self.donnees.obtenir_donnees_valides()
+        if not self.date_fin:
+            self.date_fin = self.date_debut + pd.Timedelta(days=1)
+
+        points_valides = self.donnees.obtenir_donnees_valides(self.date_debut, self.date_fin)
         if points_valides.empty:
             return
 
         # Trouve le point le plus proche
-        distances = self.calcul_distances(event, points_valides)
+        distances = self.calculer_distances(event, points_valides)
         index_min = distances.idxmin()
 
         # si on depasse le seuil on ne peut plus selectionner le point

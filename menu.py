@@ -8,9 +8,7 @@ def build_menu(app):
 
     menu_fichier = tk.Menu(menubar, tearoff=0)
     menu_fichier.add_command(label="Charger un fichier", command=app._action_charger)
-    menu_fichier.add_command(
-        label="Fermer sans sauvegarder", command=app._action_fermer
-    )
+    menu_fichier.add_command(label="Fermer sans sauvegarder", command=app._action_fermer)
     menu_fichier.add_separator()
     menu_fichier.add_command(label="Enregistrer sous", command=app._action_sauvegarder)
     menu_fichier.add_separator()
@@ -18,18 +16,12 @@ def build_menu(app):
     menubar.add_cascade(label="Fichier", menu=menu_fichier)
 
     menu_actions = tk.Menu(menubar, tearoff=0)
-    menu_actions.add_command(
-        label="Invalider toutes les donnees", command=app._non_dispo
-    )
-    menu_actions.add_command(
-        label="Invalider les donnees du jour", command=app._non_dispo
-    )
+    menu_actions.add_command(label="Invalider toutes les donnees", command=app._non_dispo)
+    menu_actions.add_command(label="Invalider les donnees du jour", command=app._non_dispo)
     menu_actions.add_separator()
     menu_actions.add_command(label="Annuler (Ctrl+Z)", command=app._non_dispo)
     menu_actions.add_separator()
-    menu_actions.add_command(
-        label="Appliquer un facteur de correction", command=app._non_dispo
-    )
+    menu_actions.add_command(label="Appliquer un facteur de correction", command=app._non_dispo)
     menubar.add_cascade(label="Actions", menu=menu_actions)
 
     menu_nav = tk.Menu(menubar, tearoff=0)
@@ -46,41 +38,23 @@ def build_toolbar(app):
     toolbar = tk.Frame(app, bd=1, relief=tk.RAISED)
     toolbar.pack(side=tk.TOP, fill=tk.X)
 
-    tk.Button(toolbar, text="|◀ Premier", command=app.premier_jour).pack(
-        side=tk.LEFT, padx=2, pady=2
-    )
-    tk.Button(toolbar, text="◀ Precedent", command=app.jour_precedent).pack(
-        side=tk.LEFT, padx=2, pady=2
-    )
-    tk.Button(toolbar, text="Suivant ▶", command=app.jour_suivant).pack(
-        side=tk.LEFT, padx=2, pady=2
-    )
-    tk.Button(toolbar, text="Dernier ▶|", command=app.dernier_jour).pack(
-        side=tk.LEFT, padx=2, pady=2
-    )
+    tk.Button(toolbar, text="|◀ Premier", command=app.premier_jour).pack(side=tk.LEFT, padx=2, pady=2)
+    tk.Button(toolbar, text="◀ Precedent", command=app.jour_precedent).pack(side=tk.LEFT, padx=2, pady=2)
+    tk.Button(toolbar, text="Suivant ▶", command=app.jour_suivant).pack(side=tk.LEFT, padx=2, pady=2)
+    tk.Button(toolbar, text="Dernier ▶|", command=app.dernier_jour).pack(side=tk.LEFT, padx=2, pady=2)
 
     tk.Label(toolbar, text="  |  ").pack(side=tk.LEFT)
 
-    tk.Button(toolbar, text="Actualiser", state=tk.DISABLED).pack(
-        side=tk.LEFT, padx=2, pady=2
-    )
-    tk.Button(toolbar, text="Invalider jour", state=tk.DISABLED).pack(
-        side=tk.LEFT, padx=2, pady=2
-    )
-    tk.Button(toolbar, text="Annuler (Z)", state=tk.DISABLED).pack(
-        side=tk.LEFT, padx=2, pady=2
-    )
+    tk.Button(toolbar, text="Actualiser", state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
+    tk.Button(toolbar, text="Invalider jour", state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
+    tk.Button(toolbar, text="Annuler (Z)", state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
 
     # ajout par rapport facteur dans interactions
     tk.Button(toolbar, text="Facteur", command=app.demander_facteur).pack(side=tk.LEFT)
     # bouton suppression plage ajout
-    tk.Button(toolbar, text="Supprimer plage", command=app.supprimer_plage).pack(
-        side=tk.LEFT, padx=2, pady=2
-    )
+    tk.Button(toolbar, text="Supprimer plage", command=app.supprimer_plage).pack(side=tk.LEFT, padx=2, pady=2)
 
-    label_jour = tk.Label(
-        toolbar, text="Aucun fichier charge", font=("Arial", 10, "bold")
-    )
+    label_jour = tk.Label(toolbar, text="Aucun fichier charge", font=("Arial", 10, "bold"))
     label_jour.pack(side=tk.RIGHT, padx=10)
 
     return label_jour

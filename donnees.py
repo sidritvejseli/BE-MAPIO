@@ -1,6 +1,7 @@
 from tkinter import filedialog, messagebox
 import os
 import pandas as pd
+from datetime import datetime
 
 
 class Donnees:
@@ -19,67 +20,60 @@ class Donnees:
         return self.donnees.empty
 
     def obtenir_jour_minimum(self):
-        return self.donnees["datetime"].dt.date.min()
+        return self.donnees.index.min()
 
     def obtenir_jour_maximum(self):
-        return self.donnees["datetime"].dt.date.max()
+        return self.donnees.index.max()
 
-    def obtenir_donnees_jour(self, jour):
-        return self.donnees[self.donnees["datetime"].dt.date == jour]
+    def obtenir_donnees(self, debut: datetime, fin: datetime):
+        return self.donnees.loc[debut:fin]
 
-    def obtenir_donnees_valides(self):
-        return self.donnees[self.donnees["smps_flag"] == 0]
+    def obtenir_donnees_valides(self, debut: datetime, fin: datetime):
+        return self.obtenir_donnees(debut, fin).query("smps_flag == 0")
 
-    def supprimer_ligne(self, ligne):
-        self.donnees.loc[ligne, "smps_flag"] = 1
+    def obtenir_donnees_invalides(self, debut: datetime, fin: datetime):
+        return self.obtenir_donnees(debut, fin).query("smps_flag == 1")
 
-    def supprimer_donnees(self, date_debut, date_fin):
-        masque = (self.donnees["datetime"] >= date_debut) & (self.donnees["datetime"] <= date_fin)
-        self.supprimer_ligne(masque)
+    def supprimer_ligne(self, date: datetime):
+        self.donnees.loc[date, "smps_flag"] = 1
+
+    def supprimer_donnees(self, debut: datetime, fin: datetime):
+        self.donnees.loc[debut:fin, "smps_flag"] = 1
 
     def multiplier_concentration(self, facteur):
         self.donnees["smps_concTotal"] *= facteur
 
+    def convertir_donnees(self):
+
+        self.donnees = self.donnees.apply(pd.to_numeric, errors="coerce")
+
+        # En cas d'erreur, la chaîne de caractères est remplacée
+        # par Not A Time ou Not A Number, en raison du drapeau "coerce".
+
+    def ajouter_drapeaux(self):
+
+        self.donnees["smps_flag"] = 0
+
     def charger_fichier_csv(self, chemin_initial=""):
 
-        self.chemin_absolu = filedialog.askopenfilename(
+        chemin_absolu_chargement = filedialog.askopenfilename(
             initialdir=chemin_initial,
             filetypes=[("CSV files", "*.csv"), ("All", "*.*")],
         )
 
-        if not self.chemin_absolu:
+        if not chemin_absolu_chargement:
             return
 
+        self.chemin_absolu = chemin_absolu_chargement
         self.nom_fichier = os.path.basename(self.chemin_absolu)
 
-        self.donnees = pd.read_csv(self.chemin_absolu)
+        self.donnees = pd.read_csv(self.chemin_absolu, parse_dates=["datetime"], index_col="datetime")
 
-        # Transtypage des chaînes de caractères en leur bon type.
-        # En cas d'erreur, la chaîne de caractères est remplacée par Not A Time ou Not A Number,
-        # en raison du drapeau "coerce".
+        self.convertir_donnees()
 
-        self.donnees["datetime"] = pd.to_datetime(self.donnees["datetime"], errors="coerce")
-
-        for colonne in self.donnees.columns:
-
-            if colonne == "datetime":
-                continue
-
-            self.donnees[colonne] = pd.to_numeric(self.donnees[colonne], errors="coerce")
-
-        # Création de deux colonnes pour les drapeaux.
-
-        if "smps_flag" not in self.donnees.columns:
-            self.donnees["smps_flag"] = 0
-
-        if "pollution_flag" not in self.donnees.columns:
-            self.donnees["pollution_flag"] = 0
-
-        print(f"Fichier {self.nom_fichier} chargé.")
+        self.ajouter_drapeaux()
 
     def fermer_fichier_csv(self):
-
-        print(f"Fichier {self.nom_fichier} fermé.")
 
         self.initialiser_donnees()
 
@@ -96,10 +90,8 @@ class Donnees:
         if not chemin_absolu_sauvegarde:
             return
 
-        self.donnees.to_csv(chemin_absolu_sauvegarde, index=False)
+        self.donnees.to_csv(chemin_absolu_sauvegarde)
 
-        nom_fichier_sauvegarde = os.path.basename(chemin_absolu_sauvegarde)
-
-        print(f"Fichier {nom_fichier_sauvegarde} sauvegardé.")
+        self.fermer_fichier_csv()
 
     # TODO : Ajout de la sauvegarde séparée du fichier "filtre" et des drapeaux.
