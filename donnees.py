@@ -1,4 +1,3 @@
-from tkinter import filedialog, messagebox
 import os
 import pandas as pd
 from datetime import datetime
@@ -54,15 +53,7 @@ class Donnees:
 
         self.donnees["smps_flag"] = 0
 
-    def charger_fichier_csv(self, chemin_initial=""):
-
-        chemin_absolu_chargement = filedialog.askopenfilename(
-            initialdir=chemin_initial,
-            filetypes=[("CSV files", "*.csv"), ("All", "*.*")],
-        )
-
-        if not chemin_absolu_chargement:
-            return
+    def charger_fichier_csv(self, chemin_absolu_chargement):
 
         self.chemin_absolu = chemin_absolu_chargement
         self.nom_fichier = os.path.basename(self.chemin_absolu)
@@ -77,21 +68,8 @@ class Donnees:
 
         self.initialiser_donnees()
 
-    def sauvegarder_fichier_csv(self):
-
-        if self.est_vide():
-            messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
-            return
-
-        chemin_absolu_sauvegarde = filedialog.asksaveasfilename(
-            defaultextension=".csv", filetypes=[("CSV files", "*.csv")]
-        )
-
-        if not chemin_absolu_sauvegarde:
-            return
+    def sauvegarder_fichier_csv(self, chemin_absolu_sauvegarde):
 
         self.donnees.to_csv(chemin_absolu_sauvegarde)
 
-        self.fermer_fichier_csv()
-
-    # TODO : Ajout de la sauvegarde séparée du fichier "filtre" et des drapeaux.
+        # TODO : Ajout de la sauvegarde séparée du fichier "filtre" et des drapeaux.

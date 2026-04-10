@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 import yaml
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -127,8 +127,17 @@ class Interface(tk.Tk, Interactions):
             self.label_jour.config(text=f"Jour affiche : {self.date_debut}")
 
     def _action_charger(self):
-        dossier_defaut = self.config.get("repertoires", {}).get("donnees", "")
-        self.donnees.charger_fichier_csv(dossier_defaut)
+        chemin_initial = self.config.get("repertoires", {}).get("donnees", "")
+
+        chemin_absolu_chargement = filedialog.askopenfilename(
+            initialdir=chemin_initial,
+            filetypes=[("CSV files", "*.csv"), ("All", "*.*")],
+        )
+
+        if not chemin_absolu_chargement:
+            return
+
+        self.donnees.charger_fichier_csv(chemin_absolu_chargement)
 
         if not self.donnees.est_vide():
             self.date_debut = self.donnees.obtenir_jour_minimum()
@@ -147,7 +156,20 @@ class Interface(tk.Tk, Interactions):
         cfg_rep = self.config.get("repertoires", {})
         dossier_resultats = cfg_rep.get("resultats", "resultats/")
         dossier_flags = cfg_rep.get("flags", "resultats/flags/")
-        self.donnees.sauvegarder_fichier_csv()
+
+        if self.donnees.est_vide():
+            messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
+            return
+
+        chemin_absolu_sauvegarde = filedialog.asksaveasfilename(
+            defaultextension=".csv", filetypes=[("CSV files", "*.csv")]
+        )
+
+        if not chemin_absolu_sauvegarde:
+            return
+
+        self.donnees.sauvegarder_fichier_csv(chemin_absolu_sauvegarde)
+        self.donnees.fermer_fichier_csv()
 
     def _action_quitter(self):
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
