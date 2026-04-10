@@ -12,7 +12,7 @@ def build_menu(app):
         label="Fermer sans sauvegarder", command=app._action_fermer
     )
     menu_fichier.add_separator()
-    menu_fichier.add_command(label="Sauvegarder", command=app._action_sauvegarder)
+    menu_fichier.add_command(label="Enregistrer sous", command=app._action_sauvegarder)
     menu_fichier.add_separator()
     menu_fichier.add_command(label="Quitter", command=app._action_quitter)
     menubar.add_cascade(label="Fichier", menu=menu_fichier)
