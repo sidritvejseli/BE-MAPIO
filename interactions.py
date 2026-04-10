@@ -22,10 +22,7 @@ class Interaction:
         echelle_x = 1 / (xlim[1] - xlim[0])
         echelle_y = 1 / (ylim[1] - ylim[0])
 
-        distances = np.sqrt(
-            ((x_points - x_souris) * echelle_x) ** 2
-            + ((y_points - y_souris) * echelle_y) ** 2
-        )
+        distances = np.sqrt(((x_points - x_souris) * echelle_x) ** 2 + ((y_points - y_souris) * echelle_y) ** 2)
 
         distances = pd.Series(distances, index=points_valides.index)
         return distances
@@ -38,6 +35,9 @@ class Interaction:
             if self.tooltip:
                 self.tooltip.set_visible(False)  # cache le tooltip
                 self.canvas2d.draw_idle()
+            return
+
+        if self.donnees.est_vide():
             return
 
         # Garde uniquement les points non supprimés
@@ -59,10 +59,7 @@ class Interaction:
         ligne = points_valides.loc[idx_min]
 
         # Texte affiché dans le tooltip
-        self.tooltip.set_text(
-            f"{ligne['datetime'].strftime('%d/%m %H:%M')}\n"
-            f"Conc : {ligne['smps_concTotal']:.1f}"
-        )
+        self.tooltip.set_text(f"{ligne['datetime'].strftime('%d/%m %H:%M')}\n" f"Conc : {ligne['smps_concTotal']:.1f}")
 
         # Position du tooltip sur le graphe
         self.tooltip.xy = (
@@ -128,7 +125,7 @@ class Interaction:
             return
 
         # on supprime en mettant flag = 1
-        self.donnees.supprimer_donnee(index_min)
+        self.donnees.supprimer_ligne(index_min)
 
         # correction bug plage
         # supprime ligne début si elle existe
@@ -149,7 +146,7 @@ class Interaction:
         self.afficher_graphe()
 
     def appliquer_facteur(self, facteur):
-        if self.donnees is None:
+        if self.donnees.est_vide():
             return
         # multiplication des valeurs
         self.donnees.multiplier_concentration(facteur)
@@ -164,7 +161,7 @@ class Interaction:
         debut = min(self.selection_debut, self.selection_fin)
         fin = max(self.selection_debut, self.selection_fin)
 
-        self.donnees.supprimer_plage(debut, fin)
+        self.donnees.supprimer_donnees(debut, fin)
 
         # supprimer les lignes
 

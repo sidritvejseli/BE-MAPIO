@@ -7,9 +7,13 @@ class Donnees:
 
     def __init__(self):
 
+        self.initialiser_donnees()
+
+    def initialiser_donnees(self):
+
         self.donnees = pd.DataFrame()
-        self.chemin_absolu = None
-        self.nom_fichier = None
+        self.chemin_absolu = ""
+        self.nom_fichier = ""
 
     def est_vide(self):
         return self.donnees.empty
@@ -26,15 +30,15 @@ class Donnees:
     def obtenir_donnees_valides(self):
         return self.donnees[self.donnees["smps_flag"] == 0]
 
-    def supprimer_donnee(self, numero_ligne):
-        self.donnees.loc[numero_ligne, "smps_flag"] = 1
+    def supprimer_ligne(self, ligne):
+        self.donnees.loc[ligne, "smps_flag"] = 1
+
+    def supprimer_donnees(self, date_debut, date_fin):
+        masque = (self.donnees["datetime"] >= date_debut) & (self.donnees["datetime"] <= date_fin)
+        self.supprimer_ligne(masque)
 
     def multiplier_concentration(self, facteur):
         self.donnees["smps_concTotal"] *= facteur
-
-    def supprimer_plage(self, debut, fin):
-        masque = (self.donnees["datetime"] >= debut) & (self.donnees["datetime"] <= fin)
-        self.donnees.loc[masque, "smps_flag"] = 1
 
     def charger_fichier_csv(self, chemin_initial=""):
 
@@ -51,20 +55,17 @@ class Donnees:
         self.donnees = pd.read_csv(self.chemin_absolu)
 
         # Transtypage des chaînes de caractères en leur bon type.
-        # En cas d'erreur, la chaîne de caractères est remplacée par Not A Time ou Not A Number, en raison du drapeau "coerce".
+        # En cas d'erreur, la chaîne de caractères est remplacée par Not A Time ou Not A Number,
+        # en raison du drapeau "coerce".
 
-        self.donnees["datetime"] = pd.to_datetime(
-            self.donnees["datetime"], errors="coerce"
-        )
+        self.donnees["datetime"] = pd.to_datetime(self.donnees["datetime"], errors="coerce")
 
         for colonne in self.donnees.columns:
 
             if colonne == "datetime":
                 continue
 
-            self.donnees[colonne] = pd.to_numeric(
-                self.donnees[colonne], errors="coerce"
-            )
+            self.donnees[colonne] = pd.to_numeric(self.donnees[colonne], errors="coerce")
 
         # Création de deux colonnes pour les drapeaux.
 
@@ -80,9 +81,7 @@ class Donnees:
 
         print(f"Fichier {self.nom_fichier} fermé.")
 
-        self.donnees = pd.DataFrame()
-        self.chemin_absolu = None
-        self.nom_fichier = None
+        self.initialiser_donnees()
 
     def sauvegarder_fichier_csv(self):
 

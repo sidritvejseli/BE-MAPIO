@@ -90,12 +90,8 @@ class Interface(tk.Tk, Interaction):
         self.frame_heatmap = tk.Frame(self.main_frame)
         self.frame_heatmap.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
 
-        self.canvas_heat = FigureCanvasTkAgg(
-            self.heatmap.fig, master=self.frame_heatmap
-        )
-        self.canvas_heat.get_tk_widget().pack(
-            fill="both", expand=True, padx=20, pady=20
-        )
+        self.canvas_heat = FigureCanvasTkAgg(self.heatmap.fig, master=self.frame_heatmap)
+        self.canvas_heat.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
 
         # plage
         # interaction de la plage
@@ -133,7 +129,7 @@ class Interface(tk.Tk, Interaction):
         dossier_defaut = self.config.get("repertoires", {}).get("donnees", "")
         self.donnees.charger_fichier_csv(dossier_defaut)
 
-        if self.donnees is not None:
+        if not self.donnees.est_vide():
             self.current_day = self.donnees.obtenir_jour_minimum()
             self.afficher_graphe()
             self.label_jour.config(text=f"Jour affiche : {self.current_day}")
@@ -142,7 +138,7 @@ class Interface(tk.Tk, Interaction):
         if self.donnees.est_vide():
             return
         if messagebox.askyesno("Confirmer", "Fermer sans sauvegarder ?"):
-            self.fermer_fichier_csv()
+            self.donnees.fermer_fichier_csv()
             self.current_day = None
             self.label_jour.config(text="Aucun fichier charge")
 
@@ -150,7 +146,7 @@ class Interface(tk.Tk, Interaction):
         cfg_rep = self.config.get("repertoires", {})
         dossier_resultats = cfg_rep.get("resultats", "resultats/")
         dossier_flags = cfg_rep.get("flags", "resultats/flags/")
-        self.sauvegarder_fichier_csv()
+        self.donnees.sauvegarder_fichier_csv()
 
     def _action_quitter(self):
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
