@@ -25,6 +25,13 @@ class App(tk.Tk, Donnees,Interaction):
         self.current_day = None
         self.tooltip = None
 
+        # pour la plage 
+
+        self.selection_debut = None
+        self.selection_fin = None
+        self.ligne_debut = None
+        self.ligne_fin = None
+
         # la fentre
         cfg_aff = self.config.get("affichage", {})
         self.title(cfg_aff.get("titre", "Outil SMPS - MAP-IO"))
@@ -88,6 +95,18 @@ class App(tk.Tk, Donnees,Interaction):
         self.canvas_heat.get_tk_widget().pack(
             fill="both", expand=True, padx=20, pady=20
         )
+
+
+        #plage
+        #interaction de la plage
+        self.canvas2d = self.canvas
+        self.ax2d = self.plotter.ax
+
+        # plage connex event souris
+        #Quand l’utilisateur clique sur le graphe ça appelle la fonction _au_clic
+        self.canvas2d.mpl_connect("button_press_event", self._au_clic)
+        self.canvas2d.mpl_connect("motion_notify_event", self.info_point)
+
 
     # config yaml
 

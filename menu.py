@@ -50,8 +50,10 @@ def build_toolbar(app):
     tk.Button(toolbar, text="Invalider jour", state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
     tk.Button(toolbar, text="Annuler (Z)",    state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
 
-    #ajout shain par rapport facteur dans interactions
+    #ajout par rapport facteur dans interactions
     tk.Button(toolbar, text="Facteur", command=app.demander_facteur).pack(side=tk.LEFT)
+    #bouton suppression plage ajout
+    tk.Button(toolbar, text="Supprimer plage", command=app.supprimer_plage).pack(side=tk.LEFT, padx=2, pady=2)
 
     label_jour = tk.Label(toolbar, text="Aucun fichier charge", font=("Arial", 10, "bold"))
     label_jour.pack(side=tk.RIGHT, padx=10)

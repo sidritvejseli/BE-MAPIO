@@ -81,6 +81,41 @@ class Interaction:
 
 
     def _au_clic(self, event):
+
+        #clique gauche pour plage
+        if event.inaxes == self.ax2d and event.button == 1 and event.xdata is not None:
+            date = mdates.num2date(event.xdata).replace(tzinfo=None)
+
+            if self.selection_debut is None:
+                self.selection_debut = date
+
+                # supp ancienne ligne si elle existe
+                #Si self a une ligne_fin et qu’elle n’est pas vide  alors on la supprime
+                # hasattr nous permet de vérifier si un objet possède un attribut
+                if hasattr(self, "ligne_debut") and self.ligne_debut:
+                    self.ligne_debut.remove()
+
+                # dessine ligne début 
+                self.ligne_debut = self.ax2d.axvline(date, color="red", linestyle="--")
+
+            else:
+                self.selection_fin = date
+
+                # supp ancienne ligne si elle existe
+                if hasattr(self, "ligne_fin") and self.ligne_fin:
+                    self.ligne_fin.remove()
+
+                # met unedessine ligne fin 
+                self.ligne_fin = self.ax2d.axvline(date, color="red", linestyle="--")
+
+            # rediesine
+            self.canvas2d.draw_idle()
+            #je met un return pour que je stop qquad je met la deuxieme ligne
+            return
+
+
+
+
         #Clic droit : supprime le point le plus proche
 
         # Vérifie : clic sur graphe + bouton droit en gros le 3 c clique droit
@@ -113,4 +148,36 @@ class Interaction:
                 return
         #multiplication des valeurs
         self.donnees["smps_concTotal"] *= facteur
+        self.afficher_graphe()
+
+
+
+    def supprimer_plage(self):
+
+        if self.selection_debut is None or self.selection_fin is None:
+            print("Aucune plage")
+            return
+
+        debut = min(self.selection_debut, self.selection_fin)
+        fin   = max(self.selection_debut, self.selection_fin)
+
+        masque = (self.donnees["datetime"] >= debut) & (self.donnees["datetime"] <= fin)
+
+        self.donnees.loc[masque, "smps_flag"] = 1
+
+        
+        #supprimer les lignes 
+        
+        if hasattr(self, "ligne_debut") and self.ligne_debut:
+            self.ligne_debut.remove()
+            self.ligne_debut = None
+
+        if hasattr(self, "ligne_fin") and self.ligne_fin:
+            self.ligne_fin.remove()
+            self.ligne_fin = None
+
+        #pour recommencer de nouvelle ligne on doit reset
+        self.selection_debut = None
+        self.selection_fin   = None
+
         self.afficher_graphe()
