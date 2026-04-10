@@ -139,6 +139,23 @@ class Interaction:
         #on supprime en mettant flag = 1
         self.donnees.loc[index_min, "smps_flag"] = 1
 
+
+        #correction bug plage
+        # supprime ligne début si elle existe
+        if hasattr(self, "ligne_debut") and self.ligne_debut:
+            self.ligne_debut.remove()
+            self.ligne_debut = None
+
+        # supprime ligne fin si elle existe
+        if hasattr(self, "ligne_fin") and self.ligne_fin:
+            self.ligne_fin.remove()
+            self.ligne_fin = None
+
+        #le reset pour les bug
+        self.selection_debut = None
+        self.selection_fin = None
+
+
         # Recharge le graphe pour voir la suppression
         self.afficher_graphe()
         
