@@ -7,9 +7,34 @@ class Donnees:
 
     def __init__(self):
 
-        self.donnees = None
+        self.donnees = pd.DataFrame()
         self.chemin_absolu = None
         self.nom_fichier = None
+
+    def est_vide(self):
+        return self.donnees.empty
+
+    def obtenir_jour_minimum(self):
+        return self.donnees["datetime"].dt.date.min()
+
+    def obtenir_jour_maximum(self):
+        return self.donnees["datetime"].dt.date.max()
+
+    def obtenir_donnees_jour(self, jour):
+        return self.donnees[self.donnees["datetime"].dt.date == jour]
+
+    def obtenir_donnees_valides(self):
+        return self.donnees[self.donnees["smps_flag"] == 0]
+
+    def supprimer_donnee(self, numero_ligne):
+        self.donnees.loc[numero_ligne, "smps_flag"] = 1
+
+    def multiplier_concentration(self, facteur):
+        self.donnees["smps_concTotal"] *= facteur
+
+    def supprimer_plage(self, debut, fin):
+        masque = (self.donnees["datetime"] >= debut) & (self.donnees["datetime"] <= fin)
+        self.donnees.loc[masque, "smps_flag"] = 1
 
     def charger_fichier_csv(self, chemin_initial=""):
 
@@ -55,13 +80,13 @@ class Donnees:
 
         print(f"Fichier {self.nom_fichier} fermé.")
 
-        self.donnees = None
+        self.donnees = pd.DataFrame()
         self.chemin_absolu = None
         self.nom_fichier = None
 
     def sauvegarder_fichier_csv(self):
 
-        if self.donnees is None:
+        if self.est_vide():
             messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
             return
 

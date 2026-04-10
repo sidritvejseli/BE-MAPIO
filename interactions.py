@@ -41,7 +41,7 @@ class Interaction:
             return
 
         # Garde uniquement les points non supprimés
-        points_valides = self.donnees[self.donnees["smps_flag"] == 0]
+        points_valides = self.donnees.obtenir_donnees_valides()
         if points_valides.empty:
             return
 
@@ -114,7 +114,7 @@ class Interaction:
             return
 
         # Garde points valides
-        points_valides = self.donnees[self.donnees["smps_flag"] == 0]
+        points_valides = self.donnees.obtenir_donnees_valides()
         if points_valides.empty:
             return
 
@@ -128,10 +128,9 @@ class Interaction:
             return
 
         # on supprime en mettant flag = 1
-        self.donnees.loc[index_min, "smps_flag"] = 1
+        self.donnees.supprimer_donnee(index_min)
 
-
-        #correction bug plage
+        # correction bug plage
         # supprime ligne début si elle existe
         if hasattr(self, "ligne_debut") and self.ligne_debut:
             self.ligne_debut.remove()
@@ -142,10 +141,9 @@ class Interaction:
             self.ligne_fin.remove()
             self.ligne_fin = None
 
-        #le reset pour les bug
+        # le reset pour les bug
         self.selection_debut = None
         self.selection_fin = None
-
 
         # Recharge le graphe pour voir la suppression
         self.afficher_graphe()
@@ -154,7 +152,7 @@ class Interaction:
         if self.donnees is None:
             return
         # multiplication des valeurs
-        self.donnees["smps_concTotal"] *= facteur
+        self.donnees.multiplier_concentration(facteur)
         self.afficher_graphe()
 
     def supprimer_plage(self):
@@ -166,9 +164,7 @@ class Interaction:
         debut = min(self.selection_debut, self.selection_fin)
         fin = max(self.selection_debut, self.selection_fin)
 
-        masque = (self.donnees["datetime"] >= debut) & (self.donnees["datetime"] <= fin)
-
-        self.donnees.loc[masque, "smps_flag"] = 1
+        self.donnees.supprimer_plage(debut, fin)
 
         # supprimer les lignes
 

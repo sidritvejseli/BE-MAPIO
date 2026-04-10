@@ -4,6 +4,7 @@ from matplotlib.widgets import Button
 import numpy as np
 from pandas import DataFrame
 import tkinter as tk
+from donnees import Donnees
 
 
 class Graphe2D:
@@ -12,9 +13,9 @@ class Graphe2D:
 
         self.fig, self.ax = plt.subplots()
 
-    def tracer_jour(self, donnees: DataFrame, jour):
+    def tracer_jour(self, donnees: Donnees, jour):
 
-        donnees_jour = donnees[donnees["datetime"].dt.date == jour]
+        donnees_jour = donnees.obtenir_donnees_jour(jour)
 
         # Séparation des données valides aux données invalides.
 
@@ -54,11 +55,11 @@ class Graphe3D:
         self.fig, self.ax = plt.subplots()
         self.colorbar = None
 
-    def tracer_jour(self, donnees: DataFrame, jour):
+    def tracer_jour(self, donnees: Donnees, jour):
 
         self.effacer_jour()
 
-        donnees_jour = donnees[donnees["datetime"].dt.date == jour]
+        donnees_jour = donnees.obtenir_donnees_jour(jour)
         donnees_jour = donnees_jour.set_index("datetime")
         donnees_jour = donnees_jour.loc[
             :, donnees_jour.columns.str.startswith("smps_d")

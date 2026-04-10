@@ -11,16 +11,17 @@ from interactions import Interaction
 from tkinter.simpledialog import askfloat
 
 
-class App(tk.Tk, Donnees, Interaction):
+class Interface(tk.Tk, Interaction):
 
     def __init__(self):
+
         super().__init__()
 
         # configuration
         self.config = self._load_config("config.yaml")
 
         # variable :
-        self.donnees = None
+        self.donnees = Donnees()
         self.donnees_original = None
         self.current_file = None
         self.current_day = None
@@ -123,22 +124,22 @@ class App(tk.Tk, Donnees, Interaction):
     # refresh
 
     def _refresh_all(self):
-        if self.donnees is None:
+        if self.donnees.est_vide():
             return
         if self.current_day is not None:
             self.label_jour.config(text=f"Jour affiche : {self.current_day}")
 
     def _action_charger(self):
         dossier_defaut = self.config.get("repertoires", {}).get("donnees", "")
-        self.charger_fichier_csv(dossier_defaut)
+        self.donnees.charger_fichier_csv(dossier_defaut)
 
         if self.donnees is not None:
-            self.current_day = self.donnees["datetime"].dt.date.min()
+            self.current_day = self.donnees.obtenir_jour_minimum()
             self.afficher_graphe()
             self.label_jour.config(text=f"Jour affiche : {self.current_day}")
 
     def _action_fermer(self):
-        if self.donnees is None:
+        if self.donnees.est_vide():
             return
         if messagebox.askyesno("Confirmer", "Fermer sans sauvegarder ?"):
             self.fermer_fichier_csv()
@@ -158,7 +159,7 @@ class App(tk.Tk, Donnees, Interaction):
     # affichage graphe
 
     def afficher_graphe(self):
-        if self.donnees is None or self.current_day is None:
+        if self.donnees.est_vide() or self.current_day is None:
             return
 
         self.plotter.tracer_jour(self.donnees, self.current_day)
@@ -186,34 +187,34 @@ class App(tk.Tk, Donnees, Interaction):
     # navigation jours
 
     def jour_suivant(self):
-        if self.donnees is None:
+        if self.donnees.est_vide():
             return
 
-        max_day = self.donnees["datetime"].dt.date.max()
+        max_day = self.donnees.obtenir_jour_maximum()
         if self.current_day < max_day:
             self.current_day += pd.Timedelta(days=1)
             self.afficher_graphe()
 
     def jour_precedent(self):
-        if self.donnees is None:
+        if self.donnees.est_vide():
             return
 
-        min_day = self.donnees["datetime"].dt.date.min()
+        min_day = self.donnees.obtenir_jour_minimum()
         if self.current_day > min_day:
             self.current_day -= pd.Timedelta(days=1)
             self.afficher_graphe()
 
     def premier_jour(self):
-        if self.donnees is None:
+        if self.donnees.est_vide():
             return
-        premier_j = self.donnees["datetime"].dt.date.min()
+        premier_j = self.donnees.obtenir_jour_minimum()
         self.current_day = premier_j
         self.afficher_graphe()
 
     def dernier_jour(self):
-        if self.donnees is None:
+        if self.donnees.est_vide():
             return
-        dernier_j = self.donnees["datetime"].dt.date.max()
+        dernier_j = self.donnees.obtenir_jour_maximum()
         self.current_day = dernier_j
         self.afficher_graphe()
 
