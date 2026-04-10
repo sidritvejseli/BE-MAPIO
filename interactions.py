@@ -5,12 +5,12 @@ import pandas as pd
 
 class Interaction:
 
-    #fonction de calcul de distances entres les points et la souris et les points valides
+    # fonction de calcul de distances entres les points et la souris et les points valides
     def calcul_distances(self, event, points_valides):
         x_points = mdates.date2num(points_valides["datetime"])
         y_points = points_valides["smps_concTotal"]
 
-        #coordonnées de la souris
+        # coordonnées de la souris
         x_souris = event.xdata
         y_souris = event.ydata
 
@@ -23,32 +23,28 @@ class Interaction:
         echelle_y = 1 / (ylim[1] - ylim[0])
 
         distances = np.sqrt(
-            ((x_points - x_souris) * echelle_x)**2 +
-            ((y_points - y_souris) * echelle_y)**2
+            ((x_points - x_souris) * echelle_x) ** 2
+            + ((y_points - y_souris) * echelle_y) ** 2
         )
 
         distances = pd.Series(distances, index=points_valides.index)
         return distances
-    
 
-    #Affiche les infos du point le plus proche quand la souris bouge
+    # Affiche les infos du point le plus proche quand la souris bouge
     def info_point(self, event):
-        
 
         # Si la souris n’est pas sur le graphe alors pas de donnée et le tooltip absent
         if event.inaxes != self.ax2d or event.xdata is None or self.tooltip is None:
             if self.tooltip:
                 self.tooltip.set_visible(False)  # cache le tooltip
-                self.canvas2d.draw_idle()        
+                self.canvas2d.draw_idle()
             return
-        
 
         # Garde uniquement les points non supprimés
         points_valides = self.donnees[self.donnees["smps_flag"] == 0]
         if points_valides.empty:
             return
 
-        
         distances = self.calcul_distances(event, points_valides)
         idx_min = distances.idxmin()
 
@@ -70,19 +66,17 @@ class Interaction:
 
         # Position du tooltip sur le graphe
         self.tooltip.xy = (
-            mdates.date2num(ligne["datetime"]),   
-            ligne["smps_concTotal"],              
+            mdates.date2num(ligne["datetime"]),
+            ligne["smps_concTotal"],
         )
 
         # Rend visible le tooltip
         self.tooltip.set_visible(True)
         self.canvas2d.draw_idle()
-        
-
 
     def _au_clic(self, event):
 
-        #clique gauche pour plage
+        # clique gauche pour plage
         if event.inaxes == self.ax2d and event.button == 1 and event.xdata is not None:
             date = mdates.num2date(event.xdata).replace(tzinfo=None)
 
@@ -90,12 +84,12 @@ class Interaction:
                 self.selection_debut = date
 
                 # supp ancienne ligne si elle existe
-                #Si self a une ligne_fin et qu’elle n’est pas vide  alors on la supprime
+                # Si self a une ligne_fin et qu’elle n’est pas vide  alors on la supprime
                 # hasattr nous permet de vérifier si un objet possède un attribut
                 if hasattr(self, "ligne_debut") and self.ligne_debut:
                     self.ligne_debut.remove()
 
-                # dessine ligne début 
+                # dessine ligne début
                 self.ligne_debut = self.ax2d.axvline(date, color="red", linestyle="--")
 
             else:
@@ -105,18 +99,15 @@ class Interaction:
                 if hasattr(self, "ligne_fin") and self.ligne_fin:
                     self.ligne_fin.remove()
 
-                # met unedessine ligne fin 
+                # met unedessine ligne fin
                 self.ligne_fin = self.ax2d.axvline(date, color="red", linestyle="--")
 
             # rediesine
             self.canvas2d.draw_idle()
-            #je met un return pour que je stop qquad je met la deuxieme ligne
+            # je met un return pour que je stop qquad je met la deuxieme ligne
             return
 
-
-
-
-        #Clic droit : supprime le point le plus proche
+        # Clic droit : supprime le point le plus proche
 
         # Vérifie : clic sur graphe + bouton droit en gros le 3 c clique droit
         if event.inaxes != self.ax2d or event.xdata is None or event.button != 3:
@@ -131,12 +122,12 @@ class Interaction:
         distances = self.calcul_distances(event, points_valides)
         index_min = distances.idxmin()
 
-        #si on depasse le seuil on ne peut plus selectionner le point
+        # si on depasse le seuil on ne peut plus selectionner le point
         seuil = 0.02
         if distances[index_min] > seuil:
             return
 
-        #on supprime en mettant flag = 1
+        # on supprime en mettant flag = 1
         self.donnees.loc[index_min, "smps_flag"] = 1
 
 
@@ -158,16 +149,13 @@ class Interaction:
 
         # Recharge le graphe pour voir la suppression
         self.afficher_graphe()
-        
 
     def appliquer_facteur(self, facteur):
         if self.donnees is None:
-                return
-        #multiplication des valeurs
+            return
+        # multiplication des valeurs
         self.donnees["smps_concTotal"] *= facteur
         self.afficher_graphe()
-
-
 
     def supprimer_plage(self):
 
@@ -176,15 +164,14 @@ class Interaction:
             return
 
         debut = min(self.selection_debut, self.selection_fin)
-        fin   = max(self.selection_debut, self.selection_fin)
+        fin = max(self.selection_debut, self.selection_fin)
 
         masque = (self.donnees["datetime"] >= debut) & (self.donnees["datetime"] <= fin)
 
         self.donnees.loc[masque, "smps_flag"] = 1
 
-        
-        #supprimer les lignes 
-        
+        # supprimer les lignes
+
         if hasattr(self, "ligne_debut") and self.ligne_debut:
             self.ligne_debut.remove()
             self.ligne_debut = None
@@ -193,8 +180,8 @@ class Interaction:
             self.ligne_fin.remove()
             self.ligne_fin = None
 
-        #pour recommencer de nouvelle ligne on doit reset
+        # pour recommencer de nouvelle ligne on doit reset
         self.selection_debut = None
-        self.selection_fin   = None
+        self.selection_fin = None
 
         self.afficher_graphe()

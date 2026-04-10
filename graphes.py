@@ -6,7 +6,6 @@ from pandas import DataFrame
 import tkinter as tk
 
 
-
 class Graphe2D:
 
     def __init__(self):
@@ -46,7 +45,7 @@ class Graphe2D:
 
         self.ax.grid(True, linestyle="--")
         self.fig.autofmt_xdate()
-        
+
 
 class Graphe3D:
 

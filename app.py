@@ -10,7 +10,8 @@ from menu import build_menu, build_toolbar, build_tabs, show_placeholder
 from interactions import Interaction
 from tkinter.simpledialog import askfloat
 
-class App(tk.Tk, Donnees,Interaction):
+
+class App(tk.Tk, Donnees, Interaction):
 
     def __init__(self):
         super().__init__()
@@ -25,7 +26,7 @@ class App(tk.Tk, Donnees,Interaction):
         self.current_day = None
         self.tooltip = None
 
-        # pour la plage 
+        # pour la plage
 
         self.selection_debut = None
         self.selection_fin = None
@@ -61,7 +62,6 @@ class App(tk.Tk, Donnees,Interaction):
 
         self._build_graph_area()
 
-
     # graphes
     def _build_graph_area(self):
 
@@ -81,7 +81,7 @@ class App(tk.Tk, Donnees,Interaction):
 
         self.canvas2d = self.canvas
         self.ax2d = self.plotter.ax
-        #quand l’utilisateur clique : appelle _au_clic
+        # quand l’utilisateur clique : appelle _au_clic
         self.canvas2d.mpl_connect("button_press_event", self._au_clic)
         self.canvas2d.mpl_connect("motion_notify_event", self.info_point)
 
@@ -96,17 +96,15 @@ class App(tk.Tk, Donnees,Interaction):
             fill="both", expand=True, padx=20, pady=20
         )
 
-
-        #plage
-        #interaction de la plage
+        # plage
+        # interaction de la plage
         self.canvas2d = self.canvas
         self.ax2d = self.plotter.ax
 
         # plage connex event souris
-        #Quand l’utilisateur clique sur le graphe ça appelle la fonction _au_clic
+        # Quand l’utilisateur clique sur le graphe ça appelle la fonction _au_clic
         self.canvas2d.mpl_connect("button_press_event", self._au_clic)
         self.canvas2d.mpl_connect("motion_notify_event", self.info_point)
-
 
     # config yaml
 
@@ -117,12 +115,12 @@ class App(tk.Tk, Donnees,Interaction):
         print(f"config.yaml introuvable : {path}")
         return {}
 
-    # fonctions utilitaires 
+    # fonctions utilitaires
 
     def _non_dispo(self):
         messagebox.showinfo("Info", "Fonctionnalite pas encore disponible")
 
-    # refresh 
+    # refresh
 
     def _refresh_all(self):
         if self.donnees is None:
@@ -166,7 +164,7 @@ class App(tk.Tk, Donnees,Interaction):
         self.plotter.tracer_jour(self.donnees, self.current_day)
         self.canvas.draw()
 
-        #infos des points
+        # infos des points
         self.tooltip = self.ax2d.annotate(
             "",
             xy=(0, 0),
@@ -174,7 +172,7 @@ class App(tk.Tk, Donnees,Interaction):
             textcoords="offset points",
             bbox=dict(boxstyle="round", fc="lightyellow", ec="orange", alpha=0.9),
             fontsize=8,
-            visible=False
+            visible=False,
         )
 
         self.heatmap.tracer_jour(self.donnees, self.current_day)
@@ -205,7 +203,6 @@ class App(tk.Tk, Donnees,Interaction):
             self.current_day -= pd.Timedelta(days=1)
             self.afficher_graphe()
 
-
     def premier_jour(self):
         if self.donnees is None:
             return
@@ -220,12 +217,10 @@ class App(tk.Tk, Donnees,Interaction):
         self.current_day = dernier_j
         self.afficher_graphe()
 
-
-
-    #demande du facteur
+    # demande du facteur
     def demander_facteur(self):
         facteur = askfloat("Facteur", "Multiplier par :")
         if facteur is None:
             return
-        #appel de la fonction interaction
+        # appel de la fonction interaction
         self.appliquer_facteur(facteur)
