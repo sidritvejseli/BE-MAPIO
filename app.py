@@ -81,10 +81,10 @@ class Interface(tk.Tk, Interactions):
 
         self.description_barre_onglets = ["Particules", "Fonctionnement", "Graphe 3D"]
 
-        # configuration
+        # Configuration.
         self.config = self._load_config("config.yaml")
 
-        # variable :
+        # Données.
         self.donnees = Donnees()
         self.donnees_originales = Donnees()
         self.fichier_courant = None
@@ -92,14 +92,13 @@ class Interface(tk.Tk, Interactions):
         self.date_fin = None
         self.tooltip = None
 
-        # pour la plage
-
+        # Plage de sélection des données.
         self.selection_debut = None
         self.selection_fin = None
         self.ligne_debut = None
         self.ligne_fin = None
 
-        # la fentre
+        # Fenêtre.
         cfg_aff = self.config.get("affichage", {})
         self.title(cfg_aff.get("titre", "Outil SMPS - MAP-IO"))
         w = cfg_aff.get("largeur", 1400)
@@ -107,7 +106,7 @@ class Interface(tk.Tk, Interactions):
         self.geometry(f"{w}x{h}")
         self.resizable(True, True)
 
-        # les graphes
+        # Graphes.
         self.graphe_2d = Graphe2D()
         self.graphe_3d = Graphe3D()
 
@@ -120,13 +119,45 @@ class Interface(tk.Tk, Interactions):
         self.onglets: Onglets = {}
         self.construire_barre_onglets()
 
-        # self.afficher_onglet_provisoire(self.onglets["Particules"])
+        self.construire_onglet_particules()
         self.afficher_onglet_provisoire(self.onglets["Fonctionnement"])
+        self.construire_onglet_graphe_3d()
 
-        self._build_graph_area()
+    def construire_onglet_particules(self):
+        self.page_principale = tk.Frame(self.onglets["Particules"])
+        self.page_principale.pack(fill="both", expand=True)
 
-        # Fenêtre individuelle du graphe 3D.
+        self.page_principale.rowconfigure(0, weight=1, minsize=300)
+        self.page_principale.rowconfigure(1, weight=1, minsize=300)
+        self.page_principale.columnconfigure(0, weight=1)
 
+        self.cadre_graphe_2d = tk.Frame(self.page_principale)
+        self.cadre_graphe_2d.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+
+        self.zone_affichage_graphe_2d = FigureCanvasTkAgg(self.graphe_2d.fig, master=self.cadre_graphe_2d)
+        self.zone_affichage_graphe_2d.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
+
+        self.ax_2d = self.graphe_2d.ax
+
+        self.zone_affichage_graphe_2d.mpl_connect("button_press_event", self.repondre_a_un_clic_droit)
+        self.zone_affichage_graphe_2d.mpl_connect("motion_notify_event", self.repondre_a_un_survol_souris)
+
+        self.cadre_graphe_3d = tk.Frame(self.page_principale)
+        self.cadre_graphe_3d.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+
+        self.zone_affichage_graphe_3d = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.cadre_graphe_3d)
+        self.zone_affichage_graphe_3d.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
+
+        # # plage
+        # # interaction de la plage
+        # self.ax_2d = self.graphe_2d.ax
+
+        # # plage connex event souris
+        # # Quand l’utilisateur clique sur le graphe ça appelle la fonction _au_clic
+        # self.zone_affichage_graphe_2d.mpl_connect("button_press_event", self.repondre_a_un_clic_droit)
+        # self.zone_affichage_graphe_2d.mpl_connect("motion_notify_event", self.repondre_a_un_survol_souris)
+
+    def construire_onglet_graphe_3d(self):
         # Frame principal qui va contenir le graphique
         self.frame_3d_individuel = tk.Frame(self.onglets["Graphe 3D"])
         self.frame_3d_individuel.pack(fill="both", expand=True)
@@ -134,46 +165,6 @@ class Interface(tk.Tk, Interactions):
         # Création du canvas matplotlib dans Tkinter
         self.canvas_3d_individuel = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.frame_3d_individuel)
         self.canvas_3d_individuel.get_tk_widget().pack(fill="both", expand=True)
-
-    # graphes
-    def _build_graph_area(self):
-
-        self.main_frame = tk.Frame(self.onglets["Particules"])
-        self.main_frame.pack(fill="both", expand=True)
-
-        self.main_frame.rowconfigure(0, weight=1, minsize=300)
-        self.main_frame.rowconfigure(1, weight=1, minsize=300)
-        self.main_frame.columnconfigure(0, weight=1)
-
-        # GRAPHE 2D
-        self.frame_graphe2d = tk.Frame(self.main_frame)
-        self.frame_graphe2d.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
-
-        self.canvas = FigureCanvasTkAgg(self.graphe_2d.fig, master=self.frame_graphe2d)
-        self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
-
-        self.canvas2d = self.canvas
-        self.ax2d = self.graphe_2d.ax
-        # quand l’utilisateur clique : appelle _au_clic
-        self.canvas2d.mpl_connect("button_press_event", self._au_clic)
-        self.canvas2d.mpl_connect("motion_notify_event", self.afficher_informations_point)
-
-        # HEATMAP
-        self.frame_heatmap = tk.Frame(self.main_frame)
-        self.frame_heatmap.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
-
-        self.canvas_heat = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.frame_heatmap)
-        self.canvas_heat.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
-
-        # plage
-        # interaction de la plage
-        self.canvas2d = self.canvas
-        self.ax2d = self.graphe_2d.ax
-
-        # plage connex event souris
-        # Quand l’utilisateur clique sur le graphe ça appelle la fonction _au_clic
-        self.canvas2d.mpl_connect("button_press_event", self._au_clic)
-        self.canvas2d.mpl_connect("motion_notify_event", self.afficher_informations_point)
 
     # config yaml
 
@@ -259,10 +250,10 @@ class Interface(tk.Tk, Interactions):
 
         self.date_fin = self.calculer_jour_suivant(self.date_debut)
         self.graphe_2d.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin)
-        self.canvas.draw()
+        self.zone_affichage_graphe_2d.draw()
 
         # infos des points
-        self.tooltip = self.ax2d.annotate(
+        self.tooltip = self.ax_2d.annotate(
             "",
             xy=(0, 0),
             xytext=(12, 12),
@@ -273,7 +264,7 @@ class Interface(tk.Tk, Interactions):
         )
 
         self.graphe_3d.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin)
-        self.canvas_heat.draw()
+        self.zone_affichage_graphe_3d.draw()
 
         # On met à jour l'affichage dans Tkinter
         self.canvas_3d_individuel.draw()

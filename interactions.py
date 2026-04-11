@@ -4,6 +4,17 @@ import pandas as pd
 
 
 class Interactions:
+
+    def __init__(self):
+        self.ax_2d = None
+        self.tooltip = None
+        self.donnees = None
+        self.date_fin = None
+        self.date_debut = None
+        self.zone_affichage_graphe_2d = None
+        self.selection_debut = None
+        self.selection_fin = None
+
     # fonction de calcul de distances entres les points et la souris et les points valides
     def calculer_distances(self, event, points_valides):
         x_points = mdates.date2num(points_valides.index)
@@ -14,8 +25,8 @@ class Interactions:
         y_souris = event.ydata
 
         # poids pour équilibrer X et Y
-        xlim = self.ax2d.get_xlim()
-        ylim = self.ax2d.get_ylim()
+        xlim = self.ax_2d.get_xlim()
+        ylim = self.ax_2d.get_ylim()
 
         # Normaliser par rapport aux limites VISIBLES (pas aux données)
         echelle_x = 1 / (xlim[1] - xlim[0])
@@ -27,13 +38,13 @@ class Interactions:
         return distances
 
     # Affiche les infos du point le plus proche quand la souris bouge
-    def afficher_informations_point(self, event):
+    def repondre_a_un_survol_souris(self, event):
 
         # Si la souris n’est pas sur le graphe alors pas de donnée et le tooltip absent
-        if event.inaxes != self.ax2d or event.xdata is None or self.tooltip is None:
+        if event.inaxes != self.ax_2d or event.xdata is None or self.tooltip is None:
             if self.tooltip:
                 self.tooltip.set_visible(False)  # cache le tooltip
-                self.canvas2d.draw_idle()
+                self.zone_affichage_graphe_2d.draw_idle()
             return
 
         if self.donnees.est_vide():
@@ -57,7 +68,7 @@ class Interactions:
         seuil = 0.02
         if distances[idx_min] > seuil:
             self.tooltip.set_visible(False)
-            self.canvas2d.draw_idle()
+            self.zone_affichage_graphe_2d.draw_idle()
             return
 
         # Récupère la ligne correspondante
@@ -74,12 +85,12 @@ class Interactions:
 
         # Rend visible le tooltip
         self.tooltip.set_visible(True)
-        self.canvas2d.draw_idle()
+        self.zone_affichage_graphe_2d.draw_idle()
 
-    def _au_clic(self, event):
+    def repondre_a_un_clic_droit(self, event):
 
         # clique gauche pour plage
-        if event.inaxes == self.ax2d and event.button == 1 and event.xdata is not None:
+        if event.inaxes == self.ax_2d and event.button == 1 and event.xdata is not None:
             date = mdates.num2date(event.xdata).replace(tzinfo=None)
 
             if self.selection_debut is None:
@@ -92,7 +103,7 @@ class Interactions:
                     self.ligne_debut.remove()
 
                 # dessine ligne début
-                self.ligne_debut = self.ax2d.axvline(date, color="red", linestyle="--")
+                self.ligne_debut = self.ax_2d.axvline(date, color="red", linestyle="--")
 
             else:
                 self.selection_fin = date
@@ -102,17 +113,17 @@ class Interactions:
                     self.ligne_fin.remove()
 
                 # met unedessine ligne fin
-                self.ligne_fin = self.ax2d.axvline(date, color="red", linestyle="--")
+                self.ligne_fin = self.ax_2d.axvline(date, color="red", linestyle="--")
 
             # rediesine
-            self.canvas2d.draw_idle()
+            self.zone_affichage_graphe_2d.draw_idle()
             # je met un return pour que je stop qquad je met la deuxieme ligne
             return
 
         # Clic droit : supprime le point le plus proche
 
         # Vérifie : clic sur graphe + bouton droit en gros le 3 c clique droit
-        if event.inaxes != self.ax2d or event.xdata is None or event.button != 3:
+        if event.inaxes != self.ax_2d or event.xdata is None or event.button != 3:
             return
 
         # Garde points valides
