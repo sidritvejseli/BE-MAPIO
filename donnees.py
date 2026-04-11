@@ -49,6 +49,9 @@ class Donnees:
         if "pollution_flag" not in self.donnees.columns:
             self.donnees["pollution_flag"] = 0
 
+        # copie de sauvegarde pour pouvoir faire un reset plus tard
+        self.donnees_original = self.donnees.copy()
+
         print(f"Fichier {self.nom_fichier} chargé.")
 
     def fermer_fichier_csv(self):
