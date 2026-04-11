@@ -62,26 +62,43 @@ class Donnees:
         self.chemin_absolu = None
         self.nom_fichier = None
 
-    def sauvegarder_fichier_csv(self):
+    # TODO : Ajout de la sauvegarde séparée du fichier "filtre" et des drapeaux.
+
+    def sauvegarder_fichier_csv(self, dossier_resultats="resultats/", dossier_flags="resultats/flags/"):
 
         if self.donnees is None:
             messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
             return
 
-        chemin_absolu_sauvegarde = filedialog.asksaveasfilename(
-            defaultextension=".csv", filetypes=[("CSV files", "*.csv")]
+        # on cree les dossiers s'ils n'existent pas
+        os.makedirs(dossier_resultats, exist_ok=True)
+        os.makedirs(dossier_flags, exist_ok=True)
+ 
+        # sauvegarde du fichier filtre (lignes valides uniquement)
+        chemin_filtre = filedialog.asksaveasfilename(
+            title="Sauvegarder les données filtrées",
+            initialdir=dossier_resultats,
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")]
         )
-
-        if not chemin_absolu_sauvegarde:
+        if not chemin_filtre:
             return
-
-        self.donnees.to_csv(chemin_absolu_sauvegarde, index=False)
-
-        nom_fichier_sauvegarde = os.path.basename(chemin_absolu_sauvegarde)
-
-        print(f"Fichier {nom_fichier_sauvegarde} sauvegardé.")
-
-    # TODO : Ajout de la sauvegarde séparée du fichier "filtre" et des drapeaux.
+        df_filtre = self.donnees[self.donnees["smps_flag"] == 0]
+        df_filtre.to_csv(chemin_filtre, index=False)
+        print(f"Fichier filtré sauvegardé : {os.path.basename(chemin_filtre)}")
+ 
+        # sauvegarde du fichier des flags (lignes invalidees)
+        chemin_flags = filedialog.asksaveasfilename(
+            title="Sauvegarder le fichier des flags",
+            initialdir=dossier_flags,
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")]
+        )
+        if not chemin_flags:
+            return
+        df_flags = self.donnees[self.donnees["smps_flag"] != 0]
+        df_flags.to_csv(chemin_flags, index=False)
+        print(f"Fichier flags sauvegardé : {os.path.basename(chemin_flags)}")
 
 
 
