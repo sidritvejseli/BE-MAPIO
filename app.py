@@ -6,21 +6,23 @@ import yaml
 
 from datetime import datetime
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from tkinter import messagebox, filedialog, Menu
+from tkinter import messagebox, filedialog, Menu, ttk, Label
 from tkinter.simpledialog import askfloat
 from typing import Callable, TypeAlias
-
+from tkinter.ttk import Notebook
 
 from donnees import Donnees
 from graphes import Graphe2D, Graphe3D
 from interactions import Interactions
-from menu import build_tabs, show_placeholder
+from menu import show_placeholder
 
 
 ItemsMenu: TypeAlias = list[tuple[str, Callable, str]]
 BarreMenus: TypeAlias = list[tuple[str, ItemsMenu]]
 
 BarreOutils: TypeAlias = list[tuple[str, Callable]]
+
+Onglets: TypeAlias = dict[str, ttk.Frame]
 
 
 class Interface(tk.Tk, Interactions):
@@ -77,6 +79,8 @@ class Interface(tk.Tk, Interactions):
             ("Supprimer plage", self.supprimer_plage),
         ]
 
+        self.description_barre_onglets = ["Particules", "Fonctionnement", "Graphe 3D"]
+
         # configuration
         self.config = self._load_config("config.yaml")
 
@@ -108,24 +112,23 @@ class Interface(tk.Tk, Interactions):
         self.graphe_3d = Graphe3D()
 
         self.construire_barre_menus()
+
+        self.barre_outils_etiquette_jour: Label = None
         self.construire_barre_outils()
 
-        (
-            self.notebook,
-            self.tab_particules,
-            self.tab_fonctionnement,
-            self.tab_heatmap_3d,
-        ) = build_tabs(self)
+        self.barre_onglets: Notebook = None
+        self.onglets: Onglets = {}
+        self.construire_barre_onglets()
 
-        show_placeholder(self.tab_particules)
-        show_placeholder(self.tab_fonctionnement)
+        show_placeholder(self.onglets["Particules"])
+        show_placeholder(self.onglets["Fonctionnement"])
 
         self._build_graph_area()
 
         # Fenêtre individuelle du graphe 3D.
 
         # Frame principal qui va contenir le graphique
-        self.frame_3d_individuel = tk.Frame(self.tab_heatmap_3d)
+        self.frame_3d_individuel = tk.Frame(self.onglets["Graphe 3D"])
         self.frame_3d_individuel.pack(fill="both", expand=True)
 
         # Création du canvas matplotlib dans Tkinter
@@ -135,7 +138,7 @@ class Interface(tk.Tk, Interactions):
     # graphes
     def _build_graph_area(self):
 
-        self.main_frame = tk.Frame(self.tab_particules)
+        self.main_frame = tk.Frame(self.onglets["Particules"])
         self.main_frame.pack(fill="both", expand=True)
 
         self.main_frame.rowconfigure(0, weight=1, minsize=300)
@@ -361,6 +364,16 @@ class Interface(tk.Tk, Interactions):
             tk.Button(barre_outils, text=etiquette, command=fonction).pack(side=tk.LEFT, padx=2, pady=2)
 
         self.barre_outils_etiquette_jour = tk.Label(
-            barre_outils, text="Aucun fichier charge", font=("Arial", 10, "bold")
+            barre_outils, text="Aucun fichier chargé", font=("Arial", 10, "bold")
         )
         self.barre_outils_etiquette_jour.pack(side=tk.RIGHT, padx=10)
+
+    def construire_barre_onglets(self):
+        self.barre_onglets = ttk.Notebook(self)
+        self.barre_onglets.pack(fill=tk.BOTH, expand=True)
+
+        for etiquette in self.description_barre_onglets:
+            onglet = ttk.Frame(self.barre_onglets)
+            self.barre_onglets.add(onglet, text=etiquette)
+
+            self.onglets[etiquette] = onglet
