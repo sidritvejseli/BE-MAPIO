@@ -33,10 +33,10 @@ class Donnees:
     def obtenir_donnees_invalides(self, debut: datetime, fin: datetime):
         return self.obtenir_donnees(debut, fin).query("smps_flag == 1")
 
-    def supprimer_ligne(self, date: datetime):
+    def invalider_date(self, date: datetime):
         self.donnees.loc[date, "smps_flag"] = 1
 
-    def supprimer_donnees(self, debut: datetime, fin: datetime):
+    def invalider_donnees(self, debut: datetime, fin: datetime):
         self.donnees.loc[debut:fin, "smps_flag"] = 1
 
     def multiplier_concentration(self, facteur):
@@ -47,7 +47,7 @@ class Donnees:
         self.donnees = self.donnees.apply(pd.to_numeric, errors="coerce")
 
         # En cas d'erreur, la chaîne de caractères est remplacée
-        # par Not A Time ou Not A Number, en raison du drapeau "coerce".
+        # par Not A Number, en raison du drapeau "coerce".
 
     def ajouter_drapeaux(self):
 

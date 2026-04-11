@@ -129,7 +129,7 @@ class Interactions:
             return
 
         # on supprime en mettant flag = 1
-        self.donnees.supprimer_ligne(index_min)
+        self.donnees.invalider_date(index_min)
 
         # correction bug plage
         # supprime ligne début si elle existe
@@ -165,7 +165,7 @@ class Interactions:
         debut = min(self.selection_debut, self.selection_fin)
         fin = max(self.selection_debut, self.selection_fin)
 
-        self.donnees.supprimer_donnees(debut, fin)
+        self.donnees.invalider_donnees(debut, fin)
 
         # supprimer les lignes
 
