@@ -42,7 +42,11 @@ class Interactions:
         # Garde uniquement les points non supprimés
         if not self.date_fin:
             self.date_fin = self.date_debut + pd.Timedelta(days=1)
-        points_valides = self.donnees.obtenir_donnees_valides(self.date_debut, self.date_fin)
+
+        points_valides = self.donnees.obtenir_donnees_valides()
+        points_valides = points_valides.obtenir_dates(self.date_debut, self.date_fin)
+        points_valides = points_valides.obtenir_dataframe()
+
         if points_valides.empty:
             return
 
@@ -115,7 +119,10 @@ class Interactions:
         if not self.date_fin:
             self.date_fin = self.date_debut + pd.Timedelta(days=1)
 
-        points_valides = self.donnees.obtenir_donnees_valides(self.date_debut, self.date_fin)
+        points_valides = self.donnees.obtenir_donnees_valides()
+        points_valides = points_valides.obtenir_dates(self.date_debut, self.date_fin)
+        points_valides = points_valides.obtenir_dataframe()
+
         if points_valides.empty:
             return
 
@@ -165,7 +172,7 @@ class Interactions:
         debut = min(self.selection_debut, self.selection_fin)
         fin = max(self.selection_debut, self.selection_fin)
 
-        self.donnees.invalider_donnees(debut, fin)
+        self.donnees.invalider_dates(debut, fin)
 
         # supprimer les lignes
 
