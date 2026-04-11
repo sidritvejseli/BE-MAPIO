@@ -6,6 +6,7 @@ from pandas import DataFrame
 import tkinter as tk
 from donnees import Donnees
 import pandas as pd
+from datetime import datetime
 
 
 class Graphe2D:
@@ -14,37 +15,61 @@ class Graphe2D:
 
         self.fig, self.ax = plt.subplots()
 
-    def tracer_jour(self, donnees: Donnees, jour):
+    def legender_titre(self, date: datetime):
+        self.ax.set_title(f"Jour : {date.date()}", fontsize=12)
 
-        donnees_jour = donnees.obtenir_donnees(jour, jour + pd.Timedelta(days=1))
-
-        # Séparation des données valides aux données invalides.
-
-        donnees_invalides = donnees.obtenir_donnees_invalides(jour, jour + pd.Timedelta(days=1))
-
-        self.ax.clear()
-        self.ax.set_title(f"Jour : {jour}", fontsize=12)
+    def legender_abscisses(self):
         self.ax.tick_params(axis="x", rotation=45)
-
-        self.ax.scatter(donnees_jour.index, donnees_jour["smps_concTotal"], s=1, color="blue")
-
-        # Traçage des données invalidées en rouge, afin de les différencier.
-
-        if not donnees_invalides.empty:
-            self.ax.scatter(
-                donnees_invalides.index,
-                donnees_invalides["smps_concTotal"],
-                s=8,
-                color="red",
-                marker="x",
-                label=f"Invalidés ({len(donnees_invalides)})",
-            )
-
         self.ax.set_xlabel("Date et heure", fontsize=5)
+
+    def legender_ordonnees(self):
         self.ax.set_ylabel("Concentration totale", fontsize=5)
 
+    def legender_boite(self):
+        self.ax.legend()
+
+    def tracer_grille(self):
         self.ax.grid(True, linestyle="--")
-        self.fig.autofmt_xdate()
+
+    def tracer_donnees(self, donnees: Donnees, taille="1", couleur="blue", marqueur="x", legende_boite=""):
+        self.ax.scatter(
+            donnees.index, donnees["smps_concTotal"], s=taille, color=couleur, marker=marqueur, label=legende_boite
+        )
+
+    def tracer_graphe_2d(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
+
+        self.effacer_jour()
+
+        donnees_valides = donnees.obtenir_donnees_valides(date_debut, date_fin)
+
+        donnees_invalides = donnees.obtenir_donnees_invalides(date_debut, date_fin)
+
+        self.tracer_donnees(
+            donnees_valides,
+            taille=1,
+            couleur="blue",
+            marqueur="x",
+        )
+
+        self.tracer_donnees(
+            donnees_invalides,
+            taille=8,
+            couleur="red",
+            marqueur="x",
+            legende_boite=f"Invalidés ({donnees_invalides.shape[0]})",
+        )
+
+        self.ax.scatter(donnees_invalides.index, donnees_invalides["smps_concTotal"], s=8, color="red", marker="x")
+
+        self.legender_titre(date_debut)
+        self.legender_abscisses()
+        self.legender_ordonnees()
+        self.legender_boite()
+
+        self.tracer_grille()
+
+    def effacer_jour(self):
+        self.ax.clear()
 
 
 class Graphe3D:

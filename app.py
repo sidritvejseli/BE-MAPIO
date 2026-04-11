@@ -9,6 +9,7 @@ from graphes import Graphe2D, Graphe3D, Heatmap3d
 from menu import build_menu, build_toolbar, build_tabs, show_placeholder
 from interactions import Interactions
 from tkinter.simpledialog import askfloat
+from datetime import datetime
 
 
 class Interface(tk.Tk, Interactions):
@@ -141,6 +142,7 @@ class Interface(tk.Tk, Interactions):
 
         if not self.donnees.est_vide():
             self.date_debut = self.donnees.obtenir_jour_minimum()
+            self.date_fin = self.calculer_jour_suivant(self.date_debut)
             self.afficher_graphe()
             self.label_jour.config(text=f"Jour affiche : {self.date_debut}")
 
@@ -150,6 +152,7 @@ class Interface(tk.Tk, Interactions):
         if messagebox.askyesno("Confirmer", "Fermer sans sauvegarder ?"):
             self.donnees.fermer_fichier_csv()
             self.date_debut = None
+            self.date_fin = None
             self.label_jour.config(text="Aucun fichier charge")
 
     def _action_sauvegarder(self):
@@ -178,10 +181,14 @@ class Interface(tk.Tk, Interactions):
     # affichage graphe
 
     def afficher_graphe(self):
-        if self.donnees.est_vide() or self.date_debut is None:
+
+        # TODO : Corriger l'erreur qui s'affiche quand on approche la souris d'un jour vide.
+
+        if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
             return
 
-        self.plotter.tracer_jour(self.donnees, self.date_debut)
+        self.date_fin = self.calculer_jour_suivant(self.date_debut)
+        self.plotter.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin)
         self.canvas.draw()
 
         # infos des points
@@ -244,3 +251,6 @@ class Interface(tk.Tk, Interactions):
             return
         # appel de la fonction interaction
         self.appliquer_facteur(facteur)
+
+    def calculer_jour_suivant(self, jour: datetime):
+        return jour + pd.Timedelta(days=1)
