@@ -1,12 +1,13 @@
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.widgets import Button
 import numpy as np
 from pandas import DataFrame
 import tkinter as tk
-from donnees import Donnees
 import pandas as pd
 from datetime import datetime
+
+
+from donnees import Donnees
 
 
 class Graphe2D:
@@ -38,7 +39,7 @@ class Graphe2D:
 
     def tracer_graphe_2d(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
 
-        self.effacer_jour()
+        self.effacer_graphe_2d()
 
         donnees_valides = donnees.obtenir_donnees_valides(date_debut, date_fin)
 
@@ -68,7 +69,7 @@ class Graphe2D:
 
         self.tracer_grille()
 
-    def effacer_jour(self):
+    def effacer_graphe_2d(self):
         self.ax.clear()
 
 
@@ -78,29 +79,6 @@ class Graphe3D:
 
         self.fig, self.ax = plt.subplots()
         self.colorbar = None
-
-    def tracer_jour(self, donnees: Donnees, jour):
-
-        self.effacer_jour()
-
-        donnees_jour = donnees.obtenir_donnees(jour, jour + pd.Timedelta(days=1))
-        donnees_jour = donnees_jour.loc[:, donnees_jour.columns.str.startswith("smps_d")]
-
-        carte_thermique = self.ax.imshow(donnees_jour.T, aspect="auto", origin="lower", cmap="RdYlBu")
-
-        # TODO : Affichage des couleurs logarithmique, à la place de linéaire.
-
-        self.legender_abscisses(donnees_jour)
-        self.legender_ordonnees(donnees_jour)
-        self.legender_barre_couleurs(carte_thermique)
-
-    def effacer_jour(self):
-
-        if self.colorbar is not None:
-            self.colorbar.remove()
-            self.colorbar = None
-
-        self.ax.clear()
 
     def legender_abscisses(self, donnees_jour: DataFrame, nombre_graduations=12):
 
@@ -128,6 +106,33 @@ class Graphe3D:
         self.colorbar = self.ax.figure.colorbar(carte_thermique, ax=self.ax)
         self.colorbar.set_label("Teneur")
 
+    def tracer_graphe_3d(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
+
+        self.effacer_graphe_3d()
+
+        donnees_valides = donnees.obtenir_particules(date_debut, date_fin)
+        donnees_invalides = donnees.obtenir_particules_invalides(date_debut, date_fin)
+
+        donnees_graphe_3d = donnees_valides.copy()
+
+        donnees_graphe_3d.loc[donnees_invalides.index] = np.nan
+
+        carte_thermique = self.ax.imshow(donnees_graphe_3d.T, aspect="auto", origin="lower", cmap="RdYlBu")
+
+        # TODO : Affichage des couleurs logarithmique, à la place de linéaire.
+
+        self.legender_abscisses(donnees_graphe_3d)
+        self.legender_ordonnees(donnees_graphe_3d)
+        self.legender_barre_couleurs(carte_thermique)
+
+    def effacer_graphe_3d(self):
+
+        if self.colorbar is not None:
+            self.colorbar.remove()
+            self.colorbar = None
+
+        self.ax.clear()
+
 
 class Heatmap3d:
 
@@ -145,10 +150,10 @@ class Heatmap3d:
         self.canvas = FigureCanvasTkAgg(self.heatmap.fig, master=self.frame)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
 
-    def tracer_jour(self, donnees: DataFrame, jour):
-        if donnees is None or jour is None:
+    def tracer_jour(self, donnees: DataFrame, date_debut: datetime, date_fin: datetime):
+        if donnees is None or date_debut is None or date_fin is None:
             return
         # On demande à la classe Heatmap de dessiner le graphique
-        self.heatmap.tracer_jour(donnees, jour)
+        self.heatmap.tracer_graphe_3d(donnees, date_debut, date_fin)
         # On met à jour l'affichage dans Tkinter
         self.canvas.draw()

@@ -33,6 +33,18 @@ class Donnees:
     def obtenir_donnees_invalides(self, debut: datetime, fin: datetime):
         return self.obtenir_donnees(debut, fin).query("smps_flag == 1")
 
+    def obtenir_particules(self, debut: datetime, fin: datetime):
+        donnees_valides = self.obtenir_donnees(debut, fin)
+        return donnees_valides.loc[:, donnees_valides.columns.str.startswith("smps_d")]
+
+    def obtenir_particules_valides(self, debut: datetime, fin: datetime):
+        donnees_valides = self.obtenir_donnees_valides(debut, fin)
+        return donnees_valides.loc[:, donnees_valides.columns.str.startswith("smps_d")]
+
+    def obtenir_particules_invalides(self, debut: datetime, fin: datetime):
+        donnees_invalides = self.obtenir_donnees_invalides(debut, fin)
+        return donnees_invalides.loc[:, donnees_invalides.columns.str.startswith("smps_d")]
+
     def invalider_date(self, date: datetime):
         self.donnees.loc[date, "smps_flag"] = 1
 

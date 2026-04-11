@@ -202,11 +202,11 @@ class Interface(tk.Tk, Interactions):
             visible=False,
         )
 
-        self.heatmap.tracer_jour(self.donnees, self.date_debut)
+        self.heatmap.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin)
         self.canvas_heat.draw()
 
         if hasattr(self, "heatmap3d"):
-            self.heatmap3d.tracer_jour(self.donnees, self.date_debut)
+            self.heatmap3d.tracer_jour(self.donnees, self.date_debut, self.date_fin)
 
         self.label_jour.config(text=f"Jour affiche : {self.date_debut}")
 
