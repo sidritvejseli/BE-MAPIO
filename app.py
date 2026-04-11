@@ -6,15 +6,15 @@ import yaml
 
 from datetime import datetime
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from tkinter import messagebox, filedialog, Menu, ttk, Label
+from tkinter import filedialog, Label, Menu, messagebox, ttk
 from tkinter.simpledialog import askfloat
-from typing import Callable, TypeAlias
 from tkinter.ttk import Notebook
+from typing import Callable, TypeAlias
+
 
 from donnees import Donnees
 from graphes import Graphe2D, Graphe3D
 from interactions import Interactions
-from menu import show_placeholder
 
 
 ItemsMenu: TypeAlias = list[tuple[str, Callable, str]]
@@ -120,8 +120,8 @@ class Interface(tk.Tk, Interactions):
         self.onglets: Onglets = {}
         self.construire_barre_onglets()
 
-        show_placeholder(self.onglets["Particules"])
-        show_placeholder(self.onglets["Fonctionnement"])
+        # self.afficher_onglet_provisoire(self.onglets["Particules"])
+        self.afficher_onglet_provisoire(self.onglets["Fonctionnement"])
 
         self._build_graph_area()
 
@@ -377,3 +377,11 @@ class Interface(tk.Tk, Interactions):
             self.barre_onglets.add(onglet, text=etiquette)
 
             self.onglets[etiquette] = onglet
+
+    def afficher_onglet_provisoire(self, etiquette_onglet: str):
+        tk.Label(
+            etiquette_onglet,
+            text="Chargez un fichier CSV via : Fichier → Charger un fichier",
+            font=("Arial", 13),
+            fg="grey",
+        ).place(relx=0.5, rely=0.5, anchor="center")
