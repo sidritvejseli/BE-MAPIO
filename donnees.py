@@ -26,8 +26,24 @@ class Donnees:
     def obtenir_dataframe(self) -> DataFrame:
         return self.dataframe
 
-    def obtenir_noms_colonnes(self) -> Index:
-        return self.dataframe.columns
+    def charger_fichier_csv(self, chemin_absolu_chargement) -> None:
+        self.chemin_absolu = chemin_absolu_chargement
+        self.nom_fichier = os.path.basename(self.chemin_absolu)
+
+        self.dataframe = pd.read_csv(self.chemin_absolu, parse_dates=["datetime"], index_col="datetime")
+
+        self.convertir_donnees_en_float()
+        self.ajouter_drapeaux()
+
+    def fermer_fichier_csv(self) -> None:
+        self.initialiser_donnees()
+
+        # TODO : Ajouter messages de debugging dans le terminal.
+
+    def sauvegarder_fichier_csv(self, chemin_absolu_sauvegarde) -> None:
+        self.dataframe.to_csv(chemin_absolu_sauvegarde)
+
+        # TODO : Ajout de la sauvegarde séparée du fichier "filtre" et des drapeaux.
 
     def obtenir_nombre_dates(self) -> int:
         return self.dataframe.shape[0]
@@ -40,6 +56,9 @@ class Donnees:
 
     def obtenir_jour_maximum(self) -> datetime:
         return self.dataframe.index.max()
+
+    def obtenir_noms_colonnes(self) -> Index:
+        return self.dataframe.columns
 
     def obtenir_date(self, date: datetime) -> Donnees:
         donnees_date = copy.copy(self)
@@ -80,7 +99,7 @@ class Donnees:
 
     # Remarque : copy.copy() renvoie une vue de l'objet Donnees.
     # Le DataFrame du champ donnees est donc partagé par ces deux objets.
-    # Si on modifie les valeur de ce DataFrame dans un des deux objets,
+    # Si on modifie les valeurs de ce DataFrame dans un des deux objets,
     # alors on modifie les valeurs de l'autre objet également.
     # C'est le comportement souhaité par souci d'optimisation.
     # Si l'on souhaite copier réellement l'objet, remplacer copy.copy() par copy.deepcopy().
@@ -97,7 +116,7 @@ class Donnees:
     def convertir_titre_particules_en_float(self) -> None:
         self.dataframe.columns = [float(colonne.split("_")[2]) for colonne in self.dataframe.columns]
 
-    def convertir_donnees(self) -> None:
+    def convertir_donnees_en_float(self) -> None:
         self.dataframe = self.dataframe.apply(pd.to_numeric, errors="coerce")
 
         # En cas d'erreur, la chaîne de caractères est remplacée
@@ -105,22 +124,3 @@ class Donnees:
 
     def ajouter_drapeaux(self) -> None:
         self.dataframe["smps_flag"] = 0
-
-    def charger_fichier_csv(self, chemin_absolu_chargement) -> None:
-        self.chemin_absolu = chemin_absolu_chargement
-        self.nom_fichier = os.path.basename(self.chemin_absolu)
-
-        self.dataframe = pd.read_csv(self.chemin_absolu, parse_dates=["datetime"], index_col="datetime")
-
-        self.convertir_donnees()
-        self.ajouter_drapeaux()
-
-    def fermer_fichier_csv(self) -> None:
-        self.initialiser_donnees()
-
-        # TODO : Ajouter messages de debugging dans le terminal.
-
-    def sauvegarder_fichier_csv(self, chemin_absolu_sauvegarde) -> None:
-        self.dataframe.to_csv(chemin_absolu_sauvegarde)
-
-        # TODO : Ajout de la sauvegarde séparée du fichier "filtre" et des drapeaux.
