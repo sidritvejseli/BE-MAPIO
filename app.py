@@ -14,11 +14,13 @@ from typing import Callable, TypeAlias
 from donnees import Donnees
 from graphes import Graphe2D, Graphe3D
 from interactions import Interactions
-from menu import build_toolbar, build_tabs, show_placeholder
+from menu import build_tabs, show_placeholder
 
 
-MenuItems: TypeAlias = list[tuple[str, Callable, str]]
-BarreMenus: TypeAlias = list[tuple[str, MenuItems]]
+ItemsMenu: TypeAlias = list[tuple[str, Callable, str]]
+BarreMenus: TypeAlias = list[tuple[str, ItemsMenu]]
+
+BarreOutils: TypeAlias = list[tuple[str, Callable]]
 
 
 class Interface(tk.Tk, Interactions):
@@ -62,6 +64,19 @@ class Interface(tk.Tk, Interactions):
             ),
         ]
 
+        self.description_barre_outils: BarreOutils = [
+            ("|◀ Premier", self.premier_jour),
+            ("◀ Precedent", self.jour_precedent),
+            ("Suivant ▶", self.jour_suivant),
+            ("Dernier ▶|", self.dernier_jour),
+            None,
+            ("Actualiser", None),
+            ("Invalider jour", None),
+            ("Annuler", None),
+            ("Facteur", self.demander_facteur),
+            ("Supprimer plage", self.supprimer_plage),
+        ]
+
         # configuration
         self.config = self._load_config("config.yaml")
 
@@ -93,7 +108,7 @@ class Interface(tk.Tk, Interactions):
         self.graphe_3d = Graphe3D()
 
         self.construire_barre_menus()
-        self.label_jour = build_toolbar(self)
+        self.construire_barre_outils()
 
         (
             self.notebook,
@@ -177,7 +192,7 @@ class Interface(tk.Tk, Interactions):
         if self.donnees.est_vide():
             return
         if self.date_debut is not None:
-            self.label_jour.config(text=f"Jour affiche : {self.date_debut}")
+            self.barre_outils_etiquette_jour.config(text=f"Jour affiche : {self.date_debut}")
 
     def _action_charger(self):
         chemin_initial = self.config.get("repertoires", {}).get("donnees", "")
@@ -196,7 +211,7 @@ class Interface(tk.Tk, Interactions):
             self.date_debut = self.donnees.obtenir_jour_minimum()
             self.date_fin = self.calculer_jour_suivant(self.date_debut)
             self.afficher_graphe()
-            self.label_jour.config(text=f"Jour affiche : {self.date_debut}")
+            self.barre_outils_etiquette_jour.config(text=f"Jour affiche : {self.date_debut}")
 
     def _action_fermer(self):
         if self.donnees.est_vide():
@@ -205,7 +220,7 @@ class Interface(tk.Tk, Interactions):
             self.donnees.fermer_fichier_csv()
             self.date_debut = None
             self.date_fin = None
-            self.label_jour.config(text="Aucun fichier charge")
+            self.barre_outils_etiquette_jour.config(text="Aucun fichier charge")
 
     def _action_sauvegarder(self):
         cfg_rep = self.config.get("repertoires", {})
@@ -260,7 +275,7 @@ class Interface(tk.Tk, Interactions):
         # On met à jour l'affichage dans Tkinter
         self.canvas_3d_individuel.draw()
 
-        self.label_jour.config(text=f"Jour affiche : {self.date_debut}")
+        self.barre_outils_etiquette_jour.config(text=f"Jour affiche : {self.date_debut}")
 
     # navigation jours
 
@@ -307,7 +322,7 @@ class Interface(tk.Tk, Interactions):
     def calculer_jour_suivant(self, jour: datetime):
         return jour + pd.Timedelta(days=1)
 
-    def construire_menu_deroulant(self, barre_menus: Menu, nom_menu_deroulant: str, items_menu_deroulant: MenuItems):
+    def construire_menu_deroulant(self, barre_menus: Menu, nom_menu_deroulant: str, items_menu_deroulant: ItemsMenu):
         menu_deroulant = tk.Menu(barre_menus, tearoff=False)
 
         for item in items_menu_deroulant:
@@ -327,3 +342,25 @@ class Interface(tk.Tk, Interactions):
             self.construire_menu_deroulant(barre_menus, nom_menu_deroulant, items_menu_deroulant)
 
         self.configure(menu=barre_menus)
+
+    def construire_barre_outils(self):
+        barre_outils = tk.Frame(self, bd=1, relief=tk.RAISED)
+        barre_outils.pack(side=tk.TOP, fill=tk.X)
+
+        for item in self.description_barre_outils:
+            if item is None:
+                tk.Label(barre_outils, text="  |  ").pack(side=tk.LEFT)
+                continue
+
+            etiquette, fonction = item
+
+            if fonction is None:
+                tk.Button(barre_outils, text=etiquette, state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
+                continue
+
+            tk.Button(barre_outils, text=etiquette, command=fonction).pack(side=tk.LEFT, padx=2, pady=2)
+
+        self.barre_outils_etiquette_jour = tk.Label(
+            barre_outils, text="Aucun fichier charge", font=("Arial", 10, "bold")
+        )
+        self.barre_outils_etiquette_jour.pack(side=tk.RIGHT, padx=10)

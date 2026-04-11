@@ -2,33 +2,6 @@ import tkinter as tk
 from tkinter import ttk
 
 
-# TOOLBAR
-def build_toolbar(app):
-    toolbar = tk.Frame(app, bd=1, relief=tk.RAISED)
-    toolbar.pack(side=tk.TOP, fill=tk.X)
-
-    tk.Button(toolbar, text="|◀ Premier", command=app.premier_jour).pack(side=tk.LEFT, padx=2, pady=2)
-    tk.Button(toolbar, text="◀ Precedent", command=app.jour_precedent).pack(side=tk.LEFT, padx=2, pady=2)
-    tk.Button(toolbar, text="Suivant ▶", command=app.jour_suivant).pack(side=tk.LEFT, padx=2, pady=2)
-    tk.Button(toolbar, text="Dernier ▶|", command=app.dernier_jour).pack(side=tk.LEFT, padx=2, pady=2)
-
-    tk.Label(toolbar, text="  |  ").pack(side=tk.LEFT)
-
-    tk.Button(toolbar, text="Actualiser", state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
-    tk.Button(toolbar, text="Invalider jour", state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
-    tk.Button(toolbar, text="Annuler (Z)", state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
-
-    # ajout par rapport facteur dans interactions
-    tk.Button(toolbar, text="Facteur", command=app.demander_facteur).pack(side=tk.LEFT)
-    # bouton suppression plage ajout
-    tk.Button(toolbar, text="Supprimer plage", command=app.supprimer_plage).pack(side=tk.LEFT, padx=2, pady=2)
-
-    label_jour = tk.Label(toolbar, text="Aucun fichier charge", font=("Arial", 10, "bold"))
-    label_jour.pack(side=tk.RIGHT, padx=10)
-
-    return label_jour
-
-
 # TABS
 def build_tabs(app):
     notebook = ttk.Notebook(app)
