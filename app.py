@@ -1,15 +1,24 @@
-import tkinter as tk
-from tkinter import messagebox, filedialog
-import yaml
 import os
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
+import tkinter as tk
+import yaml
+
+
+from datetime import datetime
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tkinter import messagebox, filedialog, Menu
+from tkinter.simpledialog import askfloat
+from typing import Callable, TypeAlias
+
+
 from donnees import Donnees
 from graphes import Graphe2D, Graphe3D
-from menu import build_menu, build_toolbar, build_tabs, show_placeholder
 from interactions import Interactions
-from tkinter.simpledialog import askfloat
-from datetime import datetime
+from menu import build_toolbar, build_tabs, show_placeholder
+
+
+MenuItems: TypeAlias = list[tuple[str, Callable, str]]
+BarreMenus: TypeAlias = list[tuple[str, MenuItems]]
 
 
 class Interface(tk.Tk, Interactions):
@@ -17,6 +26,41 @@ class Interface(tk.Tk, Interactions):
     def __init__(self):
 
         super().__init__()
+
+        self.description_barre_menus: BarreMenus = [
+            (
+                "Fichier",
+                [
+                    ("Charger un fichier", None, self._action_charger),
+                    ("Fermer sans enregistrer", None, self._action_fermer),
+                    None,
+                    ("Enregistrer sous", None, self._action_sauvegarder),
+                    None,
+                    ("Quitter", None, self._action_quitter),
+                ],
+            ),
+            (
+                "Actions",
+                [
+                    ("Invalider toutes les données", None, self._non_dispo),
+                    ("Invalider les données du jour", None, self._non_dispo),
+                    None,
+                    ("Annuler", "Ctrl+Z", self._non_dispo),
+                    None,
+                    ("Appliquer un facteur de correction", None, self._non_dispo),
+                ],
+            ),
+            (
+                "Navigation",
+                [
+                    ("Sauter au premier jour", None, self.premier_jour),
+                    ("Sauter au dernier jour", None, self.dernier_jour),
+                    None,
+                    ("Sauter au jour précédent", None, self.jour_precedent),
+                    ("Sauter au jour suivant", None, self.jour_suivant),
+                ],
+            ),
+        ]
 
         # configuration
         self.config = self._load_config("config.yaml")
@@ -45,10 +89,10 @@ class Interface(tk.Tk, Interactions):
         self.resizable(True, True)
 
         # les graphes
-        self.plotter = Graphe2D()
-        self.heatmap = Graphe3D()
+        self.graphe_2d = Graphe2D()
+        self.graphe_3d = Graphe3D()
 
-        build_menu(self)
+        self.construire_barre_menus()
         self.label_jour = build_toolbar(self)
 
         (
@@ -70,7 +114,7 @@ class Interface(tk.Tk, Interactions):
         self.frame_3d_individuel.pack(fill="both", expand=True)
 
         # Création du canvas matplotlib dans Tkinter
-        self.canvas_3d_individuel = FigureCanvasTkAgg(self.heatmap.fig, master=self.frame_3d_individuel)
+        self.canvas_3d_individuel = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.frame_3d_individuel)
         self.canvas_3d_individuel.get_tk_widget().pack(fill="both", expand=True)
 
     # graphes
@@ -87,11 +131,11 @@ class Interface(tk.Tk, Interactions):
         self.frame_graphe2d = tk.Frame(self.main_frame)
         self.frame_graphe2d.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
-        self.canvas = FigureCanvasTkAgg(self.plotter.fig, master=self.frame_graphe2d)
+        self.canvas = FigureCanvasTkAgg(self.graphe_2d.fig, master=self.frame_graphe2d)
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
 
         self.canvas2d = self.canvas
-        self.ax2d = self.plotter.ax
+        self.ax2d = self.graphe_2d.ax
         # quand l’utilisateur clique : appelle _au_clic
         self.canvas2d.mpl_connect("button_press_event", self._au_clic)
         self.canvas2d.mpl_connect("motion_notify_event", self.afficher_informations_point)
@@ -100,13 +144,13 @@ class Interface(tk.Tk, Interactions):
         self.frame_heatmap = tk.Frame(self.main_frame)
         self.frame_heatmap.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
 
-        self.canvas_heat = FigureCanvasTkAgg(self.heatmap.fig, master=self.frame_heatmap)
+        self.canvas_heat = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.frame_heatmap)
         self.canvas_heat.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
 
         # plage
         # interaction de la plage
         self.canvas2d = self.canvas
-        self.ax2d = self.plotter.ax
+        self.ax2d = self.graphe_2d.ax
 
         # plage connex event souris
         # Quand l’utilisateur clique sur le graphe ça appelle la fonction _au_clic
@@ -196,7 +240,7 @@ class Interface(tk.Tk, Interactions):
             return
 
         self.date_fin = self.calculer_jour_suivant(self.date_debut)
-        self.plotter.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin)
+        self.graphe_2d.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin)
         self.canvas.draw()
 
         # infos des points
@@ -210,7 +254,7 @@ class Interface(tk.Tk, Interactions):
             visible=False,
         )
 
-        self.heatmap.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin)
+        self.graphe_3d.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin)
         self.canvas_heat.draw()
 
         # On met à jour l'affichage dans Tkinter
@@ -262,3 +306,24 @@ class Interface(tk.Tk, Interactions):
 
     def calculer_jour_suivant(self, jour: datetime):
         return jour + pd.Timedelta(days=1)
+
+    def construire_menu_deroulant(self, barre_menus: Menu, nom_menu_deroulant: str, items_menu_deroulant: MenuItems):
+        menu_deroulant = tk.Menu(barre_menus, tearoff=False)
+
+        for item in items_menu_deroulant:
+            if item is None:
+                menu_deroulant.add_separator()
+                continue
+
+            etiquette, raccourci, fonction = item
+            menu_deroulant.add_command(label=etiquette, command=fonction, accelerator=raccourci)
+
+        barre_menus.add_cascade(label=nom_menu_deroulant, menu=menu_deroulant)
+
+    def construire_barre_menus(self):
+        barre_menus = tk.Menu(self)
+
+        for nom_menu_deroulant, items_menu_deroulant in self.description_barre_menus:
+            self.construire_menu_deroulant(barre_menus, nom_menu_deroulant, items_menu_deroulant)
+
+        self.configure(menu=barre_menus)
