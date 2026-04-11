@@ -1,12 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import tkinter as tk
 
 
 from datetime import datetime
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.image import AxesImage
-from pandas import DataFrame
 
 
 from donnees import Donnees
@@ -159,30 +156,3 @@ class Graphe3D:
 
         self.colorbar = self.ax.figure.colorbar(carte_thermique, ax=self.ax)
         self.colorbar.set_label("Teneur")
-
-
-class Heatmap3d:
-
-    def __init__(self, parent):
-        # onglet
-        self.parent = parent
-        # création de l'objet Heatmap
-        self.heatmap = Graphe3D()
-
-        # Frame principal qui va contenir le graphique
-        self.frame = tk.Frame(parent)
-        self.frame.pack(fill="both", expand=True)
-
-        # Création du canvas matplotlib dans Tkinter
-        self.canvas = FigureCanvasTkAgg(self.heatmap.fig, master=self.frame)
-        self.canvas.get_tk_widget().pack(fill="both", expand=True)
-
-    def tracer_jour(self, donnees: DataFrame, date_debut: datetime, date_fin: datetime):
-        if donnees is None or date_debut is None or date_fin is None:
-            return
-        # On demande à la classe Heatmap de dessiner le graphique
-        self.heatmap.tracer_graphe_3d(donnees, date_debut, date_fin)
-        # On met à jour l'affichage dans Tkinter
-        self.canvas.draw()
-
-    # TODO : Effacer la classe Heatmap3d.

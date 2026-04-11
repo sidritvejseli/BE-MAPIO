@@ -5,7 +5,7 @@ import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
 from donnees import Donnees
-from graphes import Graphe2D, Graphe3D, Heatmap3d
+from graphes import Graphe2D, Graphe3D
 from menu import build_menu, build_toolbar, build_tabs, show_placeholder
 from interactions import Interactions
 from tkinter.simpledialog import askfloat
@@ -61,9 +61,17 @@ class Interface(tk.Tk, Interactions):
         show_placeholder(self.tab_particules)
         show_placeholder(self.tab_fonctionnement)
 
-        self.heatmap3d = Heatmap3d(self.tab_heatmap_3d)
-
         self._build_graph_area()
+
+        # Fenêtre individuelle du graphe 3D.
+
+        # Frame principal qui va contenir le graphique
+        self.frame_3d_individuel = tk.Frame(self.tab_heatmap_3d)
+        self.frame_3d_individuel.pack(fill="both", expand=True)
+
+        # Création du canvas matplotlib dans Tkinter
+        self.canvas_3d_individuel = FigureCanvasTkAgg(self.heatmap.fig, master=self.frame_3d_individuel)
+        self.canvas_3d_individuel.get_tk_widget().pack(fill="both", expand=True)
 
     # graphes
     def _build_graph_area(self):
@@ -182,7 +190,7 @@ class Interface(tk.Tk, Interactions):
 
     def afficher_graphe(self):
 
-        # TODO : Corriger l'erreur qui s'affiche quand on approche la souris d'un jour vide.
+        # FIXME : Corriger l'erreur qui s'affiche quand on approche la souris d'un jour vide.
 
         if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
             return
@@ -205,8 +213,8 @@ class Interface(tk.Tk, Interactions):
         self.heatmap.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin)
         self.canvas_heat.draw()
 
-        if hasattr(self, "heatmap3d"):
-            self.heatmap3d.tracer_jour(self.donnees, self.date_debut, self.date_fin)
+        # On met à jour l'affichage dans Tkinter
+        self.canvas_3d_individuel.draw()
 
         self.label_jour.config(text=f"Jour affiche : {self.date_debut}")
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 
 import copy
-import numpy as np
 import os
 import pandas as pd
 
@@ -54,7 +53,7 @@ class Donnees:
 
         return donnees_dates
 
-    def obtenir_dates_echantillon(self, indices_echantillon) -> Donnees:
+    def obtenir_dates_echantillon(self, indices_echantillon: Index) -> Donnees:
         donnees_dates_echantillon = copy.copy(self)
         donnees_dates_echantillon.dataframe = donnees_dates_echantillon.dataframe.index[indices_echantillon]
 
@@ -84,7 +83,7 @@ class Donnees:
     # Si on modifie les valeur de ce DataFrame dans un des deux objets,
     # alors on modifie les valeurs de l'autre objet également.
     # C'est le comportement souhaité par souci d'optimisation.
-    # Si l'on souhaite copier en profondeur, remplacer copy.copy() par copy.deepcopy().
+    # Si l'on souhaite copier réellement l'objet, remplacer copy.copy() par copy.deepcopy().
 
     def invalider_date(self, date: datetime) -> None:
         self.dataframe.loc[date, "smps_flag"] = 1
