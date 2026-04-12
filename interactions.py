@@ -169,6 +169,10 @@ class Interactions:
             date_fin = date_debut + pd.Timedelta(days=1)
 
         self.mettre_a_jour_donnees_affichees(donnees, date_debut, date_fin)
+
+        if self.donnees_affichees_valides.est_tout_na_concentration():
+            return doit_rafraichir
+
         self.mettre_a_jour_distances_entre_donnees_et_souris(evenement, ax_2d)
 
         date_plus_proche = self.trouver_date_plus_proche_souris()
@@ -223,3 +227,5 @@ class Interactions:
 
         doit_rafraichir = True
         return doit_rafraichir
+
+        # TODO : Une ligne où la concentration est NaN, doit-elle pouvoir être invalidée ? Ou faut-il l'ignorer ?
