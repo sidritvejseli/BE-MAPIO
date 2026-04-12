@@ -189,7 +189,7 @@ class Interface(tk.Tk):
         self.zone_affichage_graphe_3d = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.cadre_graphe_3d)
         self.zone_affichage_graphe_3d.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
 
-        # FIXME : Corriger l'affichage des graphes qui est coupé sur les bords.
+        # FIXME : Corriger l'affichage des graphes qui est coupé sur les bords sur Mac.
 
     def construire_onglet_graphe_3d(self):
         # Frame principal qui va contenir le graphique
@@ -245,7 +245,7 @@ class Interface(tk.Tk):
             self.afficher_jour_barre_outils()
 
         self.donnees_sans_modification = copy.deepcopy(self.donnees)
-        # FIXME : Vérifier la nécessité de cette variable.
+        # FIXME : Vérifier de la nécessité de la variable donnees_sans_modification.
 
     def fermer_fichier(self):
         if self.donnees.est_vide():
@@ -291,8 +291,6 @@ class Interface(tk.Tk):
 
         self.donnees.sauvegarder_fichier_csv(chemin_absolu_donnees_filtrees, chemin_absolu_flags)
 
-        # FIXME : Corriger la sauvegarde.
-
     def quitter_programme(self):
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
             self.destroy()
@@ -309,7 +307,7 @@ class Interface(tk.Tk):
         self.zone_affichage_graphe_2d.draw()
 
         # Initialisation de l'infobulle.
-        # TODO : Déplacer l'initialisation de l'infobulle.
+        # FIXME : Vérifier si l'initialisation de l'infobulle se fait au bon endroit.
         self.infobulle: Annotation = self.ax_2d.annotate(
             "",
             xy=(0, 0),

@@ -126,6 +126,10 @@ class Graphe3D:
 
         # TODO : Affichage des couleurs sur une échelle logarithmique, à la place de linéaire.
 
+        # FIXME : Le graphe 3D affiche les espaces blancs des données invalidées uniquement lorsqu'elles font toujours partie du fichier.
+        # Si on charge un fichier qui ne contient que les données filtrées,
+        # alors l'espace blanc n'apparaît plus, et le graphe donne l'impression d'être continu.
+
     def effacer_graphe_3d(self):
         if self.colorbar is not None:
             self.colorbar.remove()

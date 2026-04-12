@@ -62,16 +62,14 @@ class Donnees:
 
         self.initialiser_donnees()
 
-        # TODO : Ajouter messages de debugging dans le terminal.
-
     def sauvegarder_fichier_csv(self, chemin_absolu_donnees_filtrees, chemin_absolu_flags) -> None:
         donnees_valides = self.obtenir_donnees_valides()
-        donnees_valides.obtenir_dataframe().to_csv(chemin_absolu_donnees_filtrees, index=False)
+        donnees_valides.obtenir_dataframe().to_csv(chemin_absolu_donnees_filtrees)
 
         self.logger.info(f"Fichier filtré {self.nom_fichier} sauvegardé en {chemin_absolu_donnees_filtrees}.")
 
         donnees_invalides = self.obtenir_donnees_invalides()
-        donnees_invalides.obtenir_dataframe().to_csv(chemin_absolu_flags, index=False)
+        donnees_invalides.obtenir_dataframe().to_csv(chemin_absolu_flags)
 
         self.logger.info(f"Fichier flags {self.nom_fichier} sauvegardé en {chemin_absolu_flags}.")
 

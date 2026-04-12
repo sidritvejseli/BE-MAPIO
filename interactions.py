@@ -270,6 +270,4 @@ class Interactions:
         doit_rafraichir = True
         return doit_rafraichir
 
-        # TODO : Une ligne où la concentration est NaN, doit-elle pouvoir être invalidée ? Ou faut-il l'ignorer ?
-
-        # FIXME : Si on invalide la toute dernière donnée ou bien toutes les données d'une page, toutes les données sont invalidées.
+        # FIXME : Une ligne où la concentration est NaN, doit-elle pouvoir être invalidée ? Ou faut-il l'ignorer ?
