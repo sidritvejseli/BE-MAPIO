@@ -313,7 +313,6 @@ class Interface(tk.Tk):
             xytext=(12, 12),
             textcoords="offset points",
             bbox=dict(boxstyle="round", fc="lightyellow", ec="orange", alpha=0.9),
-            fontsize=8,
             visible=False,
         )
 

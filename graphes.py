@@ -70,7 +70,7 @@ class Graphe2D:
         )
 
     def legender_titre(self, date: datetime):
-        self.ax.set_title(f"Jour : {date.date()}", fontsize=12)
+        self.ax.set_title(f"Jour : {date.date()}")
 
     def legender_abscisses(self):
         self.ax.set_xlabel("Date et heure")
@@ -80,8 +80,6 @@ class Graphe2D:
         self.ax.xaxis.set_major_formatter(formatter)
 
         self.ax.tick_params(axis="x")
-
-        # FIXME : Corriger l'affichage erroné des abscisses.
 
     def legender_ordonnees(self):
         self.ax.set_ylabel("Concentration totale")
@@ -121,6 +119,7 @@ class Graphe3D:
 
         particules.convertir_titre_particules_en_float()
 
+        self.legender_titre(date_debut)
         self.legender_abscisses(particules)
         self.legender_ordonnees(particules)
         self.legender_barre_couleurs(carte_thermique)
@@ -133,6 +132,9 @@ class Graphe3D:
             self.colorbar = None
 
         self.ax.clear()
+
+    def legender_titre(self, date: datetime):
+        self.ax.set_title(f"Jour : {date.date()}")
 
     def legender_abscisses(self, particules: Donnees, nombre_graduations: int = 12):
         self.ax.set_xlabel("Heure")
