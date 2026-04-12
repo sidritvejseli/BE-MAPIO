@@ -1,5 +1,6 @@
 import logging
 import os
+from matplotlib.text import Annotation
 import pandas as pd
 import tkinter as tk
 import yaml
@@ -7,6 +8,7 @@ import yaml
 
 from datetime import datetime
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backend_bases import Event
 from tkinter import filedialog, Label, Menu, messagebox, ttk
 from tkinter.simpledialog import askfloat
 from tkinter.ttk import Notebook
@@ -31,7 +33,7 @@ Onglets: TypeAlias = dict[str, ttk.Frame]
 # (Nom de l'onglet -> Onglet).
 
 
-class Interface(tk.Tk, Interactions):
+class Interface(tk.Tk):
 
     def __init__(self):
 
@@ -93,18 +95,12 @@ class Interface(tk.Tk, Interactions):
         self.config = self.charger_configuration("config.yaml")
 
         # Données.
-        self.donnees: Donnees = Donnees()
-        self.donnees_originales: Donnees = Donnees()
+        self.donnees = Donnees()
+        self.donnees_originales = Donnees()
         self.fichier_courant = None
         self.date_debut: datetime = None
         self.date_fin: datetime = None
-        self.infobulle = None
-
-        # Plage de sélection des données.
-        self.selection_debut = None
-        self.selection_fin = None
-        self.ligne_debut = None
-        self.ligne_fin = None
+        self.interactions = Interactions()
 
         # Fenêtre.
         cfg_aff = self.config.get("affichage", {})
@@ -130,6 +126,38 @@ class Interface(tk.Tk, Interactions):
         self.construire_onglet_particules()
         self.afficher_onglet_provisoire(self.onglets["Fonctionnement"])
         self.construire_onglet_graphe_3d()
+
+    def repondre_apres_clic_souris(self, evenement: Event):
+        type_clic = self.interactions.repondre_apres_clic_souris(
+            evenement,
+            self.donnees,
+            self.ax_2d,
+            self.date_debut,
+            self.date_fin,
+        )
+
+        if type_clic == 1:
+            self.zone_affichage_graphe_2d.draw_idle()
+
+        elif type_clic == 3:
+            self.afficher_graphe()
+
+    def afficher_infobulle_apres_survol_souris(self, evenement: Event):
+        doit_rafraichir = self.interactions.afficher_infobulle_apres_survol_souris(
+            evenement,
+            self.donnees,
+            self.ax_2d,
+            self.date_debut,
+            self.date_fin,
+            self.infobulle,
+        )
+
+        if doit_rafraichir:
+            self.zone_affichage_graphe_2d.draw_idle()
+
+    def supprimer_plage(self):
+        self.interactions.supprimer_plage(self.donnees)
+        self.afficher_graphe()
 
     def construire_onglet_particules(self):
         self.page_principale = tk.Frame(self.onglets["Particules"])
@@ -254,8 +282,9 @@ class Interface(tk.Tk, Interactions):
         self.graphe_2d.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin)
         self.zone_affichage_graphe_2d.draw()
 
-        # infos des points
-        self.infobulle = self.ax_2d.annotate(
+        # Initialisation de l'infobulle.
+        # TODO : Déplacer l'initialisation de l'infobulle.
+        self.infobulle: Annotation = self.ax_2d.annotate(
             "",
             xy=(0, 0),
             xytext=(12, 12),
@@ -310,10 +339,11 @@ class Interface(tk.Tk, Interactions):
     def demander_facteur(self):
         facteur = askfloat("Facteur", "Multiplier par :")
 
-        if facteur is None:
+        if facteur is None or self.donnees.est_vide():
             return
 
-        self.appliquer_facteur(facteur)
+        self.donnees.multiplier_concentration(facteur)
+        self.afficher_graphe()
 
     def construire_menu_deroulant(self, barre_menus: Menu, nom_menu_deroulant: str, items_menu_deroulant: ItemsMenu):
         menu_deroulant = tk.Menu(barre_menus, tearoff=False)

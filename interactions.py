@@ -1,5 +1,8 @@
 import logging
+from matplotlib.axes import Axes
 import matplotlib.dates as mdates
+from matplotlib.lines import Line2D
+from matplotlib.text import Annotation
 import numpy as np
 import pandas as pd
 
@@ -17,19 +20,17 @@ class Interactions:
     def __init__(self):
         self.logger = logging.getLogger()
 
-        self.ax_2d = None
-        self.infobulle = None
-        self.donnees = None
-        self.date_fin = None
-        self.date_debut = None
-        self.zone_affichage_graphe_2d = None
         self.selection_debut = None
         self.selection_fin = None
+
+        self.ligne_debut: Line2D = None
+        self.ligne_fin: Line2D = None
+
         self.distances_entre_donnees_et_souris: DataFrame = None
         self.donnees_affichees_valides: Donnees = None
 
     # fonction de calcul de distances entres les points et la souris et les points valides
-    def calculer_distances_entre_donnees_et_souris(self, evenement: Event, donnees: Donnees) -> DataFrame:
+    def calculer_distances_entre_donnees_et_souris(self, evenement: Event, donnees: Donnees, ax_2d: Axes) -> DataFrame:
         dataframe = donnees.obtenir_dataframe()
 
         x_points = mdates.date2num(dataframe.index)
@@ -39,8 +40,8 @@ class Interactions:
         y_souris = evenement.ydata
 
         # Poids pour équilibrer les abscisses et les ordonnees.
-        x_limite = self.ax_2d.get_xlim()
-        y_limite = self.ax_2d.get_ylim()
+        x_limite = ax_2d.get_xlim()
+        y_limite = ax_2d.get_ylim()
 
         # Normalisation par rapport aux limites visibles (pas aux données).
         x_echelle = 1 / (x_limite[1] - x_limite[0])
@@ -57,31 +58,38 @@ class Interactions:
 
         return self.distances_entre_donnees_et_souris.idxmin()
 
-    def mettre_a_jour_donnees_affichees(self):
-        self.donnees_affichees_valides = self.donnees.obtenir_donnees_valides()
-        self.donnees_affichees_valides = self.donnees_affichees_valides.obtenir_dates(self.date_debut, self.date_fin)
+    def mettre_a_jour_donnees_affichees(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
+        self.donnees_affichees_valides = donnees.obtenir_donnees_valides()
+        self.donnees_affichees_valides = self.donnees_affichees_valides.obtenir_dates(date_debut, date_fin)
 
-    def mettre_a_jour_distances_entre_donnees_et_souris(self, evenement: Event):
+    def mettre_a_jour_distances_entre_donnees_et_souris(self, evenement: Event, ax_2d: Axes):
         self.distances_entre_donnees_et_souris = self.calculer_distances_entre_donnees_et_souris(
-            evenement, self.donnees_affichees_valides
+            evenement, self.donnees_affichees_valides, ax_2d
         )
 
-    def afficher_infobulle_apres_survol_souris(self, evenement: Event):
-        if self.donnees.est_vide() or self.infobulle is None:
-            return
+    def afficher_infobulle_apres_survol_souris(
+        self,
+        evenement: Event,
+        donnees: Donnees,
+        ax_2d: Axes,
+        date_debut: datetime,
+        date_fin: datetime,
+        infobulle: Annotation,
+    ):
+        doit_rafraichir = False
+
+        if donnees.est_vide() or infobulle is None:
+            return doit_rafraichir
+
+        doit_rafraichir = True
 
         # Si la souris n’est pas sur le graphe, alors on n'affiche pas l'infobulle.
-        if evenement.inaxes != self.ax_2d or evenement.xdata is None:
-            self.infobulle.set_visible(False)
-            self.zone_affichage_graphe_2d.draw_idle()
-            return
+        if evenement.inaxes != ax_2d or evenement.xdata is None:
+            infobulle.set_visible(False)
+            return doit_rafraichir
 
-        # Garde uniquement les points non supprimés
-        if not self.date_fin:
-            self.date_fin = self.date_debut + pd.Timedelta(days=1)
-
-        self.mettre_a_jour_donnees_affichees()
-        self.mettre_a_jour_distances_entre_donnees_et_souris(evenement)
+        self.mettre_a_jour_donnees_affichees(donnees, date_debut, date_fin)
+        self.mettre_a_jour_distances_entre_donnees_et_souris(evenement, ax_2d)
 
         date_plus_proche = self.trouver_date_plus_proche_souris()
 
@@ -89,35 +97,45 @@ class Interactions:
         seuil = 0.02
 
         if self.distances_entre_donnees_et_souris.loc[date_plus_proche] > seuil:
-            self.infobulle.set_visible(False)
-            self.zone_affichage_graphe_2d.draw_idle()
-            return
+            infobulle.set_visible(False)
+            return doit_rafraichir
 
         dataframe_valides: DataFrame = self.donnees_affichees_valides.obtenir_dataframe()
 
         concentration = dataframe_valides.loc[date_plus_proche, "smps_concTotal"]
 
-        self.infobulle.set_text(f"{date_plus_proche.strftime('%d/%m %H:%M')}\nConc : {concentration:.1f}")
+        infobulle.set_text(f"{date_plus_proche.strftime('%d/%m %H:%M')}\nConc : {concentration:.1f}")
 
         # Positionnement de l'infobulle sur le graphe.
-        self.infobulle.xy = (mdates.date2num(date_plus_proche), concentration)
+        infobulle.xy = (mdates.date2num(date_plus_proche), concentration)
 
-        self.infobulle.set_visible(True)
-        self.zone_affichage_graphe_2d.draw_idle()
+        infobulle.set_visible(True)
 
-    def repondre_apres_clic_souris(self, evenement: Event):
-        if evenement.inaxes != self.ax_2d or evenement.xdata is None:
-            return
+        return doit_rafraichir
+
+    def repondre_apres_clic_souris(
+        self,
+        evenement: Event,
+        donnees: Donnees,
+        ax_2d: Axes,
+        date_debut: datetime,
+        date_fin: datetime,
+    ):
+        doit_rafraichir = False
+
+        if evenement.inaxes != ax_2d or evenement.xdata is None:
+            return doit_rafraichir
 
         if evenement.button == 1:
-            self.traiter_clic_gauche(evenement)
-            return
+            self.traiter_clic_gauche(evenement, ax_2d)
+            doit_rafraichir = 1
 
         if evenement.button == 3:
-            self.traiter_clic_droit(evenement)
-            return
+            doit_rafraichir = self.traiter_clic_droit(evenement, donnees, ax_2d, date_debut, date_fin)
 
-    def traiter_clic_gauche(self, evenement: Event):
+        return doit_rafraichir
+
+    def traiter_clic_gauche(self, evenement: Event, ax_2d: Axes):
         date = mdates.num2date(evenement.xdata).replace(tzinfo=None)
 
         if self.selection_debut is None:
@@ -127,7 +145,7 @@ class Interactions:
             if self.ligne_debut is not None:
                 self.ligne_debut.remove()
 
-            self.ligne_debut = self.ax_2d.axvline(date, color="red", linestyle="--")
+            self.ligne_debut = ax_2d.axvline(date, color="red", linestyle="--")
 
         else:
             self.selection_fin = date
@@ -136,30 +154,26 @@ class Interactions:
             if self.ligne_fin is not None:
                 self.ligne_fin.remove()
 
-            self.ligne_fin = self.ax_2d.axvline(date, color="red", linestyle="--")
+            self.ligne_fin = ax_2d.axvline(date, color="red", linestyle="--")
 
-        self.zone_affichage_graphe_2d.draw_idle()
+    def traiter_clic_droit(
+        self, evenement: Event, donnees: Donnees, ax_2d: Axes, date_debut: datetime, date_fin: datetime
+    ):
+        doit_rafraichir = False
 
-    def traiter_clic_droit(self, evenement: Event):
-        if not self.date_fin:
-            self.date_fin = self.date_debut + pd.Timedelta(days=1)
+        if date_fin is None:
+            date_fin = date_debut + pd.Timedelta(days=1)
 
-        points_valides = self.donnees.obtenir_donnees_valides()
-        points_valides = points_valides.obtenir_dates(self.date_debut, self.date_fin)
-
-        if points_valides.est_vide():
-            return
-
-        self.mettre_a_jour_donnees_affichees()
-        self.mettre_a_jour_distances_entre_donnees_et_souris(evenement)
+        self.mettre_a_jour_donnees_affichees(donnees, date_debut, date_fin)
+        self.mettre_a_jour_distances_entre_donnees_et_souris(evenement, ax_2d)
 
         date_plus_proche = self.trouver_date_plus_proche_souris()
 
         seuil = 0.02
         if self.distances_entre_donnees_et_souris.loc[date_plus_proche] > seuil:
-            return
+            return doit_rafraichir
 
-        self.donnees.invalider_date(date_plus_proche)
+        donnees.invalider_date(date_plus_proche)
 
         # correction bug plage
         # supprime ligne début si elle existe
@@ -176,24 +190,21 @@ class Interactions:
         self.selection_debut = None
         self.selection_fin = None
 
-        # Recharge le graphe pour voir la suppression
-        self.afficher_graphe()
+        doit_rafraichir = evenement.button
+        return doit_rafraichir
 
-    def appliquer_facteur(self, facteur):
-        if self.donnees.est_vide():
-            return
+        # FIXME : Vérifier si il faut faire draw_idle ou draw pour retracer le graphe après clic droit.
 
-        self.donnees.multiplier_concentration(facteur)
-        self.afficher_graphe()
+    def supprimer_plage(self, donnees: Donnees):
+        doit_rafraichir = False
 
-    def supprimer_plage(self):
         if self.selection_debut is None or self.selection_fin is None:
             self.logger.info("Suppression de la plage impossible, car aucune plage sélectionnée.")
-            return
+            return doit_rafraichir
 
         self.selection_debut, self.selection_fin = sorted((self.selection_debut, self.selection_fin))
 
-        self.donnees.invalider_dates(self.selection_debut, self.selection_fin)
+        donnees.invalider_dates(self.selection_debut, self.selection_fin)
 
         # Suppression des lignes.
         if self.ligne_debut is not None:
@@ -208,4 +219,5 @@ class Interactions:
         self.selection_debut = None
         self.selection_fin = None
 
-        self.afficher_graphe()
+        doit_rafraichir = True
+        return doit_rafraichir
