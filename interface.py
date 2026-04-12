@@ -1,14 +1,15 @@
+import copy
 import logging
 import os
-from matplotlib.text import Annotation
 import pandas as pd
 import tkinter as tk
 import yaml
 
 
 from datetime import datetime
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backend_bases import Event
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.text import Annotation
 from tkinter import filedialog, Label, Menu, messagebox, ttk
 from tkinter.simpledialog import askfloat
 from tkinter.ttk import Notebook
@@ -96,7 +97,7 @@ class Interface(tk.Tk):
 
         # Données.
         self.donnees = Donnees()
-        self.donnees_originales = Donnees()
+        self.donnees_sans_modification = Donnees()
         self.fichier_courant = None
         self.date_debut: datetime = None
         self.date_fin: datetime = None
@@ -239,6 +240,9 @@ class Interface(tk.Tk):
             self.afficher_graphe()
             self.afficher_jour_barre_outils()
 
+        self.donnees_sans_modification = copy.deepcopy(self.donnees)
+        # FIXME : Vérifier la nécessité de cette variable.
+
     def fermer_fichier(self):
         if self.donnees.est_vide():
             return
@@ -258,14 +262,30 @@ class Interface(tk.Tk):
             messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
             return
 
-        chemin_absolu_sauvegarde = filedialog.asksaveasfilename(
-            defaultextension=".csv", filetypes=[("CSV files", "*.csv")]
+        # on cree les dossiers s'ils n'existent pas
+        os.makedirs(dossier_resultats, exist_ok=True)
+        os.makedirs(dossier_flags, exist_ok=True)
+
+        # sauvegarde du fichier filtre (lignes valides uniquement)
+        chemin_absolu_donnees_filtrees = filedialog.asksaveasfilename(
+            title="Sauvegarder les données filtrées",
+            initialdir=dossier_resultats,
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")],
         )
 
-        if not chemin_absolu_sauvegarde:
+        # sauvegarde du fichier des flags (lignes invalidees)
+        chemin_absolu_flags = filedialog.asksaveasfilename(
+            title="Sauvegarder le fichier des flags",
+            initialdir=dossier_flags,
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")],
+        )
+
+        if not chemin_absolu_donnees_filtrees or not chemin_absolu_flags:
             return
 
-        self.donnees.sauvegarder_fichier_csv(chemin_absolu_sauvegarde)
+        self.donnees.sauvegarder_fichier_csv(chemin_absolu_donnees_filtrees, chemin_absolu_flags)
         self.donnees.fermer_fichier_csv()
 
     def quitter_programme(self):
