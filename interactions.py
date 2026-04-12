@@ -20,14 +20,16 @@ class Interactions:
     def __init__(self):
         self.logger = logging.getLogger()
 
-        self.selection_debut = None
-        self.selection_fin = None
+        self.date_une: datetime = None
+        self.date_deux: datetime = None
 
-        self.ligne_debut: Line2D = None
-        self.ligne_fin: Line2D = None
+        self.ligne_une: Line2D = None
+        self.ligne_deux: Line2D = None
 
         self.distances_entre_donnees_et_souris: DataFrame = None
         self.donnees_affichees_valides: Donnees = None
+
+        self.nombre_clics = 0
 
     # fonction de calcul de distances entres les points et la souris et les points valides
     def calculer_distances_entre_donnees_et_souris(self, evenement: Event, donnees: Donnees, ax_2d: Axes) -> DataFrame:
@@ -66,6 +68,30 @@ class Interactions:
         self.distances_entre_donnees_et_souris = self.calculer_distances_entre_donnees_et_souris(
             evenement, self.donnees_affichees_valides, ax_2d
         )
+
+    def incrementer_nombre_clics(self):
+        self.nombre_clics = (self.nombre_clics + 1) % 3
+
+    def supprimer_ligne_une(self):
+        if self.ligne_une is None:
+            return
+
+        self.ligne_une.remove()
+        self.ligne_une = None
+
+    def supprimer_ligne_deux(self):
+        if self.ligne_deux is None:
+            return
+
+        self.ligne_deux.remove()
+        self.ligne_deux = None
+
+    def reinitialiser_plage(self):
+        self.supprimer_ligne_une()
+        self.supprimer_ligne_deux()
+        self.date_une = None
+        self.date_deux = None
+        self.nombre_clics = 0
 
     def afficher_infobulle_apres_survol_souris(
         self,
@@ -142,31 +168,23 @@ class Interactions:
     def traiter_clic_gauche(self, evenement: Event, ax_2d: Axes):
         date = mdates.num2date(evenement.xdata).replace(tzinfo=None)
 
-        if self.selection_debut is None:
-            self.selection_debut = date
+        if self.nombre_clics == 0:
+            self.date_une = date
+            self.ligne_une = ax_2d.axvline(date, color="red", linestyle="--")
+            self.incrementer_nombre_clics()
 
-            # Suppression des anciennes lignes si elles existent.
-            if self.ligne_debut is not None:
-                self.ligne_debut.remove()
+        elif self.nombre_clics == 1:
+            self.date_deux = date
+            self.ligne_deux = ax_2d.axvline(date, color="red", linestyle="--")
+            self.incrementer_nombre_clics()
 
-            self.ligne_debut = ax_2d.axvline(date, color="red", linestyle="--")
-
-        else:
-            self.selection_fin = date
-
-            # Suppression des anciennes lignes si elles existent.
-            if self.ligne_fin is not None:
-                self.ligne_fin.remove()
-
-            self.ligne_fin = ax_2d.axvline(date, color="red", linestyle="--")
+        elif self.nombre_clics == 2:
+            self.reinitialiser_plage()
 
     def traiter_clic_droit(
         self, evenement: Event, donnees: Donnees, ax_2d: Axes, date_debut: datetime, date_fin: datetime
     ):
         doit_rafraichir = False
-
-        if date_fin is None:
-            date_fin = date_debut + pd.Timedelta(days=1)
 
         self.mettre_a_jour_donnees_affichees(donnees, date_debut, date_fin)
 
@@ -183,20 +201,7 @@ class Interactions:
 
         donnees.invalider_date(date_plus_proche)
 
-        # correction bug plage
-        # supprime ligne début si elle existe
-        if self.ligne_debut is not None:
-            self.ligne_debut.remove()
-            self.ligne_debut = None
-
-        # supprime ligne fin si elle existe
-        if self.ligne_fin is not None:
-            self.ligne_fin.remove()
-            self.ligne_fin = None
-
-        # le reset pour les bug
-        self.selection_debut = None
-        self.selection_fin = None
+        self.reinitialiser_plage()
 
         doit_rafraichir = evenement.button
         return doit_rafraichir
@@ -204,26 +209,16 @@ class Interactions:
     def supprimer_plage(self, donnees: Donnees):
         doit_rafraichir = False
 
-        if self.selection_debut is None or self.selection_fin is None:
+        if self.nombre_clics != 2:
             self.logger.info("Suppression de la plage impossible, car aucune plage sélectionnée.")
+            self.reinitialiser_plage()
             return doit_rafraichir
 
-        self.selection_debut, self.selection_fin = sorted((self.selection_debut, self.selection_fin))
+        self.date_une, self.date_deux = sorted((self.date_une, self.date_deux))
 
-        donnees.invalider_dates(self.selection_debut, self.selection_fin)
+        donnees.invalider_dates(self.date_une, self.date_deux)
 
-        # Suppression des lignes.
-        if self.ligne_debut is not None:
-            self.ligne_debut.remove()
-            self.ligne_debut = None
-
-        if self.ligne_fin is not None:
-            self.ligne_fin.remove()
-            self.ligne_fin = None
-
-        # Pour recommencer une nouvelle ligne on doit réinitaliser.
-        self.selection_debut = None
-        self.selection_fin = None
+        self.reinitialiser_plage()
 
         doit_rafraichir = True
         return doit_rafraichir
