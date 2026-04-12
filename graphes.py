@@ -4,6 +4,7 @@ import numpy as np
 
 
 from datetime import datetime
+import matplotlib.dates as mdates
 from matplotlib.image import AxesImage
 
 
@@ -28,18 +29,15 @@ class Graphe2D:
         donnees_valides = donnees_dates.obtenir_donnees_valides()
         donnees_invalides = donnees_dates.obtenir_donnees_invalides()
 
-        dataframe_valides = donnees_valides.obtenir_dataframe()
-        dataframe_invalides = donnees_invalides.obtenir_dataframe()
-
         self.tracer_donnees(
-            dataframe_valides,
+            donnees_valides,
             taille=1,
             couleur="blue",
             marqueur="x",
         )
 
         self.tracer_donnees(
-            dataframe_invalides,
+            donnees_invalides,
             taille=8,
             couleur="red",
             marqueur="x",
@@ -59,9 +57,12 @@ class Graphe2D:
     def tracer_donnees(
         self, donnees: Donnees, taille: int = "1", couleur: str = "blue", marqueur: str = "x", legende_boite: str = ""
     ):
+        dataframe_dates = donnees.obtenir_colonne_dates().obtenir_dataframe()
+        dataframe_concentration = donnees.obtenir_colonne_concentration().obtenir_dataframe()
+
         self.ax.scatter(
-            donnees.index,
-            donnees["smps_concTotal"],
+            dataframe_dates,
+            dataframe_concentration,
             s=taille,
             color=couleur,
             marker=marqueur,
@@ -72,11 +73,18 @@ class Graphe2D:
         self.ax.set_title(f"Jour : {date.date()}", fontsize=12)
 
     def legender_abscisses(self):
-        self.ax.tick_params(axis="x", rotation=45)
-        self.ax.set_xlabel("Date et heure", fontsize=5)
+        self.ax.set_xlabel("Date et heure")
+
+        formatter = mdates.DateFormatter("%H:%M")
+
+        self.ax.xaxis.set_major_formatter(formatter)
+
+        self.ax.tick_params(axis="x")
+
+        # FIXME : Corriger l'affichage erroné des abscisses.
 
     def legender_ordonnees(self):
-        self.ax.set_ylabel("Concentration totale", fontsize=5)
+        self.ax.set_ylabel("Concentration totale")
 
     def legender_boite(self):
         self.ax.legend()
@@ -140,7 +148,7 @@ class Graphe3D:
         libelles_abscisse = libelles_abscisse.obtenir_dataframe()[:].strftime("%H:%M")
 
         self.ax.set_xticks(graduations_abscisse)
-        self.ax.set_xticklabels(libelles_abscisse, rotation=45, ha="right")
+        self.ax.set_xticklabels(libelles_abscisse)
 
     def legender_ordonnees(self, particules: Donnees, nombre_graduations: int = 10):
         self.ax.set_ylabel("Taille des particules (nanomètres)")

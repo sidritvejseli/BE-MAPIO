@@ -102,21 +102,23 @@ class Interface(tk.Tk):
         self.date_debut: datetime = None
         self.date_fin: datetime = None
 
+        # Interactions.
         self.interactions = Interactions()
         self.infobulle: Annotation = None
 
         # Fenêtre.
-        cfg_aff = self.config.get("affichage", {})
-        self.title(cfg_aff.get("titre", "Outil SMPS - MAP-IO"))
-        w = cfg_aff.get("largeur", 1400)
-        h = cfg_aff.get("hauteur", 800)
-        self.geometry(f"{w}x{h}")
+        configuration_affichage = self.config.get("affichage", {})
+        self.title(configuration_affichage.get("titre", "Outil SMPS - MAP-IO"))
+        largeur = configuration_affichage.get("largeur", 1400)
+        hauteur = configuration_affichage.get("hauteur", 800)
+        self.geometry(f"{largeur}x{hauteur}")
         self.resizable(True, True)
 
         # Graphes.
         self.graphe_2d: Graphe2D = Graphe2D()
         self.graphe_3d: Graphe3D = Graphe3D()
 
+        # Construction initiale.
         self.construire_barre_menus()
 
         self.barre_outils_etiquette_jour: Label = None
@@ -129,6 +131,19 @@ class Interface(tk.Tk):
         self.construire_onglet_particules()
         self.afficher_onglet_provisoire(self.onglets["Fonctionnement"])
         self.construire_onglet_graphe_3d()
+
+    def afficher_infobulle_apres_survol_souris(self, evenement: Event):
+        doit_rafraichir = self.interactions.afficher_infobulle_apres_survol_souris(
+            evenement,
+            self.donnees,
+            self.ax_2d,
+            self.date_debut,
+            self.date_fin,
+            self.infobulle,
+        )
+
+        if doit_rafraichir:
+            self.zone_affichage_graphe_2d.draw_idle()
 
     def repondre_apres_clic_souris(self, evenement: Event):
         type_clic = self.interactions.repondre_apres_clic_souris(
@@ -144,19 +159,6 @@ class Interface(tk.Tk):
 
         elif type_clic == 3:
             self.afficher_graphe()
-
-    def afficher_infobulle_apres_survol_souris(self, evenement: Event):
-        doit_rafraichir = self.interactions.afficher_infobulle_apres_survol_souris(
-            evenement,
-            self.donnees,
-            self.ax_2d,
-            self.date_debut,
-            self.date_fin,
-            self.infobulle,
-        )
-
-        if doit_rafraichir:
-            self.zone_affichage_graphe_2d.draw_idle()
 
     def supprimer_plage(self):
         self.interactions.supprimer_plage(self.donnees)
@@ -186,6 +188,8 @@ class Interface(tk.Tk):
 
         self.zone_affichage_graphe_3d = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.cadre_graphe_3d)
         self.zone_affichage_graphe_3d.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
+
+        # FIXME : Corriger l'affichage des graphes qui est coupé sur les bords.
 
     def construire_onglet_graphe_3d(self):
         # Frame principal qui va contenir le graphique

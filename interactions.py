@@ -224,3 +224,9 @@ class Interactions:
         return doit_rafraichir
 
         # TODO : Une ligne où la concentration est NaN, doit-elle pouvoir être invalidée ? Ou faut-il l'ignorer ?
+
+        # FIXME : Si on invalide la toute dernière donnée ou bien toutes les données d'une page, toutes les données sont invalidées.
+
+        # FIXME : Impossible d'invalider des données sur plusieurs pages.
+
+        # FIXME : Corriger le débordement de la plage sur les autres pages quand on sélectionne une plage sur une extrémité.

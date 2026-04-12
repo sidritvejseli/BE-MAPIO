@@ -34,6 +34,18 @@ class Donnees:
     def obtenir_dataframe(self) -> DataFrame:
         return self.dataframe
 
+    def obtenir_colonne_dates(self) -> Donnees:
+        colonne_dates = copy.copy(self)
+        colonne_dates.dataframe = colonne_dates.dataframe.index
+
+        return colonne_dates
+
+    def obtenir_colonne_concentration(self) -> Donnees:
+        colonne_concentrations = copy.copy(self)
+        colonne_concentrations.dataframe = colonne_concentrations.dataframe[nom_colonne_concentration]
+
+        return colonne_concentrations
+
     def charger_fichier_csv(self, chemin_absolu_chargement) -> None:
         self.chemin_absolu = chemin_absolu_chargement
         self.nom_fichier = os.path.basename(self.chemin_absolu)
