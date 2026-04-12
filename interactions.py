@@ -34,7 +34,11 @@ class Interaction:
     #Affiche les infos du point le plus proche quand la souris bouge
     def info_point(self, event):
         
-
+        # si pas de donnees chargees on ne fait rien pour eviter les messages d'erreur
+        # lorsqu'on ferme le fichier sans sauvegarde la souris continue de bouger sur le graphe et appelle info_point()!!
+        if self.donnees is None:
+            return
+    
         # Si la souris n’est pas sur le graphe alors pas de donnée et le tooltip absent
         if event.inaxes != self.ax2d or event.xdata is None or self.tooltip is None:
             if self.tooltip:
