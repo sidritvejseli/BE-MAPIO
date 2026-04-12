@@ -293,9 +293,6 @@ class Interface(tk.Tk):
             self.destroy()
 
     def afficher_graphe(self):
-
-        # FIXME : Corriger l'erreur qui s'affiche quand on approche la souris d'un jour vide.
-
         if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
             return
 

@@ -89,6 +89,10 @@ class Interactions:
             return doit_rafraichir
 
         self.mettre_a_jour_donnees_affichees(donnees, date_debut, date_fin)
+
+        if self.donnees_affichees_valides.est_tout_na_concentration():
+            return doit_rafraichir
+
         self.mettre_a_jour_distances_entre_donnees_et_souris(evenement, ax_2d)
 
         date_plus_proche = self.trouver_date_plus_proche_souris()
@@ -192,8 +196,6 @@ class Interactions:
 
         doit_rafraichir = evenement.button
         return doit_rafraichir
-
-        # FIXME : Vérifier si il faut faire draw_idle ou draw pour retracer le graphe après clic droit.
 
     def supprimer_plage(self, donnees: Donnees):
         doit_rafraichir = False

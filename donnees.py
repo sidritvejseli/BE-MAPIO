@@ -11,6 +11,9 @@ from datetime import datetime
 from pandas import DataFrame, Index
 
 
+nom_colonne_concentration = "smps_concTotal"
+
+
 class Donnees:
 
     def __init__(self):
@@ -24,6 +27,9 @@ class Donnees:
 
     def est_vide(self) -> bool:
         return self.dataframe.empty
+
+    def est_tout_na_concentration(self) -> bool:
+        return self.dataframe[nom_colonne_concentration].isna().all()
 
     def obtenir_dataframe(self) -> DataFrame:
         return self.dataframe
@@ -123,7 +129,7 @@ class Donnees:
         self.dataframe.loc[debut:fin, "smps_flag"] = 1
 
     def multiplier_concentration(self, facteur) -> None:
-        self.dataframe["smps_concTotal"] *= facteur
+        self.dataframe[nom_colonne_concentration] *= facteur
 
     def convertir_titre_particules_en_float(self) -> None:
         self.dataframe.columns = [float(colonne.split("_")[2]) for colonne in self.dataframe.columns]
