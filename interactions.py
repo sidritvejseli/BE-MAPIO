@@ -209,11 +209,6 @@ class Interactions:
     def traiter_clic_gauche(self, evenement: Event, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
         date = self.obtenir_date_plus_proche_dans_plage(evenement, date_debut, date_fin)
 
-        print("DEBUG")
-        print(date_debut)
-        print(date)
-        print(date_fin)
-
         if self.nombre_clics == 0:
             self.date_une = date
             self.tracer_ligne_une(ax_2d, date_debut, date_fin)
@@ -272,5 +267,3 @@ class Interactions:
         # TODO : Une ligne où la concentration est NaN, doit-elle pouvoir être invalidée ? Ou faut-il l'ignorer ?
 
         # FIXME : Si on invalide la toute dernière donnée ou bien toutes les données d'une page, toutes les données sont invalidées.
-
-        # FIXME : Corriger le débordement de la plage sur les autres pages quand on sélectionne une plage sur une extrémité.
