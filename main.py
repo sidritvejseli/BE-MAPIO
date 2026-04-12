@@ -1,4 +1,4 @@
-from app import Interface
+from interface import Interface
 from logger import construire_logger
 
 

@@ -100,7 +100,9 @@ class Interface(tk.Tk):
         self.fichier_courant = None
         self.date_debut: datetime = None
         self.date_fin: datetime = None
+
         self.interactions = Interactions()
+        self.infobulle: Annotation = None
 
         # Fenêtre.
         cfg_aff = self.config.get("affichage", {})
