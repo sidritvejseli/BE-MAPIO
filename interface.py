@@ -290,7 +290,8 @@ class Interface(tk.Tk):
             return
 
         self.donnees.sauvegarder_fichier_csv(chemin_absolu_donnees_filtrees, chemin_absolu_flags)
-        self.donnees.fermer_fichier_csv()
+
+        # FIXME : Corriger la sauvegarde.
 
     def quitter_programme(self):
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):

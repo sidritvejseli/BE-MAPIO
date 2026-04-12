@@ -174,7 +174,7 @@ class Interactions:
         return doit_rafraichir
 
     def tracer_ligne_une(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
-        if self.date_une is None or date_debut is None or date_fin is None:
+        if self.date_une is None:
             return
 
         if self.date_une < date_debut or self.date_une > date_fin:
@@ -183,7 +183,7 @@ class Interactions:
         self.ligne_une = ax_2d.axvline(self.date_une, color="red", linestyle="--")
 
     def tracer_ligne_deux(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
-        if self.date_deux is None or date_debut is None or date_fin is None:
+        if self.date_deux is None:
             return
 
         if self.date_deux < date_debut or self.date_deux > date_fin:
@@ -207,6 +207,9 @@ class Interactions:
         return date
 
     def traiter_clic_gauche(self, evenement: Event, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
+        if date_debut is None or date_fin is None:
+            return
+
         date = self.obtenir_date_plus_proche_dans_plage(evenement, date_debut, date_fin)
 
         if self.nombre_clics == 0:
@@ -225,6 +228,9 @@ class Interactions:
     def traiter_clic_droit(
         self, evenement: Event, donnees: Donnees, ax_2d: Axes, date_debut: datetime, date_fin: datetime
     ):
+        if date_debut is None or date_fin is None:
+            return
+
         doit_rafraichir = False
 
         self.mettre_a_jour_donnees_affichees(donnees, date_debut, date_fin)
