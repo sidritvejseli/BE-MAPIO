@@ -98,7 +98,7 @@ class Interface(tk.Tk, Interactions):
         self.fichier_courant = None
         self.date_debut: datetime = None
         self.date_fin: datetime = None
-        self.tooltip = None
+        self.infobulle = None
 
         # Plage de sélection des données.
         self.selection_debut = None
@@ -147,8 +147,8 @@ class Interface(tk.Tk, Interactions):
 
         self.ax_2d = self.graphe_2d.ax
 
-        self.zone_affichage_graphe_2d.mpl_connect("button_press_event", self.repondre_a_un_clic_droit)
-        self.zone_affichage_graphe_2d.mpl_connect("motion_notify_event", self.repondre_a_un_survol_souris)
+        self.zone_affichage_graphe_2d.mpl_connect("button_press_event", self.repondre_apres_clic_souris)
+        self.zone_affichage_graphe_2d.mpl_connect("motion_notify_event", self.afficher_infobulle_apres_survol_souris)
 
         self.cadre_graphe_3d = tk.Frame(self.page_principale)
         self.cadre_graphe_3d.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
@@ -255,7 +255,7 @@ class Interface(tk.Tk, Interactions):
         self.zone_affichage_graphe_2d.draw()
 
         # infos des points
-        self.tooltip = self.ax_2d.annotate(
+        self.infobulle = self.ax_2d.annotate(
             "",
             xy=(0, 0),
             xytext=(12, 12),
@@ -281,6 +281,7 @@ class Interface(tk.Tk, Interactions):
     def sauter_au_jour_suivant(self):
         if self.donnees.est_vide() or self.date_debut >= self.donnees.obtenir_derniere_date():
             return
+
         self.date_debut = self.calculer_jour_suivant(self.date_debut)
         self.afficher_graphe()
 
