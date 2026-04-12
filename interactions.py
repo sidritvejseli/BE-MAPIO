@@ -195,8 +195,24 @@ class Interactions:
         self.tracer_ligne_une(ax_2d, date_debut, date_fin)
         self.tracer_ligne_deux(ax_2d, date_debut, date_fin)
 
-    def traiter_clic_gauche(self, evenement: Event, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
+    def obtenir_date_plus_proche_dans_plage(self, evenement: Event, date_debut: datetime, date_fin: datetime):
         date = mdates.num2date(evenement.xdata).replace(tzinfo=None)
+
+        if date < date_debut:
+            return date_debut
+
+        if date > date_fin:
+            return date_fin
+
+        return date
+
+    def traiter_clic_gauche(self, evenement: Event, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
+        date = self.obtenir_date_plus_proche_dans_plage(evenement, date_debut, date_fin)
+
+        print("DEBUG")
+        print(date_debut)
+        print(date)
+        print(date_fin)
 
         if self.nombre_clics == 0:
             self.date_une = date

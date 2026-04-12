@@ -240,7 +240,7 @@ class Interface(tk.Tk):
 
         if not self.donnees.est_vide():
             self.date_debut = self.donnees.obtenir_premiere_date()
-            self.date_fin = self.calculer_jour_suivant(self.date_debut)
+            self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
             self.afficher_graphe()
             self.afficher_jour_barre_outils()
 
@@ -300,7 +300,7 @@ class Interface(tk.Tk):
         if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
             return
 
-        self.date_fin = self.calculer_jour_suivant(self.date_debut)
+        self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
 
         self.graphe_2d.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin)
         self.interactions.tracer_lignes(self.ax_2d, self.date_debut, self.date_fin)
@@ -325,24 +325,27 @@ class Interface(tk.Tk):
 
         self.afficher_jour_barre_outils()
 
-    def calculer_jour_suivant(self, jour: datetime):
+    def ajouter_24_heures(self, jour: datetime):
         return jour + pd.Timedelta(days=1)
 
-    def calculer_jour_precedent(self, jour: datetime):
+    def soustraire_24_heures(self, jour: datetime):
         return jour - pd.Timedelta(days=1)
+
+    def ajouter_23_heures_59_minutes_et_59_secondes(self, jour: datetime):
+        return jour + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
 
     def sauter_au_jour_suivant(self):
         if self.donnees.est_vide() or self.date_debut >= self.donnees.obtenir_derniere_date():
             return
 
-        self.date_debut = self.calculer_jour_suivant(self.date_debut)
+        self.date_debut = self.ajouter_24_heures(self.date_debut)
         self.afficher_graphe()
 
     def sauter_au_jour_precedent(self):
         if self.donnees.est_vide() or self.date_debut <= self.donnees.obtenir_premiere_date():
             return
 
-        self.date_debut = self.calculer_jour_precedent(self.date_debut)
+        self.date_debut = self.soustraire_24_heures(self.date_debut)
         self.afficher_graphe()
 
     def sauter_au_premier_jour(self):
