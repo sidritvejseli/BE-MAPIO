@@ -1,3 +1,4 @@
+import logging
 import os
 import pandas as pd
 import tkinter as tk
@@ -17,12 +18,17 @@ from graphes import Graphe2D, Graphe3D
 from interactions import Interactions
 
 
-ItemsMenu: TypeAlias = list[tuple[str, Callable, str]]
+ItemsMenu: TypeAlias = list[tuple[str, str, Callable]]
+# (Titre de l'item, Raccourci, Fonction appelée). Pour un séparateur, on met None.
+
 BarreMenus: TypeAlias = list[tuple[str, ItemsMenu]]
+# (Nom du menu déroulant, Description du menu déroulant).
 
 BarreOutils: TypeAlias = list[tuple[str, Callable]]
+# (Titre de l'outil, Fonction appelée).
 
 Onglets: TypeAlias = dict[str, ttk.Frame]
+# (Nom de l'onglet -> Onglet).
 
 
 class Interface(tk.Tk, Interactions):
@@ -31,46 +37,48 @@ class Interface(tk.Tk, Interactions):
 
         super().__init__()
 
+        self.logger = logging.getLogger()
+
         self.description_barre_menus: BarreMenus = [
             (
                 "Fichier",
                 [
-                    ("Charger un fichier", None, self._action_charger),
-                    ("Fermer sans enregistrer", None, self._action_fermer),
+                    ("Charger un fichier", None, self.charger_fichier),
+                    ("Fermer sans enregistrer", None, self.fermer_fichier),
                     None,
-                    ("Enregistrer sous", None, self._action_sauvegarder),
+                    ("Enregistrer sous", None, self.sauvegarder_fichier),
                     None,
-                    ("Quitter", None, self._action_quitter),
+                    ("Quitter", None, self.quitter_programme),
                 ],
             ),
             (
                 "Actions",
                 [
-                    ("Invalider toutes les données", None, self._non_dispo),
-                    ("Invalider les données du jour", None, self._non_dispo),
+                    ("Invalider toutes les données", None, self.afficher_indisponible),
+                    ("Invalider les données du jour", None, self.afficher_indisponible),
                     None,
-                    ("Annuler", "Ctrl+Z", self._non_dispo),
+                    ("Annuler", "Ctrl+Z", self.afficher_indisponible),
                     None,
-                    ("Appliquer un facteur de correction", None, self._non_dispo),
+                    ("Appliquer un facteur de correction", None, self.afficher_indisponible),
                 ],
             ),
             (
                 "Navigation",
                 [
-                    ("Sauter au premier jour", None, self.premier_jour),
-                    ("Sauter au dernier jour", None, self.dernier_jour),
+                    ("Sauter au premier jour", None, self.sauter_au_premier_jour),
+                    ("Sauter au dernier jour", None, self.sauter_au_dernier_jour),
                     None,
-                    ("Sauter au jour précédent", None, self.jour_precedent),
-                    ("Sauter au jour suivant", None, self.jour_suivant),
+                    ("Sauter au jour précédent", None, self.sauter_au_jour_precedent),
+                    ("Sauter au jour suivant", None, self.sauter_au_jour_suivant),
                 ],
             ),
         ]
 
         self.description_barre_outils: BarreOutils = [
-            ("|◀ Premier", self.premier_jour),
-            ("◀ Precedent", self.jour_precedent),
-            ("Suivant ▶", self.jour_suivant),
-            ("Dernier ▶|", self.dernier_jour),
+            ("|◀ Premier", self.sauter_au_premier_jour),
+            ("◀ Précédent", self.sauter_au_jour_precedent),
+            ("Suivant ▶", self.sauter_au_jour_suivant),
+            ("Dernier ▶|", self.sauter_au_dernier_jour),
             None,
             ("Actualiser", None),
             ("Invalider jour", None),
@@ -79,17 +87,17 @@ class Interface(tk.Tk, Interactions):
             ("Supprimer plage", self.supprimer_plage),
         ]
 
-        self.description_barre_onglets = ["Particules", "Fonctionnement", "Graphe 3D"]
+        self.description_barre_onglets: list[str] = ["Particules", "Fonctionnement", "Graphe 3D"]
 
         # Configuration.
-        self.config = self._load_config("config.yaml")
+        self.config = self.charger_configuration("config.yaml")
 
         # Données.
-        self.donnees = Donnees()
-        self.donnees_originales = Donnees()
+        self.donnees: Donnees = Donnees()
+        self.donnees_originales: Donnees = Donnees()
         self.fichier_courant = None
-        self.date_debut = None
-        self.date_fin = None
+        self.date_debut: datetime = None
+        self.date_fin: datetime = None
         self.tooltip = None
 
         # Plage de sélection des données.
@@ -107,8 +115,8 @@ class Interface(tk.Tk, Interactions):
         self.resizable(True, True)
 
         # Graphes.
-        self.graphe_2d = Graphe2D()
-        self.graphe_3d = Graphe3D()
+        self.graphe_2d: Graphe2D = Graphe2D()
+        self.graphe_3d: Graphe3D = Graphe3D()
 
         self.construire_barre_menus()
 
@@ -148,15 +156,6 @@ class Interface(tk.Tk, Interactions):
         self.zone_affichage_graphe_3d = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.cadre_graphe_3d)
         self.zone_affichage_graphe_3d.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
 
-        # # plage
-        # # interaction de la plage
-        # self.ax_2d = self.graphe_2d.ax
-
-        # # plage connex event souris
-        # # Quand l’utilisateur clique sur le graphe ça appelle la fonction _au_clic
-        # self.zone_affichage_graphe_2d.mpl_connect("button_press_event", self.repondre_a_un_clic_droit)
-        # self.zone_affichage_graphe_2d.mpl_connect("motion_notify_event", self.repondre_a_un_survol_souris)
-
     def construire_onglet_graphe_3d(self):
         # Frame principal qui va contenir le graphique
         self.frame_3d_individuel = tk.Frame(self.onglets["Graphe 3D"])
@@ -166,33 +165,36 @@ class Interface(tk.Tk, Interactions):
         self.canvas_3d_individuel = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.frame_3d_individuel)
         self.canvas_3d_individuel.get_tk_widget().pack(fill="both", expand=True)
 
-    # config yaml
+    def charger_configuration(self, chemin):
+        if os.path.exists(chemin):
+            with open(chemin, "r", encoding="utf-8") as fichier:
+                return yaml.safe_load(fichier) or {}
 
-    def _load_config(self, path):
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                return yaml.safe_load(f) or {}
-        print(f"config.yaml introuvable : {path}")
+        self.logger.warning(f"Fichier de configuration {chemin} introuvable.")
         return {}
 
-    # fonctions utilitaires
+    def afficher_indisponible(self):
+        messagebox.showinfo("Info", "Fonctionnalité pas encore disponible.")
 
-    def _non_dispo(self):
-        messagebox.showinfo("Info", "Fonctionnalite pas encore disponible")
-
-    # refresh
-
-    def _refresh_all(self):
-        if self.donnees.est_vide():
+    def afficher_jour_barre_outils(self):
+        if self.donnees.est_vide() or self.date_debut is None:
             return
-        if self.date_debut is not None:
-            self.barre_outils_etiquette_jour.config(text=f"Jour affiche : {self.date_debut}")
 
-    def _action_charger(self):
-        chemin_initial = self.config.get("repertoires", {}).get("donnees", "")
+        self.barre_outils_etiquette_jour.config(text=f"Jour affiché : {self.date_debut.strftime("%Y-%m-%d")}")
+
+    def afficher_aucun_fichier_charge_barre_outils(self):
+        if self.donnees.est_vide() or self.date_debut is None:
+            return
+
+        self.barre_outils_etiquette_jour.config(text="Aucun fichier chargé.")
+
+    def charger_fichier(self):
+        chemin_relatif_initial = self.config.get("repertoires", {}).get("donnees", "")
+
+        # FIXME : Le chemin initial est relatif, bug potentiel si le répertoire de données inscrit dans le fichier config.yaml n'est pas dans le même dossier que le programme.
 
         chemin_absolu_chargement = filedialog.askopenfilename(
-            initialdir=chemin_initial,
+            initialdir=chemin_relatif_initial,
             filetypes=[("CSV files", "*.csv"), ("All", "*.*")],
         )
 
@@ -202,24 +204,25 @@ class Interface(tk.Tk, Interactions):
         self.donnees.charger_fichier_csv(chemin_absolu_chargement)
 
         if not self.donnees.est_vide():
-            self.date_debut = self.donnees.obtenir_jour_minimum()
+            self.date_debut = self.donnees.obtenir_premiere_date()
             self.date_fin = self.calculer_jour_suivant(self.date_debut)
             self.afficher_graphe()
-            self.barre_outils_etiquette_jour.config(text=f"Jour affiche : {self.date_debut}")
+            self.afficher_jour_barre_outils()
 
-    def _action_fermer(self):
+    def fermer_fichier(self):
         if self.donnees.est_vide():
             return
-        if messagebox.askyesno("Confirmer", "Fermer sans sauvegarder ?"):
+
+        if messagebox.askyesno("Confirmer", "Fermer sans enregistrer ?"):
             self.donnees.fermer_fichier_csv()
             self.date_debut = None
             self.date_fin = None
-            self.barre_outils_etiquette_jour.config(text="Aucun fichier charge")
+            self.afficher_aucun_fichier_charge_barre_outils()
 
-    def _action_sauvegarder(self):
-        cfg_rep = self.config.get("repertoires", {})
-        dossier_resultats = cfg_rep.get("resultats", "resultats/")
-        dossier_flags = cfg_rep.get("flags", "resultats/flags/")
+    def sauvegarder_fichier(self):
+        repertoires_configuration = self.config.get("repertoires", {})
+        dossier_resultats = repertoires_configuration.get("resultats", "resultats/")
+        dossier_flags = repertoires_configuration.get("flags", "resultats/flags/")
 
         if self.donnees.est_vide():
             messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
@@ -235,11 +238,9 @@ class Interface(tk.Tk, Interactions):
         self.donnees.sauvegarder_fichier_csv(chemin_absolu_sauvegarde)
         self.donnees.fermer_fichier_csv()
 
-    def _action_quitter(self):
+    def quitter_programme(self):
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
             self.destroy()
-
-    # affichage graphe
 
     def afficher_graphe(self):
 
@@ -249,6 +250,7 @@ class Interface(tk.Tk, Interactions):
             return
 
         self.date_fin = self.calculer_jour_suivant(self.date_debut)
+
         self.graphe_2d.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin)
         self.zone_affichage_graphe_2d.draw()
 
@@ -266,55 +268,51 @@ class Interface(tk.Tk, Interactions):
         self.graphe_3d.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin)
         self.zone_affichage_graphe_3d.draw()
 
-        # On met à jour l'affichage dans Tkinter
         self.canvas_3d_individuel.draw()
 
-        self.barre_outils_etiquette_jour.config(text=f"Jour affiche : {self.date_debut}")
+        self.afficher_jour_barre_outils()
 
-    # navigation jours
+    def calculer_jour_suivant(self, jour: datetime):
+        return jour + pd.Timedelta(days=1)
 
-    def jour_suivant(self):
-        if self.donnees.est_vide():
+    def calculer_jour_precedent(self, jour: datetime):
+        return jour - pd.Timedelta(days=1)
+
+    def sauter_au_jour_suivant(self):
+        if self.donnees.est_vide() or self.date_debut >= self.donnees.obtenir_derniere_date():
             return
-
-        max_day = self.donnees.obtenir_jour_maximum()
-        if self.date_debut < max_day:
-            self.date_debut += pd.Timedelta(days=1)
-            self.afficher_graphe()
-
-    def jour_precedent(self):
-        if self.donnees.est_vide():
-            return
-
-        min_day = self.donnees.obtenir_jour_minimum()
-        if self.date_debut > min_day:
-            self.date_debut -= pd.Timedelta(days=1)
-            self.afficher_graphe()
-
-    def premier_jour(self):
-        if self.donnees.est_vide():
-            return
-        premier_j = self.donnees.obtenir_jour_minimum()
-        self.date_debut = premier_j
+        self.date_debut = self.calculer_jour_suivant(self.date_debut)
         self.afficher_graphe()
 
-    def dernier_jour(self):
+    def sauter_au_jour_precedent(self):
+        if self.donnees.est_vide() or self.date_debut <= self.donnees.obtenir_premiere_date():
+            return
+
+        self.date_debut = self.calculer_jour_precedent(self.date_debut)
+        self.afficher_graphe()
+
+    def sauter_au_premier_jour(self):
         if self.donnees.est_vide():
             return
-        dernier_j = self.donnees.obtenir_jour_maximum()
-        self.date_debut = dernier_j
+
+        self.date_debut = self.donnees.obtenir_premiere_date()
+        self.afficher_graphe()
+
+    def sauter_au_dernier_jour(self):
+        if self.donnees.est_vide():
+            return
+
+        self.date_debut = self.donnees.obtenir_derniere_date()
         self.afficher_graphe()
 
     # demande du facteur
     def demander_facteur(self):
         facteur = askfloat("Facteur", "Multiplier par :")
+
         if facteur is None:
             return
-        # appel de la fonction interaction
-        self.appliquer_facteur(facteur)
 
-    def calculer_jour_suivant(self, jour: datetime):
-        return jour + pd.Timedelta(days=1)
+        self.appliquer_facteur(facteur)
 
     def construire_menu_deroulant(self, barre_menus: Menu, nom_menu_deroulant: str, items_menu_deroulant: ItemsMenu):
         menu_deroulant = tk.Menu(barre_menus, tearoff=False)
@@ -355,7 +353,7 @@ class Interface(tk.Tk, Interactions):
             tk.Button(barre_outils, text=etiquette, command=fonction).pack(side=tk.LEFT, padx=2, pady=2)
 
         self.barre_outils_etiquette_jour = tk.Label(
-            barre_outils, text="Aucun fichier chargé", font=("Arial", 10, "bold")
+            barre_outils, text="Aucun fichier chargé.", font=("Arial", 10, "bold")
         )
         self.barre_outils_etiquette_jour.pack(side=tk.RIGHT, padx=10)
 

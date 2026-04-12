@@ -2,6 +2,7 @@ from __future__ import annotations
 
 
 import copy
+import logging
 import os
 import pandas as pd
 
@@ -13,6 +14,7 @@ from pandas import DataFrame, Index
 class Donnees:
 
     def __init__(self):
+        self.logger = logging.getLogger()
         self.initialiser_donnees()
 
     def initialiser_donnees(self) -> None:
@@ -35,13 +37,19 @@ class Donnees:
         self.convertir_donnees_en_float()
         self.ajouter_drapeaux()
 
+        self.logger.info(f"Fichier {self.nom_fichier} chargé.")
+
     def fermer_fichier_csv(self) -> None:
+        self.logger.info(f"Fichier {self.nom_fichier} fermé.")
+
         self.initialiser_donnees()
 
         # TODO : Ajouter messages de debugging dans le terminal.
 
     def sauvegarder_fichier_csv(self, chemin_absolu_sauvegarde) -> None:
         self.dataframe.to_csv(chemin_absolu_sauvegarde)
+
+        self.logger.info(f"Fichier {self.nom_fichier} sauvegardé en {chemin_absolu_sauvegarde}.")
 
         # TODO : Ajout de la sauvegarde séparée du fichier "filtre" et des drapeaux.
 
@@ -51,10 +59,10 @@ class Donnees:
     def obtenir_nombre_colonnes(self) -> int:
         return self.dataframe.shape[1]
 
-    def obtenir_jour_minimum(self) -> datetime:
+    def obtenir_premiere_date(self) -> datetime:
         return self.dataframe.index.min()
 
-    def obtenir_jour_maximum(self) -> datetime:
+    def obtenir_derniere_date(self) -> datetime:
         return self.dataframe.index.max()
 
     def obtenir_noms_colonnes(self) -> Index:

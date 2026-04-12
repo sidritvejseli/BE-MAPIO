@@ -1,3 +1,4 @@
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -12,7 +13,12 @@ from donnees import Donnees
 class Graphe2D:
 
     def __init__(self):
+        self.logger = logging.getLogger()
+
         self.fig, self.ax = plt.subplots()
+
+    def est_vide(self):
+        return not self.ax.has_data()
 
     def tracer_graphe_2d(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
         self.effacer_graphe_2d()
