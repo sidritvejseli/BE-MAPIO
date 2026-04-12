@@ -303,6 +303,8 @@ class Interface(tk.Tk):
         self.date_fin = self.calculer_jour_suivant(self.date_debut)
 
         self.graphe_2d.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin)
+        self.interactions.tracer_lignes(self.ax_2d, self.date_debut, self.date_fin)
+
         self.zone_affichage_graphe_2d.draw()
 
         # Initialisation de l'infobulle.

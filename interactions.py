@@ -76,14 +76,22 @@ class Interactions:
         if self.ligne_une is None:
             return
 
-        self.ligne_une.remove()
+        try:
+            self.ligne_une.remove()
+        except NotImplementedError:
+            pass
+
         self.ligne_une = None
 
     def supprimer_ligne_deux(self):
         if self.ligne_deux is None:
             return
 
-        self.ligne_deux.remove()
+        try:
+            self.ligne_deux.remove()
+        except NotImplementedError:
+            pass
+
         self.ligne_deux = None
 
     def reinitialiser_plage(self):
@@ -157,7 +165,7 @@ class Interactions:
             return doit_rafraichir
 
         if evenement.button == 1:
-            self.traiter_clic_gauche(evenement, ax_2d)
+            self.traiter_clic_gauche(evenement, ax_2d, date_debut, date_fin)
             doit_rafraichir = 1
 
         if evenement.button == 3:
@@ -165,17 +173,39 @@ class Interactions:
 
         return doit_rafraichir
 
-    def traiter_clic_gauche(self, evenement: Event, ax_2d: Axes):
+    def tracer_ligne_une(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
+        if self.date_une is None or date_debut is None or date_fin is None:
+            return
+
+        if self.date_une < date_debut or self.date_une > date_fin:
+            return
+
+        self.ligne_une = ax_2d.axvline(self.date_une, color="red", linestyle="--")
+
+    def tracer_ligne_deux(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
+        if self.date_deux is None or date_debut is None or date_fin is None:
+            return
+
+        if self.date_deux < date_debut or self.date_deux > date_fin:
+            return
+
+        self.ligne_deux = ax_2d.axvline(self.date_deux, color="red", linestyle="--")
+
+    def tracer_lignes(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
+        self.tracer_ligne_une(ax_2d, date_debut, date_fin)
+        self.tracer_ligne_deux(ax_2d, date_debut, date_fin)
+
+    def traiter_clic_gauche(self, evenement: Event, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
         date = mdates.num2date(evenement.xdata).replace(tzinfo=None)
 
         if self.nombre_clics == 0:
             self.date_une = date
-            self.ligne_une = ax_2d.axvline(date, color="red", linestyle="--")
+            self.tracer_ligne_une(ax_2d, date_debut, date_fin)
             self.incrementer_nombre_clics()
 
         elif self.nombre_clics == 1:
             self.date_deux = date
-            self.ligne_deux = ax_2d.axvline(date, color="red", linestyle="--")
+            self.tracer_ligne_deux(ax_2d, date_debut, date_fin)
             self.incrementer_nombre_clics()
 
         elif self.nombre_clics == 2:
@@ -226,7 +256,5 @@ class Interactions:
         # TODO : Une ligne où la concentration est NaN, doit-elle pouvoir être invalidée ? Ou faut-il l'ignorer ?
 
         # FIXME : Si on invalide la toute dernière donnée ou bien toutes les données d'une page, toutes les données sont invalidées.
-
-        # FIXME : Impossible d'invalider des données sur plusieurs pages.
 
         # FIXME : Corriger le débordement de la plage sur les autres pages quand on sélectionne une plage sur une extrémité.
