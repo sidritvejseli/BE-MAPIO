@@ -20,19 +20,30 @@ class Interactions:
     def __init__(self):
         self.logger = logging.getLogger()
 
-        self.date_une: datetime = None
-        self.date_deux: datetime = None
+        #les deux borne de la plage selectionne
+        self.date_debut: datetime = None
+        self.date_fin: datetime = None
 
-        self.ligne_une: Line2D = None
-        self.ligne_deux: Line2D = None
+        #trait rouge verticaux du graphe
+        self.ligne_debut: Line2D = None
+        self.ligne_fin: Line2D = None
 
-        self.distances_entre_donnees_et_souris: DataFrame = None
-        self.donnees_affichees_valides: Donnees = None
+        # distances calculees entre chaque point et la souris
+        self.distances_point_souris: DataFrame = None
 
+        #points visibles a l'ecran
+        self.points_valides: Donnees = None
+        #nb clc pour enlever les trait
         self.nombre_clics = 0
 
-    # fonction de calcul de distances entres les points et la souris et les points valides
-    def calculer_distances_entre_donnees_et_souris(self, evenement: Event, donnees: Donnees, ax_2d: Axes) -> DataFrame:
+
+
+
+
+
+
+    # calcule la distance normalisee entre chaque point et la souris
+    def calculer_distances(self, evenement: Event, donnees: Donnees, ax_2d: Axes) -> DataFrame:
         dataframe = donnees.obtenir_dataframe()
 
         x_points = mdates.date2num(dataframe.index)
@@ -41,7 +52,7 @@ class Interactions:
         x_souris = evenement.xdata
         y_souris = evenement.ydata
 
-        # Poids pour équilibrer les abscisses et les ordonnees.
+        # coordonnees de la souris
         x_limite = ax_2d.get_xlim()
         y_limite = ax_2d.get_ylim()
 
@@ -50,58 +61,78 @@ class Interactions:
         y_echelle = 1 / (y_limite[1] - y_limite[0])
 
         # Calcul de la distance euclidienne.
-        distances = np.sqrt(((x_points - x_souris) * x_echelle) ** 2 + ((y_points - y_souris) * y_echelle) ** 2)
+        distances = np.sqrt(
+            ((x_points - x_souris) * x_echelle) ** 2 + 
+            ((y_points - y_souris) * y_echelle) ** 2)
 
         return distances
+    
+    #--------- Calcule des distances
 
-    def trouver_date_plus_proche_souris(self) -> datetime:
-        if self.donnees_affichees_valides.est_vide():
+
+    # retourne la date du point le plus proche de la souris
+    def trouver_date_plus_proche(self) -> datetime:
+        if self.points_valides.est_vide():
             return
 
-        return self.distances_entre_donnees_et_souris.idxmin()
+        return self.distances_point_souris.idxmin()
 
-    def mettre_a_jour_donnees_affichees(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
-        self.donnees_affichees_valides = donnees.obtenir_donnees_valides()
-        self.donnees_affichees_valides = self.donnees_affichees_valides.obtenir_dates(date_debut, date_fin)
 
-    def mettre_a_jour_distances_entre_donnees_et_souris(self, evenement: Event, ax_2d: Axes):
-        self.distances_entre_donnees_et_souris = self.calculer_distances_entre_donnees_et_souris(
-            evenement, self.donnees_affichees_valides, ax_2d
+
+    def maj_donnees_affichees(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
+        self.points_valides = donnees.obtenir_donnees_valides()
+        self.points_valides = self.points_valides.obtenir_dates(date_debut, date_fin)
+
+
+    # recalcule les distances entre les points valides et la souris
+    def maj_distances(self, evenement: Event, ax_2d: Axes):
+        self.distances_point_souris = self.calculer_distances(
+            evenement, self.points_valides, ax_2d
         )
 
+
+#--------Gestion plage
+
+    # incremente le compteur de clics en bouclant : 0 - 1 - 2 - 0
     def incrementer_nombre_clics(self):
         self.nombre_clics = (self.nombre_clics + 1) % 3
 
-    def supprimer_ligne_une(self):
-        if self.ligne_une is None:
+    def supprimer_ligne_debut(self):
+        if self.ligne_debut is None:
             return
 
         try:
-            self.ligne_une.remove()
+            self.ligne_debut.remove()
         except NotImplementedError:
             pass
 
-        self.ligne_une = None
+        self.ligne_debut = None
 
-    def supprimer_ligne_deux(self):
-        if self.ligne_deux is None:
+    def supprimer_ligne_fin(self):
+        if self.ligne_fin is None:
             return
 
         try:
-            self.ligne_deux.remove()
+            self.ligne_fin.remove()
         except NotImplementedError:
             pass
 
-        self.ligne_deux = None
+        self.ligne_fin = None
 
+    
+    
+    # supprime les deux traits et remet tout a zero
     def reinitialiser_plage(self):
-        self.supprimer_ligne_une()
-        self.supprimer_ligne_deux()
-        self.date_une = None
-        self.date_deux = None
+        self.supprimer_ligne_debut()
+        self.supprimer_ligne_fin()
+        self.date_debut = None
+        self.date_fin = None
         self.nombre_clics = 0
 
-    def afficher_infobulle_apres_survol_souris(
+
+#-----infobulle
+
+    def info_point(
         self,
         evenement: Event,
         donnees: Donnees,
@@ -112,6 +143,7 @@ class Interactions:
     ):
         doit_rafraichir = False
 
+        # si pas de donnees ou pas de tooltip on ne fait rien du tout
         if donnees.est_vide() or infobulle is None:
             return doit_rafraichir
 
@@ -122,34 +154,40 @@ class Interactions:
             infobulle.set_visible(False)
             return doit_rafraichir
 
-        self.mettre_a_jour_donnees_affichees(donnees, date_debut, date_fin)
+        self.maj_donnees_affichees(donnees, date_debut, date_fin)
 
-        if self.donnees_affichees_valides.est_tout_na_concentration():
+
+        # si toutes les concentrations sont NaN il n'y a rien a afficher
+        if self.points_valides.est_tout_na_concentration():
             return doit_rafraichir
 
-        self.mettre_a_jour_distances_entre_donnees_et_souris(evenement, ax_2d)
-
-        date_plus_proche = self.trouver_date_plus_proche_souris()
+        self.maj_distances(evenement, ax_2d)
+        date_plus_proche = self.trouver_date_plus_proche()
 
         # Seuil adaptatif (2% de la diagonale du graphe).
         seuil = 0.02
-
-        if self.distances_entre_donnees_et_souris.loc[date_plus_proche] > seuil:
+        if self.distances_point_souris.loc[date_plus_proche] > seuil:
             infobulle.set_visible(False)
             return doit_rafraichir
 
-        dataframe_valides: DataFrame = self.donnees_affichees_valides.obtenir_dataframe()
 
+        #recupere la concentration du point le plus proche
+        dataframe_valides: DataFrame = self.points_valides.obtenir_dataframe()
         concentration = dataframe_valides.loc[date_plus_proche, "smps_concTotal"]
 
-        infobulle.set_text(f"{date_plus_proche.strftime('%d/%m %H:%M')}\nConc : {concentration:.1f}")
+        # met a jour le texte et la position du tooltip sur le graphe
+        infobulle.set_text(
+            f"{date_plus_proche.strftime('%d/%m %H:%M')}\nConc : {concentration:.1f}")
 
         # Positionnement de l'infobulle sur le graphe.
         infobulle.xy = (mdates.date2num(date_plus_proche), concentration)
-
         infobulle.set_visible(True)
 
         return doit_rafraichir
+
+
+
+#------Gestion des clic
 
     def repondre_apres_clic_souris(
         self,
@@ -161,39 +199,55 @@ class Interactions:
     ):
         doit_rafraichir = False
 
+        # clic hors du graphe : on ignore
         if evenement.inaxes != ax_2d or evenement.xdata is None:
             return doit_rafraichir
+        
 
+        # bouton 1 = clic gauche → selection de plage
         if evenement.button == 1:
             self.traiter_clic_gauche(evenement, ax_2d, date_debut, date_fin)
             doit_rafraichir = 1
 
+
+         # bouton 3 = clic droit → suppression d'un point
         if evenement.button == 3:
             doit_rafraichir = self.traiter_clic_droit(evenement, donnees, ax_2d, date_debut, date_fin)
 
         return doit_rafraichir
+    
 
-    def tracer_ligne_une(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
-        if self.date_une is None:
+
+
+
+    def tracer_ligne_debut(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
+        if self.date_debut is None or date_debut is None or date_fin is None:
             return
 
-        if self.date_une < date_debut or self.date_une > date_fin:
+        if self.date_debut < date_debut or self.date_debut > date_fin:
             return
 
-        self.ligne_une = ax_2d.axvline(self.date_une, color="red", linestyle="--")
+        self.ligne_debut = ax_2d.axvline(self.date_debut, color="red", linestyle="--")
 
-    def tracer_ligne_deux(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
-        if self.date_deux is None:
+
+
+
+
+    def tracer_ligne_fin(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
+        if self.date_fin is None or date_debut is None or date_fin is None:
             return
 
-        if self.date_deux < date_debut or self.date_deux > date_fin:
+        if self.date_fin < date_debut or self.date_fin > date_fin:
             return
 
-        self.ligne_deux = ax_2d.axvline(self.date_deux, color="red", linestyle="--")
+        self.ligne_fin = ax_2d.axvline(self.date_fin, color="red", linestyle="--")
+
+
+
 
     def tracer_lignes(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
-        self.tracer_ligne_une(ax_2d, date_debut, date_fin)
-        self.tracer_ligne_deux(ax_2d, date_debut, date_fin)
+        self.tracer_ligne_debut(ax_2d, date_debut, date_fin)
+        self.tracer_ligne_fin(ax_2d, date_debut, date_fin)
 
     def obtenir_date_plus_proche_dans_plage(self, evenement: Event, date_debut: datetime, date_fin: datetime):
         date = mdates.num2date(evenement.xdata).replace(tzinfo=None)
@@ -213,17 +267,19 @@ class Interactions:
         date = self.obtenir_date_plus_proche_dans_plage(evenement, date_debut, date_fin)
 
         if self.nombre_clics == 0:
-            self.date_une = date
-            self.tracer_ligne_une(ax_2d, date_debut, date_fin)
+            self.date_debut = date
+            self.tracer_ligne_debut(ax_2d, date_debut, date_fin)
             self.incrementer_nombre_clics()
 
         elif self.nombre_clics == 1:
-            self.date_deux = date
-            self.tracer_ligne_deux(ax_2d, date_debut, date_fin)
+            self.date_fin = date
+            self.tracer_ligne_fin(ax_2d, date_debut, date_fin)
             self.incrementer_nombre_clics()
 
         elif self.nombre_clics == 2:
             self.reinitialiser_plage()
+
+
 
     def traiter_clic_droit(
         self, evenement: Event, donnees: Donnees, ax_2d: Axes, date_debut: datetime, date_fin: datetime
@@ -233,17 +289,17 @@ class Interactions:
 
         doit_rafraichir = False
 
-        self.mettre_a_jour_donnees_affichees(donnees, date_debut, date_fin)
+        self.maj_donnees_affichees(donnees, date_debut, date_fin)
 
-        if self.donnees_affichees_valides.est_tout_na_concentration():
+        if self.points_valides.est_tout_na_concentration():
             return doit_rafraichir
 
-        self.mettre_a_jour_distances_entre_donnees_et_souris(evenement, ax_2d)
+        self.maj_distances(evenement, ax_2d)
 
-        date_plus_proche = self.trouver_date_plus_proche_souris()
+        date_plus_proche = self.trouver_date_plus_proche()
 
         seuil = 0.02
-        if self.distances_entre_donnees_et_souris.loc[date_plus_proche] > seuil:
+        if self.distances_point_souris.loc[date_plus_proche] > seuil:
             return doit_rafraichir
 
         donnees.invalider_date(date_plus_proche)
@@ -252,18 +308,22 @@ class Interactions:
 
         doit_rafraichir = evenement.button
         return doit_rafraichir
+    
+
+    #-----Suppression plage
 
     def supprimer_plage(self, donnees: Donnees):
         doit_rafraichir = False
 
+        # il faut exactement 2 clics
         if self.nombre_clics != 2:
             self.logger.info("Suppression de la plage impossible, car aucune plage sélectionnée.")
             self.reinitialiser_plage()
             return doit_rafraichir
 
-        self.date_une, self.date_deux = sorted((self.date_une, self.date_deux))
+        self.date_debut, self.date_fin = sorted((self.date_debut, self.date_fin))
 
-        donnees.invalider_dates(self.date_une, self.date_deux)
+        donnees.invalider_dates(self.date_debut, self.date_fin)
 
         self.reinitialiser_plage()
 

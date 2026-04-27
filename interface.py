@@ -20,7 +20,7 @@ from donnees import Donnees
 from graphes import Graphe2D, Graphe3D
 from interactions import Interactions
 
-
+#-
 ItemsMenu: TypeAlias = list[tuple[str, str, Callable]]
 # (Titre de l'item, Raccourci, Fonction appelée). Pour un séparateur, on met None.
 
@@ -132,8 +132,8 @@ class Interface(tk.Tk):
         self.afficher_onglet_provisoire(self.onglets["Fonctionnement"])
         self.construire_onglet_graphe_3d()
 
-    def afficher_infobulle_apres_survol_souris(self, evenement: Event):
-        doit_rafraichir = self.interactions.afficher_infobulle_apres_survol_souris(
+    def info_point(self, evenement: Event):
+        doit_rafraichir = self.interactions.info_point(
             evenement,
             self.donnees,
             self.ax_2d,
@@ -181,7 +181,7 @@ class Interface(tk.Tk):
         self.ax_2d = self.graphe_2d.ax
 
         self.zone_affichage_graphe_2d.mpl_connect("button_press_event", self.repondre_apres_clic_souris)
-        self.zone_affichage_graphe_2d.mpl_connect("motion_notify_event", self.afficher_infobulle_apres_survol_souris)
+        self.zone_affichage_graphe_2d.mpl_connect("motion_notify_event", self.info_point)
 
         self.cadre_graphe_3d = tk.Frame(self.page_principale)
         self.cadre_graphe_3d.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
