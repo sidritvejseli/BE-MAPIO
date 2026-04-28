@@ -49,6 +49,9 @@ class Donnees:
 
         return colonne_concentrations
 
+    def obtenir_valeur_maximum(self):
+        return self.dataframe.max().max()
+
     def charger_fichier_csv(self, chemin_absolu_chargement) -> None:
         self.chemin_absolu = chemin_absolu_chargement
         self.nom_fichier = os.path.basename(self.chemin_absolu)

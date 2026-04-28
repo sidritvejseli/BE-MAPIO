@@ -97,7 +97,7 @@ class Graphe3D:
         self.fig, self.ax = plt.subplots()
         self.colorbar = None
 
-    def tracer_graphe_3d(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
+    def tracer_graphe_3d(self, donnees: Donnees, date_debut: datetime, date_fin: datetime, teneur_maximum):
         self.effacer_graphe_3d()
 
         donnees_dates = donnees.obtenir_dates(date_debut, date_fin)
@@ -115,7 +115,14 @@ class Graphe3D:
 
         dataframe.loc[dataframe_invalides.index] = np.nan  # Suppression des données invalidées dans le graphe 3D.
 
-        carte_thermique = self.ax.imshow(dataframe.T, aspect="auto", origin="lower", cmap="Spectral_r")
+        carte_thermique = self.ax.imshow(
+            dataframe.T,
+            aspect="auto",
+            origin="lower",
+            cmap="Spectral_r",
+            vmin=0,
+            vmax=teneur_maximum,
+        )
 
         particules.convertir_titre_particules_en_float()
 

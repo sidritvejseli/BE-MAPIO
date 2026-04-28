@@ -135,6 +135,8 @@ class Interface(tk.Tk):
         self.graphe_2d: Graphe2D = Graphe2D()
         self.graphe_3d: Graphe3D = Graphe3D()
 
+        self.teneur_maximum = None  # Remarque : Pour garder une échelle constante de couleur du graphe 3D, on garde en mémoire la valeur maximum.
+
         # Construction initiale.
         self.construire_barre_menus()
 
@@ -277,17 +279,22 @@ class Interface(tk.Tk):
             self.afficher_jour_barre_outils()
 
         self.donnees_sans_modification = copy.deepcopy(self.donnees)
+
+        self.teneur_maximum = self.donnees.obtenir_particules().obtenir_valeur_maximum()
         # FIXME : Vérifier de la nécessité de la variable donnees_sans_modification.
 
     def fermer_fichier(self):
         if self.donnees.est_vide():
             return
 
-        if messagebox.askyesno("Confirmer", "Fermer sans enregistrer ?"):
-            self.donnees.fermer_fichier_csv()
-            self.date_debut = None
-            self.date_fin = None
-            self.afficher_aucun_fichier_charge_barre_outils()
+        if not messagebox.askyesno("Confirmer", "Fermer sans enregistrer ?"):
+            return
+
+        self.donnees.fermer_fichier_csv()
+        self.date_debut = None
+        self.date_fin = None
+        self.afficher_aucun_fichier_charge_barre_outils()
+        self.teneur_maximum = None
 
     def sauvegarder_fichier(self):
         repertoires_configuration = self.config.get("repertoires", {})
@@ -349,7 +356,7 @@ class Interface(tk.Tk):
             visible=False,
         )
 
-        self.graphe_3d.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin)
+        self.graphe_3d.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin, self.teneur_maximum)
         self.zone_affichage_graphe_3d.draw()
 
         self.canvas_3d_individuel.draw()
