@@ -9,6 +9,9 @@ class Historique:
         self.pile_retour_avant: deque[list[datetime]] = deque()
 
     def convertir_dates_en_message(self, dates: list[datetime]):
+        if len(dates) == 0:
+            return ""
+
         if len(dates) == 1:
             return "Date supprimée : " + dates[0].strftime("%d/%m/%Y %Hh%M") + ".\n"
 
