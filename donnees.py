@@ -11,6 +11,8 @@ from datetime import datetime
 from pandas import DataFrame, Index
 
 
+from historique import Historique
+
 nom_colonne_concentration = "smps_concTotal"
 
 
@@ -24,6 +26,7 @@ class Donnees:
         self.dataframe = pd.DataFrame()
         self.chemin_absolu = ""
         self.nom_fichier = ""
+        self.historique = Historique()
 
     def est_vide(self) -> bool:
         return self.dataframe.empty
@@ -132,8 +135,29 @@ class Donnees:
     # C'est le comportement souhaité par souci d'optimisation.
     # Si l'on souhaite copier réellement l'objet, remplacer copy.copy() par copy.deepcopy().
 
-    def invalider_date(self, date: datetime) -> None:
+    def invalider_drapeau_date(self, date: datetime) -> None:
         self.dataframe.loc[date, "smps_flag"] = 1
+
+    def valider_drapeau_date(self, date: datetime) -> None:
+        self.dataframe.loc[date, "smps_flag"] = 0
+
+    def invalider_date(self, date: datetime) -> None:
+        self.invalider_drapeau_date(date)
+        self.historique.ajouter_action(date)
+
+    def annuler_invalidation_date(self) -> None:
+        if not self.historique.est_possible_retour_arriere():
+            return
+
+        date = self.historique.retourner_en_arriere()
+        self.valider_drapeau_date(date)
+
+    def retablir_invalidation_date(self) -> None:
+        if not self.historique.est_possible_retour_avant():
+            return
+
+        date = self.historique.retourner_en_avant()
+        self.invalider_drapeau_date(date)
 
     def invalider_dates(self, debut: datetime, fin: datetime) -> None:
         self.dataframe.loc[debut:fin, "smps_flag"] = 1

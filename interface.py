@@ -20,7 +20,7 @@ from donnees import Donnees
 from graphes import Graphe2D, Graphe3D
 from interactions import Interactions
 
-#-
+# -
 ItemsMenu: TypeAlias = list[tuple[str, str, Callable]]
 # (Titre de l'item, Raccourci, Fonction appelée). Pour un séparateur, on met None.
 
@@ -60,7 +60,8 @@ class Interface(tk.Tk):
                     ("Invalider toutes les données", None, self.afficher_indisponible),
                     ("Invalider les données du jour", None, self.afficher_indisponible),
                     None,
-                    ("Annuler", "Ctrl+Z", self.afficher_indisponible),
+                    ("Annuler", "Ctrl+Z", self.annuler),
+                    ("Rétablir", "Ctrl+Shift+Z", self.retablir),
                     None,
                     ("Appliquer un facteur de correction", None, self.afficher_indisponible),
                 ],
@@ -85,12 +86,23 @@ class Interface(tk.Tk):
             None,
             ("Actualiser", None),
             ("Invalider jour", None),
-            ("Annuler", None),
+            ("Annuler", self.annuler),
+            ("Rétablir", self.retablir),
             ("Facteur", self.demander_facteur),
             ("Supprimer plage", self.supprimer_plage),
         ]
 
         self.description_barre_onglets: list[str] = ["Particules", "Fonctionnement", "Graphe 3D"]
+
+        # Remarque : Le lien entre le raccorci clavier et sa fonction appelée par Tkinter est sensible à la casse de la touche.
+        self.description_raccourcis_clavier = [
+            ("<Control-z>", lambda evenement: self.annuler()),
+            ("<Control-Z>", lambda evenement: self.annuler()),
+            ("<Control-Shift-z>", lambda evenement: self.retablir()),
+            ("<Control-Shift-Z>", lambda evenement: self.retablir()),
+        ]
+
+        self.construire_raccourcis_clavier()
 
         # Configuration.
         self.config = self.charger_configuration("config.yaml")
@@ -159,6 +171,14 @@ class Interface(tk.Tk):
 
         elif type_clic == 3:
             self.afficher_graphe()
+
+    def annuler(self):
+        self.donnees.annuler_invalidation_date()
+        self.afficher_graphe()
+
+    def retablir(self):
+        self.donnees.retablir_invalidation_date()
+        self.afficher_graphe()
 
     def supprimer_plage(self):
         self.interactions.supprimer_plage(self.donnees)
@@ -431,3 +451,7 @@ class Interface(tk.Tk):
             font=("Arial", 13),
             fg="grey",
         ).place(relx=0.5, rely=0.5, anchor="center")
+
+    def construire_raccourcis_clavier(self):
+        for raccourci, fonction_appelee in self.description_raccourcis_clavier:
+            self.bind(raccourci, fonction_appelee)
