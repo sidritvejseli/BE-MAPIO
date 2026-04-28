@@ -92,7 +92,12 @@ class Interface(tk.Tk):
             ("Supprimer plage", self.supprimer_plage),
         ]
 
-        self.description_barre_onglets: list[str] = ["Particules", "Fonctionnement", "Graphe 3D"]
+        self.description_barre_onglets: list[str] = [
+            "Particules",
+            "Fonctionnement",
+            "Graphe 3D",
+            "Historique",
+        ]
 
         # Remarque : Le lien entre le raccorci clavier et sa fonction appelée par Tkinter est sensible à la casse de la touche.
         self.description_raccourcis_clavier = [
@@ -144,6 +149,9 @@ class Interface(tk.Tk):
         self.afficher_onglet_provisoire(self.onglets["Fonctionnement"])
         self.construire_onglet_graphe_3d()
 
+        self.journal = None
+        self.construire_journal()
+
     def info_point(self, evenement: Event):
         doit_rafraichir = self.interactions.info_point(
             evenement,
@@ -171,18 +179,22 @@ class Interface(tk.Tk):
 
         elif type_clic == 3:
             self.afficher_graphe()
+            self.mettre_a_jour_journal()
 
     def annuler(self):
         self.donnees.annuler_invalidation_date()
         self.afficher_graphe()
+        self.mettre_a_jour_journal()
 
     def retablir(self):
         self.donnees.retablir_invalidation_date()
         self.afficher_graphe()
+        self.mettre_a_jour_journal()
 
     def supprimer_plage(self):
         self.interactions.supprimer_plage(self.donnees)
         self.afficher_graphe()
+        self.mettre_a_jour_journal()
 
     def construire_onglet_particules(self):
         self.page_principale = tk.Frame(self.onglets["Particules"])
@@ -455,3 +467,19 @@ class Interface(tk.Tk):
     def construire_raccourcis_clavier(self):
         for raccourci, fonction_appelee in self.description_raccourcis_clavier:
             self.bind(raccourci, fonction_appelee)
+
+    def construire_journal(self):
+        self.page_journal = self.onglets["Historique"]
+
+        self.journal = tk.Text(self.page_journal)
+        self.journal.pack(fill=tk.BOTH, expand=True)
+        self.journal.insert("end", "Historique des modifications\n")
+        self.journal.config(state="disabled")
+
+    def mettre_a_jour_journal(self):
+        historique = self.donnees.historique.obtenir_journal()
+        self.journal.config(state="normal")
+        self.journal.delete("1.0", "end")
+        self.journal.insert("end", "Historique des modifications\n\n")
+        self.journal.insert("end", historique + "\n")
+        self.journal.config(state="disabled")
