@@ -47,7 +47,7 @@ class Graphe2D:
         self.legender_titre(date_debut)
         self.legender_abscisses()
         self.legender_ordonnees()
-        self.legender_boite()
+        # self.legender_boite()
 
         self.tracer_grille()
 
@@ -115,7 +115,7 @@ class Graphe3D:
 
         dataframe.loc[dataframe_invalides.index] = np.nan  # Suppression des données invalidées dans le graphe 3D.
 
-        carte_thermique = self.ax.imshow(dataframe.T, aspect="auto", origin="lower", cmap="RdYlBu")
+        carte_thermique = self.ax.imshow(dataframe.T, aspect="auto", origin="lower", cmap="Spectral_r")
 
         particules.convertir_titre_particules_en_float()
 
