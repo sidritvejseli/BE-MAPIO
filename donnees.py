@@ -143,24 +143,30 @@ class Donnees:
 
     def invalider_date(self, date: datetime) -> None:
         self.invalider_drapeau_date(date)
-        self.historique.ajouter_action(date)
+        self.historique.ajouter_action([date])
 
     def annuler_invalidation_date(self) -> None:
         if not self.historique.est_possible_retour_arriere():
             return
 
-        date = self.historique.retourner_en_arriere()
-        self.valider_drapeau_date(date)
+        dates = self.historique.retourner_en_arriere()
+        for date in dates:
+            self.valider_drapeau_date(date)
 
     def retablir_invalidation_date(self) -> None:
         if not self.historique.est_possible_retour_avant():
             return
 
-        date = self.historique.retourner_en_avant()
-        self.invalider_drapeau_date(date)
+        dates = self.historique.retourner_en_avant()
+        for date in dates:
+            self.invalider_drapeau_date(date)
+
+    def invalider_drapeau_dates(self, debut: datetime, fin: datetime) -> None:
+        self.dataframe.loc[debut:fin, "smps_flag"] = 1
 
     def invalider_dates(self, debut: datetime, fin: datetime) -> None:
-        self.dataframe.loc[debut:fin, "smps_flag"] = 1
+        self.invalider_drapeau_dates(debut, fin)
+        self.historique.ajouter_action(self.dataframe.loc[debut:fin].index)
 
     def multiplier_concentration(self, facteur) -> None:
         self.dataframe[nom_colonne_concentration] *= facteur

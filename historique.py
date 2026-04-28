@@ -5,17 +5,17 @@ from datetime import datetime
 class Historique:
 
     def __init__(self):
-        self.pile_retour_arriere = deque()
-        self.pile_retour_avant = deque()
+        self.pile_retour_arriere: deque[list[datetime]] = deque()
+        self.pile_retour_avant: deque[list[datetime]] = deque()
 
-    def ajouter_action(self, date: datetime) -> None:
-        self.pile_retour_arriere.append(date)
+    def ajouter_action(self, dates: list[datetime]) -> None:
+        self.pile_retour_arriere.append(dates)
         self.pile_retour_avant = deque()
 
     def est_possible_retour_arriere(self) -> bool:
         return len(self.pile_retour_arriere) > 0
 
-    def retourner_en_arriere(self) -> datetime:
+    def retourner_en_arriere(self) -> list[datetime]:
         if not self.est_possible_retour_arriere():
             raise IndexError("Erreur : Impossible d'annuler car aucune action à annuler.")
 
@@ -28,7 +28,7 @@ class Historique:
     def est_possible_retour_avant(self) -> bool:
         return len(self.pile_retour_avant) > 0
 
-    def retourner_en_avant(self) -> datetime:
+    def retourner_en_avant(self) -> list[datetime]:
         if not self.est_possible_retour_avant():
             raise IndexError("Erreur : Impossible de rétablir car aucune action à rétablir.")
 
