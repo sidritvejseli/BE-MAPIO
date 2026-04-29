@@ -52,6 +52,22 @@ class Donnees:
     def obtenir_valeur_maximum(self):
         return self.dataframe.max().max()
 
+    def soustraire_donnees(self, donnees_a_soustraire: Donnees) -> Donnees:
+        donnees_soustraites = copy.copy(self)
+
+        donnees_soustraites.obtenir_dataframe().loc[donnees_a_soustraire.obtenir_dataframe().index] = pd.NA
+
+        return donnees_soustraites
+
+    def completer_valeurs_manquantes_jour(self, date_debut: datetime, date_fin: datetime) -> Donnees:
+        jour_et_valeurs_manquantes = copy.copy(self)
+
+        plage = pd.date_range(start=date_debut, end=date_fin, freq="5min")
+
+        jour_et_valeurs_manquantes.dataframe = jour_et_valeurs_manquantes.dataframe.reindex(plage)
+
+        return jour_et_valeurs_manquantes
+
     def charger_fichier_csv(self, chemin_absolu_chargement) -> None:
         self.chemin_absolu = chemin_absolu_chargement
         self.nom_fichier = os.path.basename(self.chemin_absolu)
@@ -90,6 +106,12 @@ class Donnees:
 
     def obtenir_derniere_date(self) -> datetime:
         return self.dataframe.index.max()
+
+    def obtenir_minuit_date(self, date: datetime) -> datetime:
+        return date.floor("D")
+
+    def obtenir_minuit_premiere_date(self) -> datetime:
+        return self.obtenir_minuit_date(self.obtenir_premiere_date())
 
     def obtenir_noms_colonnes(self) -> Index:
         return self.dataframe.columns

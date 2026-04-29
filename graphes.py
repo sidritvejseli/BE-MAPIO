@@ -3,8 +3,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-from datetime import datetime
 import matplotlib.dates as mdates
+import matplotlib.ticker as mticker
+
+
+from datetime import datetime
 from matplotlib.image import AxesImage
 
 
@@ -112,16 +115,18 @@ class Graphe3D:
         # Remarque : Il faut d'abord récupérer la validité des données avant de filtrer par particules,
         # car filtrer par particules enlève la colonne "smps_flag" qui note la validité d'une donnée.
 
-        dataframe = particules.obtenir_dataframe()
-        dataframe_invalides = particules_invalides.obtenir_dataframe()
+        # Suppression des données invalidées dans le graphe 3D.
+        particules_valides = particules.soustraire_donnees(particules_invalides)
+        particules_valides = particules_valides.completer_valeurs_manquantes_jour(date_debut, date_fin)
 
-        dataframe.loc[dataframe_invalides.index] = np.nan  # Suppression des données invalidées dans le graphe 3D.
+        dataframe = particules_valides.obtenir_dataframe()
 
-        carte_thermique = self.ax.imshow(
+        carte_thermique = self.ax.pcolormesh(
+            dataframe.index,
+            dataframe.columns,
             dataframe.T,
-            aspect="auto",
-            origin="lower",
             cmap="Spectral_r",
+            shading="auto",
             vmin=0,
             vmax=teneur_maximum,
         )
@@ -129,15 +134,9 @@ class Graphe3D:
         particules.convertir_titre_particules_en_float()
 
         self.legender_titre(date_debut)
-        self.legender_abscisses(particules)
-        self.legender_ordonnees(particules)
+        self.legender_abscisses()
+        self.legender_ordonnees()
         self.legender_barre_couleurs(carte_thermique)
-
-        # TODO : Affichage des couleurs sur une échelle logarithmique, à la place de linéaire.
-
-        # FIXME : Le graphe 3D affiche les espaces blancs des données invalidées uniquement lorsqu'elles font toujours partie du fichier.
-        # Si on charge un fichier qui ne contient que les données filtrées,
-        # alors l'espace blanc n'apparaît plus, et le graphe donne l'impression d'être continu.
 
     def effacer_graphe_3d(self):
         if self.colorbar is not None:
@@ -149,37 +148,24 @@ class Graphe3D:
     def legender_titre(self, date: datetime):
         self.ax.set_title(f"Jour : {date.date()}")
 
-    def legender_abscisses(self, particules: Donnees, nombre_graduations: int = 12):
+    def legender_abscisses(self):
         self.ax.set_xlabel("Heure")
 
-        graduations_abscisse = np.linspace(
-            start=0,
-            stop=particules.obtenir_nombre_dates() - 1,
-            num=nombre_graduations,
-            dtype=int,
-        )
+        formatter = mdates.DateFormatter("%H:%M")
+        self.ax.xaxis.set_major_formatter(formatter)
 
-        libelles_abscisse = particules.obtenir_dates_echantillon(graduations_abscisse)
-        libelles_abscisse = libelles_abscisse.obtenir_dataframe()[:].strftime("%H:%M")
+        self.ax.tick_params(axis="x")
 
-        self.ax.set_xticks(graduations_abscisse)
-        self.ax.set_xticklabels(libelles_abscisse)
-
-    def legender_ordonnees(self, particules: Donnees, nombre_graduations: int = 10):
+    def legender_ordonnees(self):
         self.ax.set_ylabel("Taille des particules (nanomètres)")
 
-        graduations_ordonnee = np.linspace(
-            start=0,
-            stop=particules.obtenir_nombre_colonnes() - 1,
-            num=nombre_graduations,
-            dtype=int,
-        )
+        self.ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=10))
 
-        libelles_ordonnee = particules.obtenir_noms_colonnes()
-        libelles_ordonnee = libelles_ordonnee[graduations_ordonnee]
+        self.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.2f"))
 
-        self.ax.set_yticks(graduations_ordonnee)
-        self.ax.set_yticklabels(libelles_ordonnee)
+        self.ax.tick_params(axis="y")
+
+        # FIXME : Les ordonnées ne sont pas sur une échelle linéaire.
 
     def legender_barre_couleurs(self, carte_thermique: AxesImage):
 

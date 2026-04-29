@@ -275,7 +275,7 @@ class Interface(tk.Tk):
         self.teneur_maximum = self.donnees.obtenir_particules().obtenir_valeur_maximum()
 
         if not self.donnees.est_vide():
-            self.date_debut = self.donnees.obtenir_premiere_date()
+            self.date_debut = self.donnees.obtenir_minuit_premiere_date()
             self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
             self.afficher_graphe()
             self.afficher_jour_barre_outils()
