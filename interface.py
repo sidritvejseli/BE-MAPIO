@@ -136,6 +136,7 @@ class Interface(tk.Tk):
         self.graphe_3d: Graphe3D = Graphe3D()
 
         self.teneur_maximum = None  # Remarque : Pour garder une échelle constante de couleur du graphe 3D, on garde en mémoire la valeur maximum.
+        self.concentration_maximum = None
 
         # Construction initiale.
         self.construire_barre_menus()
@@ -273,6 +274,7 @@ class Interface(tk.Tk):
         self.donnees.charger_fichier_csv(chemin_absolu_chargement)
 
         self.teneur_maximum = self.donnees.obtenir_particules().obtenir_valeur_maximum()
+        self.concentration_maximum = self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
 
         if not self.donnees.est_vide():
             self.date_debut = self.donnees.obtenir_minuit_premiere_date()
@@ -296,6 +298,7 @@ class Interface(tk.Tk):
         self.date_fin = None
         self.afficher_aucun_fichier_charge_barre_outils()
         self.teneur_maximum = None
+        self.concentration_maximum = None
 
     def sauvegarder_fichier(self):
         repertoires_configuration = self.config.get("repertoires", {})
@@ -341,7 +344,7 @@ class Interface(tk.Tk):
 
         self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
 
-        self.graphe_2d.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin)
+        self.graphe_2d.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin, self.concentration_maximum)
         self.interactions.tracer_lignes(self.ax_2d, self.date_debut, self.date_fin)
 
         self.zone_affichage_graphe_2d.draw()

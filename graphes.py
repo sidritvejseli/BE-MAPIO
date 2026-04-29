@@ -24,7 +24,7 @@ class Graphe2D:
     def est_vide(self):
         return not self.ax.has_data()
 
-    def tracer_graphe_2d(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
+    def tracer_graphe_2d(self, donnees: Donnees, date_debut: datetime, date_fin: datetime, concentration_maximum):
         self.effacer_graphe_2d()
 
         donnees_dates = donnees.obtenir_dates(date_debut, date_fin)
@@ -49,7 +49,7 @@ class Graphe2D:
 
         self.legender_titre(date_debut)
         self.legender_abscisses(date_debut, date_fin)
-        self.legender_ordonnees()
+        self.legender_ordonnees(concentration_maximum)
         # self.legender_boite()
 
         self.tracer_grille()
@@ -86,8 +86,10 @@ class Graphe2D:
 
         self.ax.set_xlim(date_debut, date_fin)
 
-    def legender_ordonnees(self):
+    def legender_ordonnees(self, concentration_maximum):
         self.ax.set_ylabel("Concentration totale")
+
+        self.ax.set_ylim(0, concentration_maximum)
 
     def legender_boite(self):
         self.ax.legend()
