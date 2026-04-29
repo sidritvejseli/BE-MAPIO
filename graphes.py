@@ -45,7 +45,7 @@ class Graphe2D:
         )
 
         self.legender_titre(date_debut)
-        self.legender_abscisses()
+        self.legender_abscisses(date_debut, date_fin)
         self.legender_ordonnees()
         # self.legender_boite()
 
@@ -72,7 +72,7 @@ class Graphe2D:
     def legender_titre(self, date: datetime):
         self.ax.set_title(f"Jour : {date.date()}")
 
-    def legender_abscisses(self):
+    def legender_abscisses(self, date_debut: datetime, date_fin: datetime):
         self.ax.set_xlabel("Date et heure")
 
         formatter = mdates.DateFormatter("%H:%M")
@@ -80,6 +80,8 @@ class Graphe2D:
         self.ax.xaxis.set_major_formatter(formatter)
 
         self.ax.tick_params(axis="x")
+
+        self.ax.set_xlim(date_debut, date_fin)
 
     def legender_ordonnees(self):
         self.ax.set_ylabel("Concentration totale")
