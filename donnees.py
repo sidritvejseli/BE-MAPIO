@@ -53,14 +53,16 @@ class Donnees:
         return self.dataframe.max().max()
 
     def soustraire_donnees(self, donnees_a_soustraire: Donnees) -> Donnees:
-        donnees_soustraites = copy.copy(self)
+        donnees_soustraites = copy.deepcopy(self)
+        # FIXME : Par souci d'optimisation, la copie complète est-elle nécessaire ?
 
         donnees_soustraites.obtenir_dataframe().loc[donnees_a_soustraire.obtenir_dataframe().index] = pd.NA
 
         return donnees_soustraites
 
     def completer_valeurs_manquantes_jour(self, date_debut: datetime, date_fin: datetime) -> Donnees:
-        jour_et_valeurs_manquantes = copy.copy(self)
+        jour_et_valeurs_manquantes = copy.deepcopy(self)
+        # FIXME : Par souci d'optimisation, la copie complète est-elle nécessaire ?
 
         plage = pd.date_range(start=date_debut, end=date_fin, freq="5min")
 

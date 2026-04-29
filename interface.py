@@ -34,13 +34,15 @@ Onglets: TypeAlias = dict[str, ttk.Frame]
 # (Nom de l'onglet -> Onglet).
 
 
-class Interface(tk.Tk):
+class Interface:
 
     def __init__(self):
 
         super().__init__()
 
         self.logger = logging.getLogger()
+
+        self.application = tk.Tk()
 
         self.description_barre_menus: BarreMenus = [
             (
@@ -125,11 +127,11 @@ class Interface(tk.Tk):
 
         # Fenêtre.
         configuration_affichage = self.config.get("affichage", {})
-        self.title(configuration_affichage.get("titre", "Outil SMPS - MAP-IO"))
+        self.application.title(configuration_affichage.get("titre", "Outil SMPS - MAP-IO"))
         largeur = configuration_affichage.get("largeur", 1400)
         hauteur = configuration_affichage.get("hauteur", 800)
-        self.geometry(f"{largeur}x{hauteur}")
-        self.resizable(True, True)
+        self.application.geometry(f"{largeur}x{hauteur}")
+        self.application.resizable(True, True)
 
         # Graphes.
         self.graphe_2d: Graphe2D = Graphe2D()
@@ -428,15 +430,15 @@ class Interface(tk.Tk):
         barre_menus.add_cascade(label=nom_menu_deroulant, menu=menu_deroulant)
 
     def construire_barre_menus(self):
-        barre_menus = tk.Menu(self)
+        barre_menus = tk.Menu(self.application)
 
         for nom_menu_deroulant, items_menu_deroulant in self.description_barre_menus:
             self.construire_menu_deroulant(barre_menus, nom_menu_deroulant, items_menu_deroulant)
 
-        self.configure(menu=barre_menus)
+        self.application.configure(menu=barre_menus)
 
     def construire_barre_outils(self):
-        barre_outils = tk.Frame(self, bd=1, relief=tk.RAISED)
+        barre_outils = tk.Frame(self.application, bd=1, relief=tk.RAISED)
         barre_outils.pack(side=tk.TOP, fill=tk.X)
 
         for item in self.description_barre_outils:
@@ -458,7 +460,7 @@ class Interface(tk.Tk):
         self.barre_outils_etiquette_jour.pack(side=tk.RIGHT, padx=10)
 
     def construire_barre_onglets(self):
-        self.barre_onglets = ttk.Notebook(self)
+        self.barre_onglets = ttk.Notebook(self.application)
         self.barre_onglets.pack(fill=tk.BOTH, expand=True)
 
         for etiquette in self.description_barre_onglets:
@@ -477,7 +479,7 @@ class Interface(tk.Tk):
 
     def construire_raccourcis_clavier(self):
         for raccourci, fonction_appelee in self.description_raccourcis_clavier:
-            self.bind(raccourci, fonction_appelee)
+            self.application.bind(raccourci, fonction_appelee)
 
     def construire_journal(self):
         self.page_journal = self.onglets["Historique"]
@@ -494,3 +496,6 @@ class Interface(tk.Tk):
         self.journal.insert("end", "Historique des modifications\n\n")
         self.journal.insert("end", historique + "\n")
         self.journal.config(state="disabled")
+
+    def construire_interface(self):
+        self.application.mainloop()
