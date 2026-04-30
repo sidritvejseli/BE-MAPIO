@@ -34,7 +34,7 @@ class Graphe2D:
 
         self.tracer_donnees(
             donnees_valides,
-            taille=1,
+            taille=3,
             couleur="blue",
             marqueur="x",
         )
