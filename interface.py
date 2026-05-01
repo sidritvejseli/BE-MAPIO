@@ -437,7 +437,8 @@ class Interface:
         elif self.donnees.nom_colonne_concentration == cpc:
             self.donnees.nom_colonne_concentration = smps
 
-        self.concentration_maximum = self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
+        if not self.donnees.est_vide():
+            self.concentration_maximum = self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
 
         self.afficher_graphe()
 
