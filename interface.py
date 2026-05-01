@@ -87,7 +87,10 @@ class Interface(tk.Tk):
             ("Invalider jour", None),
             ("Annuler", None),
             ("Facteur", self.demander_facteur),
+            ("Selectionner plage", self.activer_selection_rectangle),
             ("Supprimer plage", self.supprimer_plage),
+            ("Zoomer", self.zoomer),          
+            ("Dezoomer", self.dezoomer), 
         ]
 
         self.description_barre_onglets: list[str] = ["Particules", "Fonctionnement", "Graphe 3D"]
@@ -133,6 +136,11 @@ class Interface(tk.Tk):
         self.construire_onglet_graphe_3d()
 
     def info_point(self, evenement: Event):
+        # quand rectangle actif , priorite
+        if self.interactions.rectangle_selector is not None and self.interactions.rectangle_selector.active:
+            return
+        
+
         doit_rafraichir = self.interactions.info_point(
             evenement,
             self.donnees,
@@ -146,7 +154,10 @@ class Interface(tk.Tk):
             self.zone_affichage_graphe_2d.draw_idle()
 
     def repondre_apres_clic_souris(self, evenement: Event):
-        type_clic = self.interactions.repondre_apres_clic_souris(
+        if self.interactions.rectangle_selector is not None and self.interactions.rectangle_selector.active:
+            return
+        
+        doit_rafraichir = self.interactions.repondre_apres_clic_souris(
             evenement,
             self.donnees,
             self.ax_2d,
@@ -154,16 +165,41 @@ class Interface(tk.Tk):
             self.date_fin,
         )
 
-        if type_clic == 1:
-            self.zone_affichage_graphe_2d.draw_idle()
-
-        elif type_clic == 3:
+        if doit_rafraichir:
             self.afficher_graphe()
 
-    def supprimer_plage(self):
-        self.interactions.supprimer_plage(self.donnees)
-        self.afficher_graphe()
 
+
+
+    def activer_selection_rectangle(self):
+        
+        if self.donnees.est_vide():
+            messagebox.showwarning("Attention !!!", "Aucune donnée chargée")
+            return
+
+        self.interactions.activer_mode_rectangle()
+        self.barre_outils_etiquette_jour.config(
+            text="Dessinez un rectangle sur le graphe, puis cliquez sur 'Supprimer plage' "
+        )
+
+    def supprimer_plage(self):
+        if not self.interactions.rectangle_actif:
+            messagebox.showinfo(
+                "Info",
+                "Aucun rectangle sélectionné.\n Cliquez d'abord sur 'Sélectionner plage' et dessinez un rectangle sur le graphe. ",
+                
+            )
+            return
+
+        rafraichir = self.interactions.supprimer_plage_rectangle(self.donnees)
+
+        if rafraichir:
+            self.afficher_graphe()
+
+
+
+
+    
     def construire_onglet_particules(self):
         self.page_principale = tk.Frame(self.onglets["Particules"])
         self.page_principale.pack(fill="both", expand=True)
@@ -179,6 +215,8 @@ class Interface(tk.Tk):
         self.zone_affichage_graphe_2d.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
 
         self.ax_2d = self.graphe_2d.ax
+
+        self.interactions.initialiser_rectangle_selector(self.ax_2d)
 
         self.zone_affichage_graphe_2d.mpl_connect("button_press_event", self.repondre_apres_clic_souris)
         self.zone_affichage_graphe_2d.mpl_connect("motion_notify_event", self.info_point)
@@ -207,6 +245,8 @@ class Interface(tk.Tk):
 
         self.logger.warning(f"Fichier de configuration {chemin} introuvable.")
         return {}
+    
+    #affichage
 
     def afficher_indisponible(self):
         messagebox.showinfo("Info", "Fonctionnalité pas encore disponible.")
@@ -299,12 +339,18 @@ class Interface(tk.Tk):
         if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
             return
 
+        self.interactions.reinitialiser_rectangle()
         self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
 
         self.graphe_2d.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin)
-        self.interactions.tracer_lignes(self.ax_2d, self.date_debut, self.date_fin)
+        
+        # Sauvegarde les limites du graphe après le trace(pour dezzommer et avoir le meme graphe quavant)
+        self.xlim_original = self.ax_2d.get_xlim()
+        self.ylim_original = self.ax_2d.get_ylim()
 
         self.zone_affichage_graphe_2d.draw()
+
+
 
         # Initialisation de l'infobulle.
         # FIXME : Vérifier si l'initialisation de l'infobulle se fait au bon endroit.
@@ -431,3 +477,31 @@ class Interface(tk.Tk):
             font=("Arial", 13),
             fg="grey",
         ).place(relx=0.5, rely=0.5, anchor="center")
+
+
+
+    def zoomer(self):
+        if not self.interactions.rectangle_actif:
+            messagebox.showinfo(
+                "Info",
+                "Aucun rectangle sélectionné.\n Cliquez d'abord sur 'Sélectionner plage' "
+            )
+            return
+
+        #delegue le zoome a interaction
+        rafraichir = self.interactions.zoomer_rectangle(self.ax_2d)
+
+        if rafraichir:
+            #redessine le grpahe pour que le zomme se fasse
+            self.zone_affichage_graphe_2d.draw()
+
+    def dezoomer(self):
+        #hasattr vérifie si l'attribut xlim_original existe sur l'objet
+        #Si afficher_graphe n'a jamais été appelé, cet attribut n'existe pas encore et appeler set_xlim planterait.
+        if not hasattr(self, "xlim_original"):
+            return
+
+        #remet les nouvelle limite
+        self.ax_2d.set_xlim(self.xlim_original)
+        self.ax_2d.set_ylim(self.ylim_original)
+        self.zone_affichage_graphe_2d.draw()

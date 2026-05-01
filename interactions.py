@@ -3,6 +3,7 @@ from matplotlib.axes import Axes
 import matplotlib.dates as mdates
 from matplotlib.lines import Line2D
 from matplotlib.text import Annotation
+from matplotlib.widgets import RectangleSelector
 import numpy as np
 import pandas as pd
 
@@ -20,25 +21,125 @@ class Interactions:
     def __init__(self):
         self.logger = logging.getLogger()
 
-        #les deux borne de la plage selectionne
-        self.date_debut: datetime = None
-        self.date_fin: datetime = None
-
-        #trait rouge verticaux du graphe
-        self.ligne_debut: Line2D = None
-        self.ligne_fin: Line2D = None
+        
 
         # distances calculees entre chaque point et la souris
         self.distances_point_souris: DataFrame = None
 
         #points visibles a l'ecran
         self.points_valides: Donnees = None
-        #nb clc pour enlever les trait
-        self.nombre_clics = 0
+        
+
+        # RectangleSelector pour la sélection de plage
+        self.rectangle_selector= None
+        self.rect_x1 = None
+        self.rect_x2 = None
+        self.rect_y1 = None
+        self.rect_y2 = None
+        self.rectangle_actif = False   # True = un rectangle est dessiné et prêt
 
 
 
 
+    def initialiser_rectangle_selector(self, ax_2d):#: Axes
+        self.rectangle_selector = RectangleSelector(
+            ax_2d,#graphe ou il dessine
+            self.enregistrement_rectangle, #quand on relache la souris , il fait ça
+            useblit=True,# trouver sur internet (redessine que le rectangle pas le graphe)
+            button=[1],  # clic gauche 
+            minspanx=5, minspany=5,       # taille min de laxe x et y 
+            spancoords="pixels",
+            interactive=True,    # affiche le rectangle pendant le glisser
+            
+            
+            props=dict(
+                facecolor="red",
+                edgecolor="darkred",
+                alpha=0.2,
+                fill=True,
+                linestyle="--",
+            ),
+        )
+        self.rectangle_selector.set_active(False)   # on desactive le rect apres
+
+    
+    
+    #utile pour apres relacher (stock les infos)
+    def enregistrement_rectangle(self, clique, relache):
+        
+        self.rect_x1 = min(clique.xdata, relache.xdata)
+        self.rect_x2 = max(clique.xdata, relache.xdata)
+        self.rect_y1 = min(clique.ydata, relache.ydata)
+        self.rect_y2 = max(clique.ydata, relache.ydata)
+        self.rectangle_actif = True
+        #self.logger.info("Rectangle sélectionné.")
+
+    #appler par le bouton selectinner plage
+    def activer_mode_rectangle(self):
+        if self.rectangle_selector is None:
+            return
+        self.reinitialiser_rectangle()
+        self.rectangle_selector.set_active(True)
+        
+
+    #remet tout a zero
+    def reinitialiser_rectangle(self):
+        #effache les cordonner stocker en haut
+        self.rect_x1 = self.rect_x2 = None
+        self.rect_y1 = self.rect_y2 = None
+        #remet le flag a faux pour dire plus rine a supprimer
+        self.rectangle_actif = False
+        if self.rectangle_selector is not None:
+            self.rectangle_selector.set_active(False)
+            self.rectangle_selector.clear()
+
+
+    #Invalide tous les points valides contenus dans le rectangle def supprimer_plage_rectangle(self, donnees: Donnees) -> bool:
+    def supprimer_plage_rectangle(self, donnees):
+        
+        #Si aucun rectangle dessine, on ne fait rien
+        if not self.rectangle_actif:
+            self.logger.info("Suppression impossible : aucun rectangle sélectionne")
+            return False
+
+        #replace(tzinfo=None) pour pas que pandas plante (vuseau pas attendu)
+        date_debut = mdates.num2date(self.rect_x1).replace(tzinfo=None)
+        date_fin   = mdates.num2date(self.rect_x2).replace(tzinfo=None)
+        y_min = self.rect_y1
+        y_max = self.rect_y2
+
+        #On récupère le tableau pandas complet
+        df = donnees.obtenir_dataframe()
+
+        #le point est dans le  rectangle et il est encore valide
+        masque = (
+            (df.index >= date_debut) &
+            (df.index <= date_fin) &
+            (df["smps_concTotal"] >= y_min) &
+            (df["smps_concTotal"] <= y_max) &
+            (df["smps_flag"] == 0)          # seulement les points encore valides
+        )
+
+        #si correspond au masque , on le vire
+        df.loc[masque, "smps_flag"] = 1
+
+        
+
+        self.reinitialiser_rectangle()
+        return True
+
+
+    def zoomer_rectangle(self, ax_2d):
+        
+        #si pas de rectangle , on fait rien
+        if not self.rectangle_actif:
+            return False
+
+        ax_2d.set_xlim(self.rect_x1, self.rect_x2)
+        ax_2d.set_ylim(self.rect_y1, self.rect_y2)
+
+        self.reinitialiser_rectangle()
+        return True
 
 
 
@@ -91,45 +192,6 @@ class Interactions:
         )
 
 
-#--------Gestion plage
-
-    # incremente le compteur de clics en bouclant : 0 - 1 - 2 - 0
-    def incrementer_nombre_clics(self):
-        self.nombre_clics = (self.nombre_clics + 1) % 3
-
-    def supprimer_ligne_debut(self):
-        if self.ligne_debut is None:
-            return
-
-        try:
-            self.ligne_debut.remove()
-        except NotImplementedError:
-            pass
-
-        self.ligne_debut = None
-
-    def supprimer_ligne_fin(self):
-        if self.ligne_fin is None:
-            return
-
-        try:
-            self.ligne_fin.remove()
-        except NotImplementedError:
-            pass
-
-        self.ligne_fin = None
-
-    
-    
-    # supprime les deux traits et remet tout a zero
-    def reinitialiser_plage(self):
-        self.supprimer_ligne_debut()
-        self.supprimer_ligne_fin()
-        self.date_debut = None
-        self.date_fin = None
-        self.nombre_clics = 0
-
-
 #-----infobulle
 
     def info_point(
@@ -140,7 +202,7 @@ class Interactions:
         date_debut: datetime,
         date_fin: datetime,
         infobulle: Annotation,
-    ):
+    ) :
         doit_rafraichir = False
 
         # si pas de donnees ou pas de tooltip on ne fait rien du tout
@@ -199,93 +261,29 @@ class Interactions:
     ):
         doit_rafraichir = False
 
-        # clic hors du graphe : on ignore
+        # Clic hors du graphe : on ignore.
         if evenement.inaxes != ax_2d or evenement.xdata is None:
             return doit_rafraichir
-        
 
-        # bouton 1 = clic gauche → selection de plage
-        if evenement.button == 1:
-            self.traiter_clic_gauche(evenement, ax_2d, date_debut, date_fin)
-            doit_rafraichir = 1
-
-
-         # bouton 3 = clic droit → suppression d'un point
+        # Bouton 3 = clic droit : suppression d'un point unique.
         if evenement.button == 3:
-            doit_rafraichir = self.traiter_clic_droit(evenement, donnees, ax_2d, date_debut, date_fin)
+            doit_rafraichir = self.traiter_clic_droit(
+                evenement, donnees, ax_2d, date_debut, date_fin
+            )
 
         return doit_rafraichir
     
 
-
-
-
-    def tracer_ligne_debut(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
-        if self.date_debut is None or date_debut is None or date_fin is None:
-            return
-
-        if self.date_debut < date_debut or self.date_debut > date_fin:
-            return
-
-        self.ligne_debut = ax_2d.axvline(self.date_debut, color="red", linestyle="--")
-
-
-
-
-
-    def tracer_ligne_fin(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
-        if self.date_fin is None or date_debut is None or date_fin is None:
-            return
-
-        if self.date_fin < date_debut or self.date_fin > date_fin:
-            return
-
-        self.ligne_fin = ax_2d.axvline(self.date_fin, color="red", linestyle="--")
-
-
-
-
-    def tracer_lignes(self, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
-        self.tracer_ligne_debut(ax_2d, date_debut, date_fin)
-        self.tracer_ligne_fin(ax_2d, date_debut, date_fin)
-
-    def obtenir_date_plus_proche_dans_plage(self, evenement: Event, date_debut: datetime, date_fin: datetime):
-        date = mdates.num2date(evenement.xdata).replace(tzinfo=None)
-
-        if date < date_debut:
-            return date_debut
-
-        if date > date_fin:
-            return date_fin
-
-        return date
-
-    def traiter_clic_gauche(self, evenement: Event, ax_2d: Axes, date_debut: datetime, date_fin: datetime):
-        if date_debut is None or date_fin is None:
-            return
-
-        date = self.obtenir_date_plus_proche_dans_plage(evenement, date_debut, date_fin)
-
-        if self.nombre_clics == 0:
-            self.date_debut = date
-            self.tracer_ligne_debut(ax_2d, date_debut, date_fin)
-            self.incrementer_nombre_clics()
-
-        elif self.nombre_clics == 1:
-            self.date_fin = date
-            self.tracer_ligne_fin(ax_2d, date_debut, date_fin)
-            self.incrementer_nombre_clics()
-
-        elif self.nombre_clics == 2:
-            self.reinitialiser_plage()
-
-
-
     def traiter_clic_droit(
-        self, evenement: Event, donnees: Donnees, ax_2d: Axes, date_debut: datetime, date_fin: datetime
-    ):
+        self,
+        evenement: Event,
+        donnees: Donnees,
+        ax_2d: Axes,
+        date_debut: datetime,
+        date_fin: datetime,
+    ) :
         if date_debut is None or date_fin is None:
-            return
+            return False
 
         doit_rafraichir = False
 
@@ -295,8 +293,10 @@ class Interactions:
             return doit_rafraichir
 
         self.maj_distances(evenement, ax_2d)
-
         date_plus_proche = self.trouver_date_plus_proche()
+
+        if date_plus_proche is None:
+            return doit_rafraichir
 
         seuil = 0.02
         if self.distances_point_souris.loc[date_plus_proche] > seuil:
@@ -304,30 +304,14 @@ class Interactions:
 
         donnees.invalider_date(date_plus_proche)
 
-        self.reinitialiser_plage()
-
-        doit_rafraichir = evenement.button
+        doit_rafraichir = True
         return doit_rafraichir
     
 
-    #-----Suppression plage
-
-    def supprimer_plage(self, donnees: Donnees):
-        doit_rafraichir = False
-
-        # il faut exactement 2 clics
-        if self.nombre_clics != 2:
-            self.logger.info("Suppression de la plage impossible, car aucune plage sélectionnée.")
-            self.reinitialiser_plage()
-            return doit_rafraichir
-
-        self.date_debut, self.date_fin = sorted((self.date_debut, self.date_fin))
-
-        donnees.invalider_dates(self.date_debut, self.date_fin)
-
-        self.reinitialiser_plage()
-
-        doit_rafraichir = True
-        return doit_rafraichir
+    
 
         # FIXME : Une ligne où la concentration est NaN, doit-elle pouvoir être invalidée ? Ou faut-il l'ignorer ?
+
+
+    
+    
