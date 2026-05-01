@@ -59,8 +59,7 @@ class Donnees:
         colonnes_concentrations.dataframe = colonnes_concentrations.dataframe[list(self.noms_colonnes_concentrations)]
 
         #enlever les valeurs NaN
-        df = colonnes_concentrations.dataframe
-        df = df.dropna(subset=self.noms_colonnes_concentrations)
+        df = colonnes_concentrations.dataframe.dropna(subset=self.noms_colonnes_concentrations)
         colonnes_concentrations.dataframe = df
         return colonnes_concentrations
 

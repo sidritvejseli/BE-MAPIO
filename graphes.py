@@ -189,7 +189,7 @@ class GrapheCorrelation:
         return not self.ax.has_data()
 
     def tracer_graphe_correlation(self, donnees: Donnees):
-        self.effacer_graphe()
+        self.effacer_graphe_correlation()
 
         self.tracer_donnees(donnees)
      
@@ -200,7 +200,7 @@ class GrapheCorrelation:
 
 
 
-    def effacer_graphe(self):
+    def effacer_graphe_correlation(self):
         self.ax.clear()
         self.pente = None
 
@@ -220,19 +220,35 @@ class GrapheCorrelation:
         self.ax.grid(True, linestyle="--", alpha=0.5)
     
     def tracer_donnees(
-        self, donnees: Donnees, taille: int = "1", couleur: str = "blue", marqueur: str = "x", legende_boite: str = ""
+        self, donnees: Donnees, taille: int = 0.5, couleur: str = "blue", marqueur: str = "o", legende_boite: str = ""
     ):
            #donnees deja filtrees
         df_colonnes = donnees.obtenir_colonnes_concentrations()
 
-        conc_cps = df_colonnes.dataframe["cpc_conc"]
+        cpc_conc = df_colonnes.dataframe["cpc_conc"]
         smps_total = df_colonnes.dataframe["smps_concTotal"]
-
+        
         self.ax.scatter(
-            conc_cps,
+            cpc_conc,
             smps_total,
-            s=0.1,
+            s=taille,
             color=couleur,
             marker=marqueur,
             label=legende_boite,
         )
+        self.tracer_regression(cpc_conc, smps_total, self.ax)
+
+    def tracer_regression(self, cpc_conc, smps_total, axe):
+        x = cpc_conc.values.reshape(-1,1)
+        y = smps_total.values
+        model = LinearRegression(fit_intercept=False)
+
+        model.fit(x, y)
+
+        self.pente = model.coef_[0]
+        self.ax.set_title(f"SMPS vs CPC (Pente: {self.pente:.2f})")
+
+        max = x.max()
+        yy = [0, max]          
+
+        self.ax.plot(yy/self.pente, yy, color='hotpink', linewidth=1.5) 
