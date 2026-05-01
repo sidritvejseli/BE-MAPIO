@@ -13,13 +13,13 @@ from pandas import DataFrame, Index
 
 from historique import Historique
 
-nom_colonne_concentration = "smps_concTotal"
-
 
 class Donnees:
 
-    def __init__(self):
+    def __init__(self, nom_colonne_concentration: str):
         self.logger = logging.getLogger()
+        self.nom_colonne_concentration = nom_colonne_concentration
+
         self.initialiser_donnees()
 
     def initialiser_donnees(self) -> None:
@@ -32,7 +32,7 @@ class Donnees:
         return self.dataframe.empty
 
     def est_tout_na_concentration(self) -> bool:
-        return self.dataframe[nom_colonne_concentration].isna().all()
+        return self.dataframe[self.nom_colonne_concentration].isna().all()
 
     def obtenir_dataframe(self) -> DataFrame:
         return self.dataframe
@@ -45,7 +45,7 @@ class Donnees:
 
     def obtenir_colonne_concentration(self) -> Donnees:
         colonne_concentrations = copy.copy(self)
-        colonne_concentrations.dataframe = colonne_concentrations.dataframe[nom_colonne_concentration]
+        colonne_concentrations.dataframe = colonne_concentrations.dataframe[self.nom_colonne_concentration]
 
         return colonne_concentrations
 
@@ -196,7 +196,7 @@ class Donnees:
         self.historique.ajouter_action(self.dataframe.loc[debut:fin].index)
 
     def multiplier_concentration(self, facteur) -> None:
-        self.dataframe[nom_colonne_concentration] *= facteur
+        self.dataframe[self.nom_colonne_concentration] *= facteur
 
     def convertir_titre_particules_en_float(self) -> None:
         self.dataframe.columns = [float(colonne.split("_")[2]) for colonne in self.dataframe.columns]

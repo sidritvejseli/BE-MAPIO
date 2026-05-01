@@ -86,12 +86,14 @@ class Interface:
             ("Suivant ▶", self.sauter_au_jour_suivant),
             ("Dernier ▶|", self.sauter_au_dernier_jour),
             None,
-            ("Actualiser", None),
-            ("Invalider jour", None),
+            ("Supprimer plage", self.supprimer_plage),
+            None,
             ("Annuler", self.annuler),
             ("Rétablir", self.retablir),
+            None,
             ("Facteur", self.demander_facteur),
-            ("Supprimer plage", self.supprimer_plage),
+            None,
+            ("smps↔conc", self.changer_colonne_concentration),
         ]
 
         self.description_barre_onglets: list[str] = [
@@ -111,12 +113,14 @@ class Interface:
 
         self.construire_raccourcis_clavier()
 
+        self.description_colonnes_concentration = ["smps_concTotal", "cpc_conc"]
+
         # Configuration.
         self.config = self.charger_configuration("config.yaml")
 
         # Données.
-        self.donnees = Donnees()
-        self.donnees_sans_modification = Donnees()
+        self.donnees = Donnees(self.description_colonnes_concentration[0])
+        self.donnees_sans_modification = Donnees(self.description_colonnes_concentration[0])
         self.fichier_courant = None
         self.date_debut: datetime = None
         self.date_fin: datetime = None
@@ -414,6 +418,21 @@ class Interface:
             return
 
         self.donnees.multiplier_concentration(facteur)
+        self.concentration_maximum *= facteur
+
+        self.afficher_graphe()
+
+    def changer_colonne_concentration(self):
+        smps, cpc = self.description_colonnes_concentration
+
+        if self.donnees.nom_colonne_concentration == smps:
+            self.donnees.nom_colonne_concentration = cpc
+
+        elif self.donnees.nom_colonne_concentration == cpc:
+            self.donnees.nom_colonne_concentration = smps
+
+        self.concentration_maximum = self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
+
         self.afficher_graphe()
 
     def construire_menu_deroulant(self, barre_menus: Menu, nom_menu_deroulant: str, items_menu_deroulant: ItemsMenu):

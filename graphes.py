@@ -47,7 +47,7 @@ class Graphe2D:
             legende_boite=f"Invalidés ({donnees_invalides.obtenir_nombre_dates()})",
         )
 
-        self.legender_titre(date_debut)
+        self.legender_titre(date_debut, donnees.nom_colonne_concentration)
         self.legender_abscisses(date_debut, date_fin)
         self.legender_ordonnees(concentration_maximum)
         # self.legender_boite()
@@ -72,8 +72,8 @@ class Graphe2D:
             label=legende_boite,
         )
 
-    def legender_titre(self, date: datetime):
-        self.ax.set_title(f"Jour : {date.date()}")
+    def legender_titre(self, date: datetime, nom_colonne_concentration: str):
+        self.ax.set_title(f"Jour : {date.date()}\n{nom_colonne_concentration}")
 
     def legender_abscisses(self, date_debut: datetime, date_fin: datetime):
         self.ax.set_xlabel("Date et heure")
