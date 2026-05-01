@@ -10,6 +10,7 @@ import matplotlib.ticker as mticker
 from datetime import datetime
 from matplotlib.image import AxesImage
 from sklearn.linear_model import LinearRegression
+from scipy.stats import gaussian_kde
 
 
 from donnees import Donnees
@@ -220,7 +221,7 @@ class GrapheCorrelation:
         self.ax.grid(True, linestyle="--", alpha=0.5)
     
     def tracer_donnees(
-        self, donnees: Donnees, taille: int = 0.5, couleur: str = "blue", marqueur: str = "o", legende_boite: str = ""
+        self, donnees: Donnees, taille: int = 0.5, couleur: str = "steelblue", marqueur: str = "o", legende_boite: str = ""
     ):
            #donnees deja filtrees
         df_colonnes = donnees.obtenir_colonnes_concentrations()
@@ -228,16 +229,20 @@ class GrapheCorrelation:
         cpc_conc = df_colonnes.dataframe["cpc_conc"]
         smps_total = df_colonnes.dataframe["smps_concTotal"]
         
+        xy = np.vstack([cpc_conc,smps_total])
+        z = gaussian_kde(xy)(xy)
+
         self.ax.scatter(
             cpc_conc,
             smps_total,
             s=taille,
-            color=couleur,
+            c=z,
             marker=marqueur,
             label=legende_boite,
         )
         self.tracer_regression(cpc_conc, smps_total, self.ax)
 
+    #FIXME verfier quel paramettre est l'abscisse et quel est l'ordonnee
     def tracer_regression(self, cpc_conc, smps_total, axe):
         x = cpc_conc.values.reshape(-1,1)
         y = smps_total.values
@@ -246,9 +251,13 @@ class GrapheCorrelation:
         model.fit(x, y)
 
         self.pente = model.coef_[0]
-        self.ax.set_title(f"SMPS vs CPC (Pente: {self.pente:.2f})")
+        axe.set_title(f"SMPS vs CPC (Pente: {self.pente:.2f})")
 
-        max = x.max()
-        yy = [0, max]          
+        y_max = y.max()
+        yy = [0, y_max] 
+        
+        #decalage de 20 -> un des points était majortairement en dehor du graphe affiche
+        axe.set_xlim(0, x.max()+20)
+         
 
-        self.ax.plot(yy/self.pente, yy, color='hotpink', linewidth=1.5) 
+        axe.plot(yy/self.pente, yy, color='dimgrey', linewidth=1.5) 
