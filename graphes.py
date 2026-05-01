@@ -54,6 +54,8 @@ class Graphe2D:
 
         self.tracer_grille()
 
+        self.fig.tight_layout()
+
     def effacer_graphe_2d(self):
         self.ax.clear()
 
@@ -76,7 +78,7 @@ class Graphe2D:
         self.ax.set_title(f"Jour : {date.date()}\n{nom_colonne_concentration}")
 
     def legender_abscisses(self, date_debut: datetime, date_fin: datetime):
-        self.ax.set_xlabel("Date et heure")
+        self.ax.set_xlabel("Heure")
 
         formatter = mdates.DateFormatter("%H:%M")
 
@@ -139,6 +141,8 @@ class Graphe3D:
         self.legender_abscisses()
         self.legender_ordonnees()
         self.legender_barre_couleurs(carte_thermique)
+
+        self.fig.tight_layout()
 
     def effacer_graphe_3d(self):
         if self.colorbar is not None:
