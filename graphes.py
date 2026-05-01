@@ -188,14 +188,23 @@ class GrapheCorrelation:
     def est_vide(self):
         return not self.ax.has_data()
 
-    def tracer_graphe_correlation(self, donnees: Donnees): ...
+    def tracer_graphe_correlation(self, donnees: Donnees):
+        self.effacer_graphe()
+
+        df_conc = donnees.obtenir_colonnes_concentrations()
+        self.legender_abscisses()
+        self.legender_ordonnees()
+        self.tracer_griller()
+        self.legender_titre()
+
+
 
     def effacer_graphe(self):
         self.ax.clear()
         self.pente = None
 
-    def legender_titre(self, date: datetime):
-        self.ax.set_title(f"Corrélation CPC/ SMPS - Jour : {date.date()}")
+    def legender_titre(self):
+        self.ax.set_title("Corrélation CPC/ SMPS")
 
     def legender_abscisses(self):
         self.ax.set_xlabel("ConcentrationCPC (cpc_conc)")
