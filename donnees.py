@@ -58,6 +58,10 @@ class Donnees:
         colonnes_concentrations = copy.copy(self)
         colonnes_concentrations.dataframe = colonnes_concentrations.dataframe[list(self.noms_colonnes_concentrations)]
 
+        #enlever les valeurs NaN
+        df = colonnes_concentrations.dataframe
+        df = df.dropna(subset=self.noms_colonnes_concentrations)
+        colonnes_concentrations.dataframe = df
         return colonnes_concentrations
 
     def supprimer_donnees_manquantes_colonne_concentration(self, nom_colonne_concentration: str):

@@ -380,6 +380,7 @@ class Interface:
         if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
             self.graphe_2d.effacer_graphe_2d()
             self.graphe_3d.effacer_graphe_3d()
+            self.graphe_correlation.effacer_graphe_correlation()
             self.mettre_a_jour_trace_graphe()
             return
 
