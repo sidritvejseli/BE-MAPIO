@@ -93,7 +93,7 @@ class Interface:
             None,
             ("Facteur", self.demander_facteur),
             None,
-            ("smps↔conc", self.changer_colonne_concentration),
+            ("smps↔cpc", self.changer_colonne_concentration),
         ]
 
         self.description_barre_onglets: list[str] = [
@@ -113,14 +113,14 @@ class Interface:
 
         self.construire_raccourcis_clavier()
 
-        self.description_colonnes_concentration = ["smps_concTotal", "cpc_conc"]
+        self.description_colonnes_concentration = ("smps_concTotal", "cpc_conc")
 
         # Configuration.
         self.config = self.charger_configuration("config.yaml")
 
         # Données.
-        self.donnees = Donnees(self.description_colonnes_concentration[0])
-        self.donnees_sans_modification = Donnees(self.description_colonnes_concentration[0])
+        self.donnees = Donnees(self.description_colonnes_concentration)
+        self.donnees_sans_modification = Donnees(self.description_colonnes_concentration)
         self.fichier_courant = None
         self.date_debut: datetime = None
         self.date_fin: datetime = None
@@ -429,13 +429,7 @@ class Interface:
         self.afficher_graphe()
 
     def changer_colonne_concentration(self):
-        smps, cpc = self.description_colonnes_concentration
-
-        if self.donnees.nom_colonne_concentration == smps:
-            self.donnees.nom_colonne_concentration = cpc
-
-        elif self.donnees.nom_colonne_concentration == cpc:
-            self.donnees.nom_colonne_concentration = smps
+        self.donnees.echanger_nom_colonne_concentration()
 
         if not self.donnees.est_vide():
             self.concentration_maximum = self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()

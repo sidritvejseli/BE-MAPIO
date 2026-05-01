@@ -9,16 +9,21 @@ import pandas as pd
 
 from datetime import datetime
 from pandas import DataFrame, Index
+from typing import TypeAlias
 
 
 from historique import Historique
 
+NomConcentrationSMPS: TypeAlias = str
+NomConcentrationCPC: TypeAlias = str
+
 
 class Donnees:
 
-    def __init__(self, nom_colonne_concentration: str):
+    def __init__(self, noms_colonnes_concentrations: tuple[NomConcentrationSMPS, NomConcentrationCPC]):
         self.logger = logging.getLogger()
-        self.nom_colonne_concentration = nom_colonne_concentration
+        self.noms_colonnes_concentrations = noms_colonnes_concentrations
+        self.nom_colonne_concentration = self.noms_colonnes_concentrations[0]
 
         self.initialiser_donnees()
 
@@ -48,6 +53,37 @@ class Donnees:
         colonne_concentrations.dataframe = colonne_concentrations.dataframe[self.nom_colonne_concentration]
 
         return colonne_concentrations
+
+    def obtenir_colonnes_concentrations(self) -> Donnees:
+        colonnes_concentrations = copy.copy(self)
+        colonnes_concentrations.dataframe = colonnes_concentrations.dataframe[self.noms_colonnes_concentrations]
+
+        return colonnes_concentrations
+
+    def supprimer_donnees_manquantes_colonne_concentration(self, nom_colonne_concentration: str):
+        donnees_supprimees = copy.deepcopy(self)
+        donnees_supprimees.dataframe = donnees_supprimees.dataframe.dropna(subset=[nom_colonne_concentration])
+
+        return donnees_supprimees
+
+    def supprimer_donnees_manquantes_colonnes_concentrations(self):
+        donnees_supprimees = self.supprimer_donnees_manquantes_colonne_concentration(
+            self.noms_colonnes_concentrations[0]
+        )
+        donnees_supprimees = donnees_supprimees.supprimer_donnees_manquantes_colonne_concentration(
+            self.noms_colonnes_concentrations[1]
+        )
+
+        return donnees_supprimees
+
+    def echanger_nom_colonne_concentration(self) -> Donnees:
+        smps, cpc = self.noms_colonnes_concentrations
+
+        if self.nom_colonne_concentration == smps:
+            self.nom_colonne_concentration = cpc
+
+        elif self.nom_colonne_concentration == cpc:
+            self.nom_colonne_concentration = smps
 
     def obtenir_valeur_maximum(self):
         return self.dataframe.max().max()
