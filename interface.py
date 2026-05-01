@@ -306,6 +306,8 @@ class Interface:
         self.teneur_maximum = None
         self.concentration_maximum = None
 
+        self.afficher_graphe()
+
     def sauvegarder_fichier(self):
         repertoires_configuration = self.config.get("repertoires", {})
         dossier_resultats = repertoires_configuration.get("resultats", "resultats/")
@@ -344,16 +346,22 @@ class Interface:
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
             self.destroy()
 
+    def mettre_a_jour_trace_graphe(self):
+        self.zone_affichage_graphe_2d.draw()
+        self.zone_affichage_graphe_3d.draw()
+        self.canvas_3d_individuel.draw()
+
     def afficher_graphe(self):
         if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
+            self.graphe_2d.effacer_graphe_2d()
+            self.graphe_3d.effacer_graphe_3d()
+            self.mettre_a_jour_trace_graphe()
             return
 
         self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
 
         self.graphe_2d.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin, self.concentration_maximum)
         self.interactions.tracer_lignes(self.ax_2d, self.date_debut, self.date_fin)
-
-        self.zone_affichage_graphe_2d.draw()
 
         # Initialisation de l'infobulle.
         # FIXME : Vérifier si l'initialisation de l'infobulle se fait au bon endroit.
@@ -367,10 +375,8 @@ class Interface:
         )
 
         self.graphe_3d.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin, self.teneur_maximum)
-        self.zone_affichage_graphe_3d.draw()
 
-        self.canvas_3d_individuel.draw()
-
+        self.mettre_a_jour_trace_graphe()
         self.afficher_jour_barre_outils()
 
     def ajouter_24_heures(self, jour: datetime):
