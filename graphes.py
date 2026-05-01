@@ -182,7 +182,7 @@ class GrapheCorrelation:
     def est_vide(self):
         return not self.ax.has_data()
     
-    #def tracer_graphe_correlation(self, donnees: Donnees, date_debut:datetime, date_fin: datetime):
+    #def tracer_graphe_correlation(self, donnees: Donnees):
     
     def effacer_graphe(self):
         self.ax.clear()

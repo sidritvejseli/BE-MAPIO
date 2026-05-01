@@ -98,7 +98,7 @@ class Interface:
             "Particules",
             "Fonctionnement",
             "Graphe 3D",
-            "Corrélation"
+            "Corrélation",
             "Historique",
         ]
 
@@ -156,7 +156,7 @@ class Interface:
         self.construire_onglet_particules()
         self.afficher_onglet_provisoire(self.onglets["Fonctionnement"])
         self.construire_onglet_graphe_3d()
-        self.construire_onglet_graphe_correlation() #on appelle construire graphe correlation
+        self.construire_onglet_correlation() #on appelle construire graphe correlation
 
         self.journal = None
         self.construire_journal()
@@ -393,8 +393,7 @@ class Interface:
         self.canvas_3d_individuel.draw()
 
          # on met a jour le graphe de correlation avec les donnees du jour affiche
-         #peut etre il faut enlever self.date_debut et fin
-        self.graphe_correlation.tracer_graphe_correlation(self.donnees, self.date_debut, self.date_fin)
+        self.graphe_correlation.tracer_graphe_correlation(self.donnees)
         self.zone_affichage_graphe_correlation.draw()
 
         
