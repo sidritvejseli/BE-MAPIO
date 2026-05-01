@@ -17,7 +17,7 @@ from typing import Callable, TypeAlias
 
 
 from donnees import Donnees
-from graphes import Graphe2D, Graphe3D
+from graphes import Graphe2D, Graphe3D, GrapheCorrelation
 from interactions import Interactions
 
 # -
@@ -98,6 +98,7 @@ class Interface:
             "Particules",
             "Fonctionnement",
             "Graphe 3D",
+            "Corrélation"
             "Historique",
         ]
 
@@ -136,6 +137,8 @@ class Interface:
         # Graphes.
         self.graphe_2d: Graphe2D = Graphe2D()
         self.graphe_3d: Graphe3D = Graphe3D()
+        self.graphe_correlation: GrapheCorrelation = GrapheCorrelation()
+
 
         self.teneur_maximum = None  # Remarque : Pour garder une échelle constante de couleur du graphe 3D, on garde en mémoire la valeur maximum.
         self.concentration_maximum = None
@@ -153,6 +156,7 @@ class Interface:
         self.construire_onglet_particules()
         self.afficher_onglet_provisoire(self.onglets["Fonctionnement"])
         self.construire_onglet_graphe_3d()
+        self.construire_onglet_graphe_correlation() #on appelle construire graphe correlation
 
         self.journal = None
         self.construire_journal()
@@ -220,11 +224,20 @@ class Interface:
         self.zone_affichage_graphe_2d.mpl_connect("button_press_event", self.repondre_apres_clic_souris)
         self.zone_affichage_graphe_2d.mpl_connect("motion_notify_event", self.info_point)
 
-        self.cadre_graphe_3d = tk.Frame(self.page_principale)
-        self.cadre_graphe_3d.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+        # cadre du graphe de correlation (on remplace le graphe 3D dans cet onglet)
+        self.cadre_graphe_correlation = tk.Frame(self.page_principale)
+        self.cadre_graphe_correlation.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
 
-        self.zone_affichage_graphe_3d = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.cadre_graphe_3d)
-        self.zone_affichage_graphe_3d.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
+        self.zone_affichage_graphe_correlation = FigureCanvasTkAgg(
+            self.graphe_correlation.fig, master=self.cadre_graphe_correlation
+        )
+        self.zone_affichage_graphe_correlation.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
+
+        #self.cadre_graphe_3d = tk.Frame(self.page_principale)
+        #self.cadre_graphe_3d.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+
+        #self.zone_affichage_graphe_3d = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.cadre_graphe_3d)
+        #self.zone_affichage_graphe_3d.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
 
         # FIXME : Corriger l'affichage des graphes qui est coupé sur les bords sur Mac.
 
@@ -236,6 +249,18 @@ class Interface:
         # Création du canvas matplotlib dans Tkinter
         self.canvas_3d_individuel = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.frame_3d_individuel)
         self.canvas_3d_individuel.get_tk_widget().pack(fill="both", expand=True)
+
+        # construire l'onglet graphe correlation , on fait la meme chose que le graphe 3D 
+    def construire_onglet_correlation(self):
+        # frame qui va contenir le graphe de correlation
+        self.frame_correlation = tk.Frame(self.onglets["Corrélation"])
+        self.frame_correlation.pack(fill="both", expand=True)
+
+        # canvas matplotlib pour le graphe de correlation
+        self.zone_affichage_graphe_correlation = FigureCanvasTkAgg(
+        self.graphe_correlation.fig, master=self.frame_correlation
+        )
+        self.zone_affichage_graphe_correlation.get_tk_widget().pack(fill="both", expand=True)
 
     def charger_configuration(self, chemin):
         if os.path.exists(chemin):
@@ -363,10 +388,16 @@ class Interface:
         )
 
         self.graphe_3d.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin, self.teneur_maximum)
-        self.zone_affichage_graphe_3d.draw()
+        #self.zone_affichage_graphe_3d.draw()
 
         self.canvas_3d_individuel.draw()
 
+         # on met a jour le graphe de correlation avec les donnees du jour affiche
+         #peut etre il faut enlever self.date_debut et fin
+        self.graphe_correlation.tracer_graphe_correlation(self.donnees, self.date_debut, self.date_fin)
+        self.zone_affichage_graphe_correlation.draw()
+
+        
         self.afficher_jour_barre_outils()
 
     def ajouter_24_heures(self, jour: datetime):
