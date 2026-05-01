@@ -191,7 +191,8 @@ class GrapheCorrelation:
     def tracer_graphe_correlation(self, donnees: Donnees):
         self.effacer_graphe()
 
-        df_conc = donnees.obtenir_colonnes_concentrations()
+        self.tracer_donnees(donnees)
+     
         self.legender_abscisses()
         self.legender_ordonnees()
         self.tracer_griller()
@@ -217,3 +218,21 @@ class GrapheCorrelation:
 
     def tracer_griller(self):
         self.ax.grid(True, linestyle="--", alpha=0.5)
+    
+    def tracer_donnees(
+        self, donnees: Donnees, taille: int = "1", couleur: str = "blue", marqueur: str = "x", legende_boite: str = ""
+    ):
+           #donnees deja filtrees
+        df_colonnes = donnees.obtenir_colonnes_concentrations()
+
+        conc_cps = df_colonnes.dataframe["cpc_conc"]
+        smps_total = df_colonnes.dataframe["smps_concTotal"]
+
+        self.ax.scatter(
+            conc_cps,
+            smps_total,
+            s=0.1,
+            color=couleur,
+            marker=marqueur,
+            label=legende_boite,
+        )
