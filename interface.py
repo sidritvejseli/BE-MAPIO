@@ -257,14 +257,14 @@ class Interface:
 
     def construire_onglet_correlation(self):
         # frame qui va contenir le graphe de correlation
-        self.frame_correlation = tk.Frame(self.onglets["Corrélation"])
-        self.frame_correlation.pack(fill="both", expand=True)
+        self.frame_correlation_individuel = tk.Frame(self.onglets["Corrélation"])
+        self.frame_correlation_individuel.pack(fill="both", expand=True)
 
         # canvas matplotlib pour le graphe de correlation
-        self.zone_affichage_graphe_correlation = FigureCanvasTkAgg(
-            self.graphe_correlation.fig, master=self.frame_correlation
+        self.zone_affichage_graphe_correlation_individuel = FigureCanvasTkAgg(
+            self.graphe_correlation.fig, master=self.frame_correlation_individuel
         )
-        self.zone_affichage_graphe_correlation.get_tk_widget().pack(fill="both", expand=True)
+        self.zone_affichage_graphe_correlation_individuel.get_tk_widget().pack(fill="both", expand=True)
 
     def charger_configuration(self, chemin):
         if os.path.exists(chemin):
