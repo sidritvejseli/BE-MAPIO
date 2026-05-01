@@ -9,6 +9,7 @@ import matplotlib.ticker as mticker
 
 from datetime import datetime
 from matplotlib.image import AxesImage
+from sklearn.linear_model import LinearRegression
 
 
 from donnees import Donnees
