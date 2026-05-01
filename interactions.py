@@ -308,7 +308,6 @@ class Interactions:
         return doit_rafraichir
     
 
-    
 
         # FIXME : Une ligne où la concentration est NaN, doit-elle pouvoir être invalidée ? Ou faut-il l'ignorer ?
 
