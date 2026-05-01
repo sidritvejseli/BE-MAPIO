@@ -56,7 +56,7 @@ class Donnees:
 
     def obtenir_colonnes_concentrations(self) -> Donnees:
         colonnes_concentrations = copy.copy(self)
-        colonnes_concentrations.dataframe = colonnes_concentrations.dataframe[self.noms_colonnes_concentrations]
+        colonnes_concentrations.dataframe = colonnes_concentrations.dataframe[list(self.noms_colonnes_concentrations)]
 
         return colonnes_concentrations
 
