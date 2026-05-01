@@ -177,3 +177,33 @@ class Graphe3D:
 
         self.colorbar = self.ax.figure.colorbar(carte_thermique, ax=self.ax)
         self.colorbar.set_label("Teneur")
+
+
+class GrapheCorrelation:
+    def __init__(self):
+        self.fig, self.ax = plt.subplots()
+        self.pente = None
+
+    def est_vide(self):
+        return not self.ax.has_data()
+
+    def tracer_graphe_correlation(self, donnees: Donnees): ...
+
+    def effacer_graphe(self):
+        self.ax.clear()
+        self.pente = None
+
+    def legender_titre(self, date: datetime):
+        self.ax.set_title(f"Corrélation CPC/ SMPS - Jour : {date.date()}")
+
+    def legender_abscisses(self):
+        self.ax.set_xlabel("ConcentrationCPC (cpc_conc)")
+
+    def legender_ordonnees(self):
+        self.ax.set_ylabel("Concentration total SMPS (smps_concTotal)")
+
+    def legender_boite(self):
+        self.ax.legend(fontsize=8)
+
+    def tracer_griller(self):
+        self.ax.grid(True, linestyle="--", alpha=0.5)
