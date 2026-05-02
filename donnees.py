@@ -22,7 +22,7 @@ class Donnees:
 
     def __init__(self, noms_colonnes_concentrations: tuple[NomConcentrationSMPS, NomConcentrationCPC]):
         self.logger = logging.getLogger()
-        self.noms_colonnes_concentrations = noms_colonnes_concentrations
+        self.noms_colonnes_concentrations = list(noms_colonnes_concentrations)
         self.nom_colonne_concentration = self.noms_colonnes_concentrations[0]
 
         self.initialiser_donnees()
@@ -56,7 +56,7 @@ class Donnees:
 
     def obtenir_colonnes_concentrations(self) -> Donnees:
         colonnes_concentrations = copy.copy(self)
-        colonnes_concentrations.dataframe = colonnes_concentrations.dataframe[list(self.noms_colonnes_concentrations)]
+        colonnes_concentrations.dataframe = colonnes_concentrations.dataframe[self.noms_colonnes_concentrations]
 
         # enlever les valeurs NaN
         df = colonnes_concentrations.dataframe.dropna(subset=self.noms_colonnes_concentrations)
@@ -235,7 +235,7 @@ class Donnees:
         self.historique.ajouter_action(self.dataframe.loc[debut:fin].index)
 
     def multiplier_concentration(self, facteur) -> None:
-        self.dataframe[list(self.noms_colonnes_concentrations)] *= facteur
+        self.dataframe[self.noms_colonnes_concentrations] *= facteur
 
     def convertir_titre_particules_en_float(self) -> None:
         self.dataframe.columns = [float(colonne.split("_")[2]) for colonne in self.dataframe.columns]

@@ -219,16 +219,16 @@ class GrapheCorrelation:
         self.ax.grid(True, linestyle="--", alpha=0.5)
 
     def tracer_donnees(self, donnees: Donnees, taille: int = 0.5, marqueur: str = "o", legende_boite: str = ""):
-        # donnees deja filtrees
-        df_colonnes = donnees.obtenir_colonnes_concentrations()
+        df_colonnes = donnees.obtenir_donnees_valides().obtenir_colonnes_concentrations()
 
-        smps_total = df_colonnes.dataframe.iloc[:, 0]
-        cpc_conc = df_colonnes.dataframe.iloc[:, 1]
+        smps_total = df_colonnes.obtenir_dataframe().iloc[:, 0]
+        cpc_conc = df_colonnes.obtenir_dataframe().iloc[:, 1]
 
         xy = np.vstack([cpc_conc, smps_total])
 
         # couleurs qui changent avec si la densité de points est elevée
         z = gaussian_kde(xy)(xy)
+
         self.ax.scatter(
             smps_total,
             cpc_conc,
@@ -237,6 +237,7 @@ class GrapheCorrelation:
             marker=marqueur,
             label=legende_boite,
         )
+
         self.tracer_regression(smps_total, cpc_conc)
 
     # FIXME verfier quel paramettre est l'abscisse et quel est l'ordonnee
