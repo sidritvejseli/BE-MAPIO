@@ -79,7 +79,7 @@ class Donnees:
 
         return donnees_supprimees
 
-    def echanger_nom_colonne_concentration(self) -> Donnees:
+    def echanger_nom_colonne_concentration(self) -> None:
         smps, cpc = self.noms_colonnes_concentrations
 
         if self.nom_colonne_concentration == smps:
@@ -233,6 +233,11 @@ class Donnees:
     def invalider_dates(self, debut: datetime, fin: datetime) -> None:
         self.invalider_drapeau_dates(debut, fin)
         self.historique.ajouter_action(self.dataframe.loc[debut:fin].index)
+
+    def est_tout_invalide(self) -> bool:
+        colonnes = self.noms_colonnes_concentrations
+        dataframe_non_nan = self.dataframe[colonnes].notna().all(axis=1)
+        return (self.dataframe.loc[dataframe_non_nan, "smps_flag"] == 1).all()
 
     def multiplier_concentration(self, facteur) -> None:
         self.dataframe[self.noms_colonnes_concentrations] *= facteur

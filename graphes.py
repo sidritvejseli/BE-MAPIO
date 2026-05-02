@@ -189,16 +189,6 @@ class GrapheCorrelation:
     def est_vide(self):
         return not self.ax.has_data()
 
-    def tracer_graphe_correlation(self, donnees: Donnees):
-        self.effacer_graphe_correlation()
-
-        self.tracer_donnees(donnees)
-
-        self.legender_abscisses()
-        self.legender_ordonnees()
-        self.tracer_griller()
-        self.legender_titre()
-
     def effacer_graphe_correlation(self):
         self.ax.clear()
         self.pente = None
@@ -206,19 +196,43 @@ class GrapheCorrelation:
     def legender_titre(self):
         self.ax.set_title(f"SMPS vs CPC (Pente: {self.pente:.2f})")
 
-    def legender_abscisses(self):
+    def legender_abscisses(self, concentration_maximum_smps):
         self.ax.set_ylabel("Concentration total SMPS (smps_concTotal)")
 
-    def legender_ordonnees(self):
+        self.ax.set_xlim(0, 1.05 * concentration_maximum_smps)
+
+    def legender_ordonnees(self, concentration_maximum_cpc):
         self.ax.set_xlabel("ConcentrationCPC (cpc_conc)")
+
+        self.ax.set_ylim(0, 1.05 * concentration_maximum_cpc)
 
     def legender_boite(self):
         self.ax.legend(fontsize=8)
 
-    def tracer_griller(self):
+    def tracer_grille(self):
         self.ax.grid(True, linestyle="--", alpha=0.5)
 
-    def tracer_donnees(self, donnees: Donnees, taille: int = 0.5, marqueur: str = "o", legende_boite: str = ""):
+    def tracer_graphe_correlation(self, donnees: Donnees, concentrations_maximum: dict[str, float]):
+        self.effacer_graphe_correlation()
+
+        self.tracer_donnees(donnees)
+
+        concentration_maximum_smps = concentrations_maximum[donnees.noms_colonnes_concentrations[0]]
+        self.legender_abscisses(concentration_maximum_smps)
+
+        concentration_maximum_cpc = concentrations_maximum[donnees.noms_colonnes_concentrations[1]]
+        self.legender_ordonnees(concentration_maximum_cpc)
+
+        self.tracer_grille()
+        self.legender_titre()
+
+    def tracer_donnees(
+        self,
+        donnees: Donnees,
+        taille: int = 0.5,
+        marqueur: str = "o",
+        legende_boite: str = "",
+    ):
         df_colonnes = donnees.obtenir_donnees_valides().obtenir_colonnes_concentrations()
 
         smps_total = df_colonnes.obtenir_dataframe().iloc[:, 0]
@@ -251,10 +265,5 @@ class GrapheCorrelation:
         self.pente = model.coef_[0]
         y_max = y_data.max()
         yy = [0, y_max]
-
-        # decalage -> un des points était majortairement en dehor du graphe affiché
-        x_max = x_data.max()
-        decalage = x_max * 0.05
-        self.ax.set_xlim(0, x_max + decalage)
 
         self.ax.plot(yy / self.pente, yy, color="dimgrey", linewidth=1.5)

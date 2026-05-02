@@ -144,7 +144,10 @@ class Interface:
         self.graphe_correlation: GrapheCorrelation = GrapheCorrelation()
 
         self.teneur_maximum = None  # Remarque : Pour garder une échelle constante de couleur du graphe 3D, on garde en mémoire la valeur maximum.
-        self.concentration_maximum = None
+        self.concentrations_maximum: dict[str, float] = {
+            self.description_colonnes_concentration[0]: None,
+            self.description_colonnes_concentration[1]: None,
+        }
 
         # Construction initiale.
         self.construire_barre_menus()
@@ -313,7 +316,17 @@ class Interface:
         self.donnees.charger_fichier_csv(chemin_absolu_chargement)
 
         self.teneur_maximum = self.donnees.obtenir_particules().obtenir_valeur_maximum()
-        self.concentration_maximum = self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
+
+        self.concentrations_maximum[self.description_colonnes_concentration[0]] = (
+            self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
+        )
+
+        self.donnees.echanger_nom_colonne_concentration()
+        self.concentrations_maximum[self.description_colonnes_concentration[1]] = (
+            self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
+        )
+
+        self.donnees.echanger_nom_colonne_concentration()
 
         if not self.donnees.est_vide():
             self.date_debut = self.donnees.obtenir_minuit_premiere_date()
@@ -339,7 +352,10 @@ class Interface:
         self.date_fin = None
         self.afficher_aucun_fichier_charge_barre_outils()
         self.teneur_maximum = None
-        self.concentration_maximum = None
+        self.concentrations_maximum: dict[str, float] = {
+            self.description_colonnes_concentration[0]: None,
+            self.description_colonnes_concentration[1]: None,
+        }
 
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
@@ -400,7 +416,12 @@ class Interface:
 
         self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
 
-        self.graphe_2d.tracer_graphe_2d(self.donnees, self.date_debut, self.date_fin, self.concentration_maximum)
+        self.graphe_2d.tracer_graphe_2d(
+            self.donnees,
+            self.date_debut,
+            self.date_fin,
+            self.concentrations_maximum[self.donnees.nom_colonne_concentration],
+        )
         self.interactions.tracer_lignes(self.ax_2d, self.date_debut, self.date_fin)
 
         # Initialisation de l'infobulle.
@@ -429,12 +450,17 @@ class Interface:
         self.mettre_a_jour_trace_graphe_3d()
 
     def tracer_graphe_correlation(self):
-        if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
+        if (
+            self.donnees.est_vide()
+            or self.donnees.est_tout_invalide()
+            or self.date_debut is None
+            or self.date_fin is None
+        ):
             self.graphe_correlation.effacer_graphe_correlation()
             self.mettre_a_jour_trace_graphe_correlation()
             return
 
-        self.graphe_correlation.tracer_graphe_correlation(self.donnees)
+        self.graphe_correlation.tracer_graphe_correlation(self.donnees, self.concentrations_maximum)
 
         self.mettre_a_jour_trace_graphe_correlation()
 
@@ -495,16 +521,14 @@ class Interface:
             return
 
         self.donnees.multiplier_concentration(facteur)
-        self.concentration_maximum *= facteur
+        self.concentrations_maximum[self.description_colonnes_concentration[0]] *= facteur
+        self.concentrations_maximum[self.description_colonnes_concentration[1]] *= facteur
 
         self.tracer_graphe_2d()
         self.tracer_graphe_correlation()
 
     def changer_colonne_concentration(self):
         self.donnees.echanger_nom_colonne_concentration()
-
-        if not self.donnees.est_vide():
-            self.concentration_maximum = self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
 
         self.tracer_graphe_2d()
 
