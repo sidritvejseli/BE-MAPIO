@@ -237,10 +237,10 @@ class GrapheCorrelation:
             marker=marqueur,
             label=legende_boite,
         )
-        self.tracer_regression(smps_total, cpc_conc, self.ax)
+        self.tracer_regression(smps_total, cpc_conc)
 
     # FIXME verfier quel paramettre est l'abscisse et quel est l'ordonnee
-    def tracer_regression(self, x, y, axe):
+    def tracer_regression(self, x, y):
         x_data = x.values.reshape(-1, 1)
         y_data = y.values
         model = LinearRegression(fit_intercept=False)
@@ -254,6 +254,6 @@ class GrapheCorrelation:
         # decalage -> un des points était majortairement en dehor du graphe affiché
         x_max = x_data.max()
         decalage = x_max * 0.05
-        axe.set_xlim(0, x_max+ decalage)
+        self.ax.set_xlim(0, x_max+ decalage)
 
-        axe.plot(yy / self.pente, yy, color="dimgrey", linewidth=1.5)
+        self.ax.plot(yy / self.pente, yy, color="dimgrey", linewidth=1.5)
