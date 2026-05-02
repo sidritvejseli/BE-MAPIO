@@ -242,6 +242,7 @@ class GrapheCorrelation:
 
         # couleurs qui changent avec si la densité de points est elevée
         z = gaussian_kde(xy)(xy)
+        # FIXME : Si le graphe contient un unique point valide, la corrélation imprime une erreur.
 
         self.ax.scatter(
             smps_total,
