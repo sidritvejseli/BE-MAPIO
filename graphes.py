@@ -211,10 +211,11 @@ class GrapheCorrelation:
 
 
     def legender_abscisses(self):
-        self.ax.set_xlabel("ConcentrationCPC (cpc_conc)")
+        self.ax.set_ylabel("Concentration total SMPS (smps_concTotal)")
 
     def legender_ordonnees(self):
-        self.ax.set_ylabel("Concentration total SMPS (smps_concTotal)")
+        self.ax.set_xlabel("ConcentrationCPC (cpc_conc)")
+
 
     def legender_boite(self):
         self.ax.legend(fontsize=8)
@@ -223,41 +224,42 @@ class GrapheCorrelation:
         self.ax.grid(True, linestyle="--", alpha=0.5)
     
     def tracer_donnees(
-        self, donnees: Donnees, taille: int = 0.5, couleur: str = "steelblue", marqueur: str = "o", legende_boite: str = ""
+        self, donnees: Donnees, taille: int = 0.5, marqueur: str = "o", legende_boite: str = ""
     ):
            #donnees deja filtrees
         df_colonnes = donnees.obtenir_colonnes_concentrations()
-
-        cpc_conc = df_colonnes.dataframe["cpc_conc"]
+        
         smps_total = df_colonnes.dataframe["smps_concTotal"]
+        cpc_conc = df_colonnes.dataframe["cpc_conc"]
         
         xy = np.vstack([cpc_conc,smps_total])
-        z = gaussian_kde(xy)(xy)
 
+        #couleurs qui changent avec si la densité de points est elevée
+        z = gaussian_kde(xy)(xy)
         self.ax.scatter(
-            cpc_conc,
             smps_total,
+            cpc_conc,
             s=taille,
             c=z,
             marker=marqueur,
             label=legende_boite,
         )
-        self.tracer_regression(cpc_conc, smps_total, self.ax)
+        self.tracer_regression(smps_total,cpc_conc, self.ax)
 
     #FIXME verfier quel paramettre est l'abscisse et quel est l'ordonnee
-    def tracer_regression(self, cpc_conc, smps_total, axe):
-        x = cpc_conc.values.reshape(-1,1)
-        y = smps_total.values
+    def tracer_regression(self, x, y, axe):
+        x_data = x.values.reshape(-1,1)
+        y_data = y.values
         model = LinearRegression(fit_intercept=False)
 
-        model.fit(x, y)
+        model.fit(x_data, y_data)
 
         self.pente = model.coef_[0]
-        y_max = y.max()
+        y_max = y_data.max()
         yy = [0, y_max] 
         
         #decalage de 20 -> un des points était majortairement en dehor du graphe affiche
-        axe.set_xlim(0, x.max()+20)
+        axe.set_xlim(0, x_data.max()+20)
          
 
         axe.plot(yy/self.pente, yy, color='dimgrey', linewidth=1.5) 
