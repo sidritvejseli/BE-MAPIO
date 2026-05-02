@@ -86,6 +86,7 @@ class Interface:
             ("Suivant ▶", self.sauter_au_jour_suivant),
             ("Dernier ▶|", self.sauter_au_dernier_jour),
             None,
+            ("Selectionner plage", self.activer_selection_rectangle),
             ("Supprimer plage", self.supprimer_plage),
             None,
             ("Annuler", self.annuler),
@@ -94,6 +95,9 @@ class Interface:
             ("Facteur", self.demander_facteur),
             None,
             ("smps↔cpc", self.changer_colonne_concentration),
+            None,
+            ("Zoomer", self.zoomer),
+            ("Dezoomer", self.dezoomer),
         ]
 
         self.description_barre_onglets: list[str] = [
@@ -168,6 +172,10 @@ class Interface:
         self.construire_journal()
 
     def info_point(self, evenement: Event):
+        # quand rectangle actif , priorite
+        if self.interactions.rectangle_selector is not None and self.interactions.rectangle_selector.active:
+            return
+
         doit_rafraichir = self.interactions.info_point(
             evenement,
             self.donnees,
@@ -181,7 +189,10 @@ class Interface:
             self.zone_affichage_graphe_2d.draw_idle()
 
     def repondre_apres_clic_souris(self, evenement: Event):
-        type_clic = self.interactions.repondre_apres_clic_souris(
+        if self.interactions.rectangle_selector is not None and self.interactions.rectangle_selector.active:
+            return
+
+        doit_rafraichir = self.interactions.repondre_apres_clic_souris(
             evenement,
             self.donnees,
             self.ax_2d,
@@ -189,10 +200,7 @@ class Interface:
             self.date_fin,
         )
 
-        if type_clic == 1:
-            self.zone_affichage_graphe_2d.draw_idle()
-
-        elif type_clic == 3:
+        if doit_rafraichir:
             self.tracer_graphe_2d()
             self.tracer_graphe_3d()
             self.tracer_graphe_correlation()
@@ -212,12 +220,32 @@ class Interface:
         self.tracer_graphe_correlation()
         self.mettre_a_jour_journal()
 
+    def activer_selection_rectangle(self):
+
+        if self.donnees.est_vide():
+            messagebox.showwarning("Attention !!!", "Aucune donnée chargée")
+            return
+
+        self.interactions.activer_mode_rectangle()
+        self.barre_outils_etiquette_jour.config(
+            text="Dessinez un rectangle sur le graphe, puis cliquez sur 'Supprimer plage' "
+        )
+
     def supprimer_plage(self):
-        self.interactions.supprimer_plage(self.donnees)
-        self.tracer_graphe_2d()
-        self.tracer_graphe_3d()
-        self.tracer_graphe_correlation()
-        self.mettre_a_jour_journal()
+        if not self.interactions.rectangle_actif:
+            messagebox.showinfo(
+                "Info",
+                "Aucun rectangle sélectionné.\n Cliquez d'abord sur 'Sélectionner plage' et dessinez un rectangle sur le graphe. ",
+            )
+            return
+
+        rafraichir = self.interactions.supprimer_plage_rectangle(self.donnees)
+
+        if rafraichir:
+            self.tracer_graphe_2d()
+            self.tracer_graphe_3d()
+            self.tracer_graphe_correlation()
+            self.mettre_a_jour_journal()
 
     def construire_onglet_particules(self):
         self.page_principale = tk.Frame(self.onglets["Particules"])
@@ -234,6 +262,8 @@ class Interface:
         self.zone_affichage_graphe_2d.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
 
         self.ax_2d = self.graphe_2d.ax
+
+        self.interactions.initialiser_rectangle_selector(self.ax_2d)
 
         self.zone_affichage_graphe_2d.mpl_connect("button_press_event", self.repondre_apres_clic_souris)
         self.zone_affichage_graphe_2d.mpl_connect("motion_notify_event", self.info_point)
@@ -284,6 +314,8 @@ class Interface:
 
         self.logger.warning(f"Fichier de configuration {chemin} introuvable.")
         return {}
+
+    # affichage
 
     def afficher_indisponible(self):
         messagebox.showinfo("Info", "Fonctionnalité pas encore disponible.")
@@ -414,6 +446,7 @@ class Interface:
             self.mettre_a_jour_trace_graphe_2d()
             return
 
+        self.interactions.reinitialiser_rectangle()
         self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
 
         self.graphe_2d.tracer_graphe_2d(
@@ -422,7 +455,10 @@ class Interface:
             self.date_fin,
             self.concentrations_maximum[self.donnees.nom_colonne_concentration],
         )
-        self.interactions.tracer_lignes(self.ax_2d, self.date_debut, self.date_fin)
+
+        # Sauvegarde les limites du graphe après le trace(pour dezzommer et avoir le meme graphe quavant)
+        self.xlim_original = self.ax_2d.get_xlim()
+        self.ylim_original = self.ax_2d.get_ylim()
 
         # Initialisation de l'infobulle.
         # FIXME : Vérifier si l'initialisation de l'infobulle se fait au bon endroit.
@@ -615,3 +651,26 @@ class Interface:
 
     def construire_interface(self):
         self.application.mainloop()
+
+    def zoomer(self):
+        if not self.interactions.rectangle_actif:
+            messagebox.showinfo("Info", "Aucun rectangle sélectionné.\n Cliquez d'abord sur 'Sélectionner plage' ")
+            return
+
+        # delegue le zoome a interaction
+        rafraichir = self.interactions.zoomer_rectangle(self.ax_2d)
+
+        if rafraichir:
+            # redessine le grpahe pour que le zomme se fasse
+            self.zone_affichage_graphe_2d.draw()
+
+    def dezoomer(self):
+        # hasattr vérifie si l'attribut xlim_original existe sur l'objet
+        # Si afficher_graphe n'a jamais été appelé, cet attribut n'existe pas encore et appeler set_xlim planterait.
+        if not hasattr(self, "xlim_original"):
+            return
+
+        # remet les nouvelle limite
+        self.ax_2d.set_xlim(self.xlim_original)
+        self.ax_2d.set_ylim(self.ylim_original)
+        self.zone_affichage_graphe_2d.draw()
