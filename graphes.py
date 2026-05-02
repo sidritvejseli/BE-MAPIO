@@ -251,7 +251,9 @@ class GrapheCorrelation:
         y_max = y_data.max()
         yy = [0, y_max]
 
-        # decalage de 20 -> un des points était majortairement en dehor du graphe affiche
-        axe.set_xlim(0, x_data.max() + 20)
+        # decalage -> un des points était majortairement en dehor du graphe affiché
+        x_max = x_data.max()
+        decalage = x_max * 0.05
+        axe.set_xlim(0, x_max+ decalage)
 
         axe.plot(yy / self.pente, yy, color="dimgrey", linewidth=1.5)
