@@ -376,7 +376,7 @@ class Interface:
         self.zone_affichage_graphe_correlation.draw()
         self.canvas_3d_individuel.draw()
 
-    def afficher_graphe(self, MAJ_correlation = True):
+    def afficher_graphe(self):
         if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
             self.graphe_2d.effacer_graphe_2d()
             self.graphe_3d.effacer_graphe_3d()
@@ -402,10 +402,10 @@ class Interface:
 
         self.graphe_3d.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin, self.teneur_maximum)
 
-        if (MAJ_correlation):
-            self.graphe_correlation.tracer_graphe_correlation(self.donnees)
+        
+        self.graphe_correlation.tracer_graphe_correlation(self.donnees)
 
-        self.mettre_a_jour_trace_graphe(MAJ_correlation)
+        self.mettre_a_jour_trace_graphe()
 
         self.afficher_jour_barre_outils()
 
@@ -424,28 +424,28 @@ class Interface:
             return
 
         self.date_debut = self.ajouter_24_heures(self.date_debut)
-        self.afficher_graphe(MAJ_correlation= False)
+        self.afficher_graphe()
 
     def sauter_au_jour_precedent(self):
         if self.donnees.est_vide() or self.date_debut <= self.donnees.obtenir_premiere_date():
             return
 
         self.date_debut = self.soustraire_24_heures(self.date_debut)
-        self.afficher_graphe(MAJ_correlation= False)
+        self.afficher_graphe()
 
     def sauter_au_premier_jour(self):
         if self.donnees.est_vide():
             return
 
         self.date_debut = self.donnees.obtenir_premiere_date()
-        self.afficher_graphe(MAJ_correlation= False)
+        self.afficher_graphe()
 
     def sauter_au_dernier_jour(self):
         if self.donnees.est_vide():
             return
 
         self.date_debut = self.donnees.obtenir_derniere_date()
-        self.afficher_graphe(MAJ_correlation= False)
+        self.afficher_graphe()
 
     # demande du facteur
     def demander_facteur(self):
