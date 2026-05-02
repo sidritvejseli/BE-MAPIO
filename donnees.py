@@ -58,7 +58,7 @@ class Donnees:
         colonnes_concentrations = copy.copy(self)
         colonnes_concentrations.dataframe = colonnes_concentrations.dataframe[list(self.noms_colonnes_concentrations)]
 
-        #enlever les valeurs NaN
+        # enlever les valeurs NaN
         df = colonnes_concentrations.dataframe.dropna(subset=self.noms_colonnes_concentrations)
         colonnes_concentrations.dataframe = df
         return colonnes_concentrations
@@ -235,7 +235,7 @@ class Donnees:
         self.historique.ajouter_action(self.dataframe.loc[debut:fin].index)
 
     def multiplier_concentration(self, facteur) -> None:
-        self.dataframe[self.nom_colonne_concentration] *= facteur
+        self.dataframe[list(self.noms_colonnes_concentrations)] *= facteur
 
     def convertir_titre_particules_en_float(self) -> None:
         self.dataframe.columns = [float(colonne.split("_")[2]) for colonne in self.dataframe.columns]
