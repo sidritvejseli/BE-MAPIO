@@ -371,7 +371,7 @@ class Interface:
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
             self.destroy()
 
-    def mettre_a_jour_trace_graphe(self, MAJ_correlation):
+    def mettre_a_jour_trace_graphe(self):
         self.zone_affichage_graphe_2d.draw()
         self.zone_affichage_graphe_correlation.draw()
         self.canvas_3d_individuel.draw()
