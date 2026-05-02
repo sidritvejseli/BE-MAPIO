@@ -198,6 +198,7 @@ class GrapheCorrelation:
         self.legender_ordonnees()
         self.tracer_griller()
         self.legender_titre()
+        
 
 
 
@@ -206,7 +207,8 @@ class GrapheCorrelation:
         self.pente = None
 
     def legender_titre(self):
-        self.ax.set_title("Corrélation CPC/ SMPS")
+        self.ax.set_title(f"SMPS vs CPC (Pente: {self.pente:.2f})")
+
 
     def legender_abscisses(self):
         self.ax.set_xlabel("ConcentrationCPC (cpc_conc)")
@@ -251,8 +253,6 @@ class GrapheCorrelation:
         model.fit(x, y)
 
         self.pente = model.coef_[0]
-        axe.set_title(f"SMPS vs CPC (Pente: {self.pente:.2f})")
-
         y_max = y.max()
         yy = [0, y_max] 
         
