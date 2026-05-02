@@ -1,14 +1,13 @@
 import logging
-from matplotlib.axes import Axes
 import matplotlib.dates as mdates
-from matplotlib.lines import Line2D
-from matplotlib.text import Annotation
-from matplotlib.widgets import RectangleSelector
 import numpy as np
 
 
 from datetime import datetime
+from matplotlib.axes import Axes
 from matplotlib.backend_bases import Event
+from matplotlib.text import Annotation
+from matplotlib.widgets import RectangleSelector
 from pandas import DataFrame
 
 
@@ -87,7 +86,7 @@ class Interactions:
 
         # Si aucun rectangle dessine, on ne fait rien
         if not self.rectangle_actif:
-            self.logger.info("Suppression impossible : aucun rectangle sélectionne")
+            self.logger.info("Suppression des données impossible car aucun rectangle sélectionné.")
             return False
 
         # replace(tzinfo=None) pour pas que pandas plante (vuseau pas attendu)

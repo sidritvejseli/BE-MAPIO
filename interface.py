@@ -80,12 +80,19 @@ class Interface:
             ),
         ]
 
-        self.description_barre_outils: BarreOutils = [
+        self.description_barre_outils_jour: BarreOutils = [
             ("|◀ Premier", self.sauter_au_premier_jour),
             ("◀ Précédent", self.sauter_au_jour_precedent),
             ("Suivant ▶", self.sauter_au_jour_suivant),
             ("Dernier ▶|", self.sauter_au_dernier_jour),
             None,
+            ("smps↔cpc", self.changer_colonne_concentration),
+            None,
+            ("Zoomer", self.zoomer),
+            ("Dezoomer", self.dezoomer),
+        ]
+
+        self.description_barre_outils_validation: BarreOutils = [
             ("Sélectionner plage", self.activer_selection_rectangle),
             ("Supprimer plage", self.supprimer_plage),
             None,
@@ -93,11 +100,6 @@ class Interface:
             ("Rétablir", self.retablir),
             None,
             ("Facteur", self.demander_facteur),
-            None,
-            ("smps↔cpc", self.changer_colonne_concentration),
-            None,
-            ("Zoomer", self.zoomer),
-            ("Dezoomer", self.dezoomer),
         ]
 
         self.description_barre_onglets: list[str] = [
@@ -159,8 +161,10 @@ class Interface:
         # Construction initiale.
         self.construire_barre_menus()
 
-        self.barre_outils_etiquette_jour: Label = None
-        self.construire_barre_outils()
+        self.barre_outils_etiquette_jour: Label = self.construire_barre_outils(self.description_barre_outils_jour)
+        self.barre_outils_etiquette_message: Label = self.construire_barre_outils(
+            self.description_barre_outils_validation
+        )
 
         self.barre_onglets: Notebook = None
         self.onglets: Onglets = {}
@@ -230,7 +234,7 @@ class Interface:
             return
 
         self.interactions.activer_mode_rectangle()
-        self.barre_outils_etiquette_jour.config(
+        self.barre_outils_etiquette_message.config(
             text="Dessinez un rectangle sur le graphe, puis cliquez sur 'Supprimer plage' "
         )
 
@@ -595,11 +599,11 @@ class Interface:
 
         self.application.configure(menu=barre_menus)
 
-    def construire_barre_outils(self):
+    def construire_barre_outils(self, description_barre_outils):
         barre_outils = tk.Frame(self.application, bd=1, relief=tk.RAISED)
         barre_outils.pack(side=tk.TOP, fill=tk.X)
 
-        for item in self.description_barre_outils:
+        for item in description_barre_outils:
             if item is None:
                 tk.Label(barre_outils, text="  |  ").pack(side=tk.LEFT)
                 continue
@@ -612,10 +616,10 @@ class Interface:
 
             tk.Button(barre_outils, text=etiquette, command=fonction).pack(side=tk.LEFT, padx=2, pady=2)
 
-        self.barre_outils_etiquette_jour = tk.Label(
-            barre_outils, text="Aucun fichier chargé.", font=("Arial", 10, "bold")
-        )
-        self.barre_outils_etiquette_jour.pack(side=tk.RIGHT, padx=10)
+        barre_outils_etiquette = tk.Label(barre_outils, text="Aucun fichier chargé.", font=("Arial", 10, "bold"))
+        barre_outils_etiquette.pack(side=tk.RIGHT, padx=10)
+
+        return barre_outils_etiquette
 
     def construire_barre_onglets(self):
         self.barre_onglets = ttk.Notebook(self.application)
