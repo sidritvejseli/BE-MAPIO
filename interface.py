@@ -86,7 +86,7 @@ class Interface:
             ("Suivant ▶", self.sauter_au_jour_suivant),
             ("Dernier ▶|", self.sauter_au_dernier_jour),
             None,
-            ("Selectionner plage", self.activer_selection_rectangle),
+            ("Sélectionner plage", self.activer_selection_rectangle),
             ("Supprimer plage", self.supprimer_plage),
             None,
             ("Annuler", self.annuler),
@@ -144,6 +144,9 @@ class Interface:
 
         # Graphes.
         self.graphe_2d: Graphe2D = Graphe2D()
+        self.xlim_original = None
+        self.ylim_original = None
+
         self.graphe_3d: Graphe3D = Graphe3D()
         self.graphe_correlation: GrapheCorrelation = GrapheCorrelation()
 
@@ -388,6 +391,9 @@ class Interface:
             self.description_colonnes_concentration[0]: None,
             self.description_colonnes_concentration[1]: None,
         }
+
+        self.xlim_original = None
+        self.ylim_original = None
 
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
@@ -665,9 +671,7 @@ class Interface:
             self.zone_affichage_graphe_2d.draw()
 
     def dezoomer(self):
-        # hasattr vérifie si l'attribut xlim_original existe sur l'objet
-        # Si afficher_graphe n'a jamais été appelé, cet attribut n'existe pas encore et appeler set_xlim planterait.
-        if not hasattr(self, "xlim_original"):
+        if self.xlim_original is None or self.ylim_original is None:
             return
 
         # remet les nouvelle limite
