@@ -374,8 +374,7 @@ class Interface:
     def mettre_a_jour_trace_graphe(self, MAJ_correlation):
         self.zone_affichage_graphe_2d.draw()
         self.zone_affichage_graphe_correlation.draw()
-        if (MAJ_correlation):
-            self.canvas_3d_individuel.draw()
+        self.canvas_3d_individuel.draw()
 
     def afficher_graphe(self, MAJ_correlation = True):
         if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
