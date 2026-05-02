@@ -5,7 +5,6 @@ from matplotlib.lines import Line2D
 from matplotlib.text import Annotation
 from matplotlib.widgets import RectangleSelector
 import numpy as np
-import pandas as pd
 
 
 from datetime import datetime
@@ -84,7 +83,7 @@ class Interactions:
             self.rectangle_selector.clear()
 
     # Invalide tous les points valides contenus dans le rectangle def supprimer_plage_rectangle(self, donnees: Donnees) -> bool:
-    def supprimer_plage_rectangle(self, donnees):
+    def supprimer_plage_rectangle(self, donnees: Donnees):
 
         # Si aucun rectangle dessine, on ne fait rien
         if not self.rectangle_actif:
@@ -98,19 +97,18 @@ class Interactions:
         y_max = self.rect_y2
 
         # On récupère le tableau pandas complet
-        df = donnees.obtenir_dataframe()
-
         # le point est dans le  rectangle et il est encore valide
         masque = (
-            (df.index >= date_debut)
-            & (df.index <= date_fin)
-            & (df["smps_concTotal"] >= y_min)
-            & (df["smps_concTotal"] <= y_max)
-            & (df["smps_flag"] == 0)  # seulement les points encore valides
+            donnees.obtenir_donnees_valides()
+            .obtenir_dates(date_debut, date_fin)
+            .obtenir_concentration_intervalle(y_min, y_max)
+            .obtenir_colonne_concentration()
+            .obtenir_colonne_dates()
+            .obtenir_dataframe()
         )
 
         # si correspond au masque , on le vire
-        df.loc[masque, "smps_flag"] = 1
+        donnees.invalider_dates(masque)
 
         self.reinitialiser_rectangle()
         return True

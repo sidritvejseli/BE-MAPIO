@@ -194,6 +194,17 @@ class Donnees:
 
         return particules
 
+    def obtenir_concentration_intervalle(self, concentration_minimum, concentration_maximum) -> Donnees:
+        intervalle = copy.copy(self)
+
+        masque = (intervalle.dataframe[self.nom_colonne_concentration] >= concentration_minimum) & (
+            intervalle.dataframe[self.nom_colonne_concentration] <= concentration_maximum
+        )
+
+        intervalle.dataframe = intervalle.dataframe[masque]
+
+        return intervalle
+
     # Remarque : copy.copy() renvoie une vue de l'objet Donnees.
     # Le DataFrame du champ donnees est donc partagé par ces deux objets.
     # Si on modifie les valeurs de ce DataFrame dans un des deux objets,
@@ -227,12 +238,12 @@ class Donnees:
         for date in dates:
             self.invalider_drapeau_date(date)
 
-    def invalider_drapeau_dates(self, debut: datetime, fin: datetime) -> None:
-        self.dataframe.loc[debut:fin, "smps_flag"] = 1
+    def invalider_drapeau_dates(self, masque: list[datetime]) -> None:
+        self.dataframe.loc[masque, "smps_flag"] = 1
 
-    def invalider_dates(self, debut: datetime, fin: datetime) -> None:
-        self.invalider_drapeau_dates(debut, fin)
-        self.historique.ajouter_action(self.dataframe.loc[debut:fin].index)
+    def invalider_dates(self, masque: list[datetime]) -> None:
+        self.invalider_drapeau_dates(masque)
+        self.historique.ajouter_action(self.dataframe.loc[masque].index)
 
     def est_tout_invalide(self) -> bool:
         colonnes = self.noms_colonnes_concentrations
