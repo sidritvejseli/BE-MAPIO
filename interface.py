@@ -190,22 +190,30 @@ class Interface:
             self.zone_affichage_graphe_2d.draw_idle()
 
         elif type_clic == 3:
-            self.afficher_graphe()
+            self.tracer_graphe_2d()
+            self.tracer_graphe_3d()
+            self.tracer_graphe_correlation()
             self.mettre_a_jour_journal()
 
     def annuler(self):
         self.donnees.annuler_invalidation_date()
-        self.afficher_graphe()
+        self.tracer_graphe_2d()
+        self.tracer_graphe_3d()
+        self.tracer_graphe_correlation()
         self.mettre_a_jour_journal()
 
     def retablir(self):
         self.donnees.retablir_invalidation_date()
-        self.afficher_graphe()
+        self.tracer_graphe_2d()
+        self.tracer_graphe_3d()
+        self.tracer_graphe_correlation()
         self.mettre_a_jour_journal()
 
     def supprimer_plage(self):
         self.interactions.supprimer_plage(self.donnees)
-        self.afficher_graphe()
+        self.tracer_graphe_2d()
+        self.tracer_graphe_3d()
+        self.tracer_graphe_correlation()
         self.mettre_a_jour_journal()
 
     def construire_onglet_particules(self):
@@ -310,7 +318,9 @@ class Interface:
         if not self.donnees.est_vide():
             self.date_debut = self.donnees.obtenir_minuit_premiere_date()
             self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
-            self.afficher_graphe()
+            self.tracer_graphe_2d()
+            self.tracer_graphe_3d()
+            self.tracer_graphe_correlation()
             self.afficher_jour_barre_outils()
 
         self.donnees_sans_modification = copy.deepcopy(self.donnees)
@@ -331,7 +341,9 @@ class Interface:
         self.teneur_maximum = None
         self.concentration_maximum = None
 
-        self.afficher_graphe()
+        self.tracer_graphe_2d()
+        self.tracer_graphe_3d()
+        self.tracer_graphe_correlation()
 
     def sauvegarder_fichier(self):
         repertoires_configuration = self.config.get("repertoires", {})
@@ -371,17 +383,19 @@ class Interface:
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
             self.destroy()
 
-    def mettre_a_jour_trace_graphe(self):
+    def mettre_a_jour_trace_graphe_2d(self):
         self.zone_affichage_graphe_2d.draw()
-        self.zone_affichage_graphe_correlation.draw()
+
+    def mettre_a_jour_trace_graphe_3d(self):
         self.canvas_3d_individuel.draw()
 
-    def afficher_graphe(self):
+    def mettre_a_jour_trace_graphe_correlation(self):
+        self.zone_affichage_graphe_correlation.draw()
+
+    def tracer_graphe_2d(self):
         if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
             self.graphe_2d.effacer_graphe_2d()
-            self.graphe_3d.effacer_graphe_3d()
-            self.graphe_correlation.effacer_graphe_correlation()
-            self.mettre_a_jour_trace_graphe()
+            self.mettre_a_jour_trace_graphe_2d()
             return
 
         self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
@@ -400,15 +414,29 @@ class Interface:
             visible=False,
         )
 
+        self.mettre_a_jour_trace_graphe_2d()
+
+    def tracer_graphe_3d(self):
+        if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
+            self.graphe_3d.effacer_graphe_3d()
+            self.mettre_a_jour_trace_graphe_3d()
+            return
+
+        self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
+
         self.graphe_3d.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin, self.teneur_maximum)
 
-        
+        self.mettre_a_jour_trace_graphe_3d()
+
+    def tracer_graphe_correlation(self):
+        if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
+            self.graphe_correlation.effacer_graphe_correlation()
+            self.mettre_a_jour_trace_graphe_correlation()
+            return
+
         self.graphe_correlation.tracer_graphe_correlation(self.donnees)
 
-        self.mettre_a_jour_trace_graphe()
-
-        self.afficher_jour_barre_outils()
-
+        self.mettre_a_jour_trace_graphe_correlation()
 
     def ajouter_24_heures(self, jour: datetime):
         return jour + pd.Timedelta(days=1)
@@ -424,28 +452,40 @@ class Interface:
             return
 
         self.date_debut = self.ajouter_24_heures(self.date_debut)
-        self.afficher_graphe()
+        self.tracer_graphe_2d()
+        self.tracer_graphe_3d()
+
+        self.afficher_jour_barre_outils()
 
     def sauter_au_jour_precedent(self):
         if self.donnees.est_vide() or self.date_debut <= self.donnees.obtenir_premiere_date():
             return
 
         self.date_debut = self.soustraire_24_heures(self.date_debut)
-        self.afficher_graphe()
+        self.tracer_graphe_2d()
+        self.tracer_graphe_3d()
+
+        self.afficher_jour_barre_outils()
 
     def sauter_au_premier_jour(self):
         if self.donnees.est_vide():
             return
 
         self.date_debut = self.donnees.obtenir_premiere_date()
-        self.afficher_graphe()
+        self.tracer_graphe_2d()
+        self.tracer_graphe_3d()
+
+        self.afficher_jour_barre_outils()
 
     def sauter_au_dernier_jour(self):
         if self.donnees.est_vide():
             return
 
         self.date_debut = self.donnees.obtenir_derniere_date()
-        self.afficher_graphe()
+        self.tracer_graphe_2d()
+        self.tracer_graphe_3d()
+
+        self.afficher_jour_barre_outils()
 
     # demande du facteur
     def demander_facteur(self):
@@ -457,7 +497,8 @@ class Interface:
         self.donnees.multiplier_concentration(facteur)
         self.concentration_maximum *= facteur
 
-        self.afficher_graphe()
+        self.tracer_graphe_2d()
+        self.tracer_graphe_correlation()
 
     def changer_colonne_concentration(self):
         self.donnees.echanger_nom_colonne_concentration()
@@ -465,7 +506,7 @@ class Interface:
         if not self.donnees.est_vide():
             self.concentration_maximum = self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
 
-        self.afficher_graphe()
+        self.tracer_graphe_2d()
 
     def construire_menu_deroulant(self, barre_menus: Menu, nom_menu_deroulant: str, items_menu_deroulant: ItemsMenu):
         menu_deroulant = tk.Menu(barre_menus, tearoff=False)
