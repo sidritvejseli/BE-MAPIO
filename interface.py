@@ -435,7 +435,7 @@ class Interface:
 
     def quitter_programme(self):
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
-            self.destroy()
+            self.application.destroy()
 
     def mettre_a_jour_trace_graphe_2d(self):
         self.zone_affichage_graphe_2d.draw()
