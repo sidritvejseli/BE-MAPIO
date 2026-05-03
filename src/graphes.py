@@ -16,7 +16,11 @@ from scipy.stats import gaussian_kde
 from donnees import Donnees
 
 
-class Graphe2D:
+class Graphe:
+    pass
+
+
+class Graphe2D(Graphe):
 
     def __init__(self):
         self.logger = logging.getLogger()
@@ -102,7 +106,7 @@ class Graphe2D:
         self.ax.grid(True, linestyle="--")
 
 
-class Graphe3D:
+class Graphe3D(Graphe):
 
     def __init__(self):
         self.fig, self.ax = plt.subplots()
@@ -181,7 +185,7 @@ class Graphe3D:
         self.colorbar.set_label("Teneur")
 
 
-class GrapheCorrelation:
+class GrapheCorrelation(Graphe):
     def __init__(self):
         self.fig, self.ax = plt.subplots()
         self.pente = None

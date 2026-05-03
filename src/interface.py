@@ -7,31 +7,24 @@ import tkinter as tk
 
 from datetime import datetime
 from matplotlib.backend_bases import Event
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.text import Annotation
-from tkinter import filedialog, Label, Menu, messagebox, ttk
+from tkinter import filedialog, Label, messagebox, ttk
 from tkinter.simpledialog import askfloat
 from tkinter.ttk import Notebook
-from typing import Callable, TypeAlias
 
 
 from donnees import Donnees
 from graphes import Graphe2D, Graphe3D, GrapheCorrelation
 from interactions import Interactions
 from configuration import ConfigurationUtilisateur, ConfigurationProgramme
-
-# -
-ItemsMenu: TypeAlias = list[tuple[str, str, Callable]]
-# (Titre de l'item, Raccourci, Fonction appelée). Pour un séparateur, on met None.
-
-BarreMenus: TypeAlias = list[tuple[str, ItemsMenu]]
-# (Nom du menu déroulant, Description du menu déroulant).
-
-BarreOutils: TypeAlias = list[tuple[str, Callable]]
-# (Titre de l'outil, Fonction appelée).
-
-Onglets: TypeAlias = dict[str, ttk.Frame]
-# (Nom de l'onglet -> Onglet).
+from menus import (
+    DescriptionBarreMenus,
+    DescriptionBarreOutils,
+    DescriptionBarreOnglets,
+    BarreMenus,
+    BarreOutils,
+    BarreOnglets,
+)
 
 
 class Interface:
@@ -41,7 +34,7 @@ class Interface:
 
         self.application = tk.Tk()
 
-        self.description_barre_menus: BarreMenus = [
+        self.description_barre_menus: DescriptionBarreMenus = [
             (
                 "Fichier",
                 [
@@ -56,13 +49,13 @@ class Interface:
             (
                 "Actions",
                 [
-                    ("Invalider toutes les données", None, self.afficher_indisponible),
-                    ("Invalider les données du jour", None, self.afficher_indisponible),
+                    ("Invalider toutes les données", None, None),
+                    ("Invalider les données du jour", None, None),
                     None,
                     ("Annuler", "Ctrl+Z", self.annuler),
                     ("Rétablir", "Ctrl+Shift+Z", self.retablir),
                     None,
-                    ("Appliquer un facteur de correction", None, self.afficher_indisponible),
+                    ("Appliquer un facteur de correction", None, None),
                 ],
             ),
             (
@@ -77,7 +70,7 @@ class Interface:
             ),
         ]
 
-        self.description_barre_outils_jour: BarreOutils = [
+        self.description_barre_outils_jour: DescriptionBarreOutils = [
             ("|◀ Premier", self.sauter_au_premier_jour),
             ("◀ Précédent", self.sauter_au_jour_precedent),
             ("Suivant ▶", self.sauter_au_jour_suivant),
@@ -89,7 +82,7 @@ class Interface:
             ("Dezoomer", self.dezoomer),
         ]
 
-        self.description_barre_outils_validation: BarreOutils = [
+        self.description_barre_outils_validation: DescriptionBarreOutils = [
             ("Sélectionner plage", self.activer_selection_rectangle),
             ("Supprimer plage", self.supprimer_plage),
             None,
@@ -97,14 +90,6 @@ class Interface:
             ("Rétablir", self.retablir),
             None,
             ("Facteur", self.demander_facteur),
-        ]
-
-        self.description_barre_onglets: list[str] = [
-            "Particules",
-            "Fonctionnement",
-            "Graphe 3D",
-            "Corrélation",
-            "Historique",
         ]
 
         # Remarque : Le lien entre le raccorci clavier et sa fonction appelée par Tkinter est sensible à la casse de la touche.
@@ -159,25 +144,43 @@ class Interface:
             self.description_colonnes_concentration[1]: None,
         }
 
-        # Construction initiale.
-        self.construire_barre_menus()
+        self.description_barre_onglets: DescriptionBarreOnglets = [
+            ("Particules", [self.graphe_2d, self.graphe_correlation]),
+            ("Graphe 3D", [self.graphe_3d]),
+            ("Corrélation", [self.graphe_correlation]),
+            ("Historique", []),
+        ]
 
-        self.barre_outils_etiquette_jour: Label = self.construire_barre_outils(self.description_barre_outils_jour)
-        self.barre_outils_etiquette_message: Label = self.construire_barre_outils(
-            self.description_barre_outils_validation
+        # Construction de l'application.
+        self.barre_menus = BarreMenus(self.application, self.description_barre_menus)
+        self.barre_menus.construire_barre_menus()
+
+        self.barre_outils_jour = BarreOutils(self.application, self.description_barre_outils_jour)
+        self.barre_outils_validation = BarreOutils(self.application, self.description_barre_outils_validation)
+
+        self.barre_outils_jour.construire_barre_outils()
+        self.barre_outils_validation.construire_barre_outils()
+
+        self.barre_outils_jour.construire_etiquette()
+        self.barre_outils_validation.construire_etiquette()
+
+        self.barre_onglets: BarreOnglets = BarreOnglets(self.application, self.description_barre_onglets)
+        self.barre_onglets.construire_barre_onglets()
+
+        self.barre_onglets.construire_onglets()
+
+        self.interactions.initialiser_rectangle_selector(self.graphe_2d.ax)
+        self.barre_onglets.obtenir_toile("Particules", 0).mpl_connect(
+            "button_press_event", self.repondre_apres_clic_souris
         )
+        self.barre_onglets.obtenir_toile("Particules", 1).mpl_connect("motion_notify_event", self.info_point)
 
-        self.barre_onglets: Notebook = None
-        self.onglets: Onglets = {}
-        self.construire_barre_onglets()
+        self.mettre_a_jour_historique()
 
-        self.construire_onglet_particules()
-        self.afficher_onglet_provisoire(self.onglets["Fonctionnement"])
-        self.construire_onglet_graphe_3d()
-        self.construire_onglet_correlation()  # on appelle construire graphe correlation
-
-        self.journal = None
-        self.construire_journal()
+    def mettre_a_jour_historique(self):
+        historique = "Historique des modifications\n\n"
+        historique += self.donnees.historique.obtenir_journal()
+        self.barre_onglets.definir_texte("Historique", historique)
 
     def info_point(self, evenement: Event):
         # quand rectangle actif , priorite
@@ -187,14 +190,14 @@ class Interface:
         doit_rafraichir = self.interactions.info_point(
             evenement,
             self.donnees,
-            self.ax_2d,
+            self.graphe_2d.ax,
             self.date_debut,
             self.date_fin,
             self.infobulle,
         )
 
         if doit_rafraichir:
-            self.zone_affichage_graphe_2d.draw_idle()
+            self.barre_onglets.obtenir_toile("Particules", 0).draw_idle()
 
     def repondre_apres_clic_souris(self, evenement: Event):
         if self.interactions.rectangle_selector is not None and self.interactions.rectangle_selector.active:
@@ -203,7 +206,7 @@ class Interface:
         doit_rafraichir = self.interactions.repondre_apres_clic_souris(
             evenement,
             self.donnees,
-            self.ax_2d,
+            self.graphe_2d.ax,
             self.date_debut,
             self.date_fin,
         )
@@ -212,21 +215,21 @@ class Interface:
             self.tracer_graphe_2d()
             self.tracer_graphe_3d()
             self.tracer_graphe_correlation()
-            self.mettre_a_jour_journal()
+            self.mettre_a_jour_historique()
 
     def annuler(self):
         self.donnees.annuler_invalidation_date()
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
         self.tracer_graphe_correlation()
-        self.mettre_a_jour_journal()
+        self.mettre_a_jour_historique()
 
     def retablir(self):
         self.donnees.retablir_invalidation_date()
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
         self.tracer_graphe_correlation()
-        self.mettre_a_jour_journal()
+        self.mettre_a_jour_historique()
 
     def activer_selection_rectangle(self):
 
@@ -235,8 +238,8 @@ class Interface:
             return
 
         self.interactions.activer_mode_rectangle()
-        self.barre_outils_etiquette_message.config(
-            text="Dessinez un rectangle sur le graphe, puis cliquez sur 'Supprimer plage' "
+        self.barre_outils_validation.modifier_etiquette(
+            "Dessinez un rectangle sur le graphe, puis cliquez sur 'Supprimer plage'."
         )
 
     def supprimer_plage(self):
@@ -253,84 +256,21 @@ class Interface:
             self.tracer_graphe_2d()
             self.tracer_graphe_3d()
             self.tracer_graphe_correlation()
-            self.mettre_a_jour_journal()
-
-    def construire_onglet_particules(self):
-        self.page_principale = tk.Frame(self.onglets["Particules"])
-        self.page_principale.pack(fill="both", expand=True)
-
-        self.page_principale.rowconfigure(0, weight=1, minsize=300)
-        self.page_principale.rowconfigure(1, weight=1, minsize=300)
-        self.page_principale.columnconfigure(0, weight=1)
-
-        self.cadre_graphe_2d = tk.Frame(self.page_principale)
-        self.cadre_graphe_2d.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
-
-        self.zone_affichage_graphe_2d = FigureCanvasTkAgg(self.graphe_2d.fig, master=self.cadre_graphe_2d)
-        self.zone_affichage_graphe_2d.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
-
-        self.ax_2d = self.graphe_2d.ax
-
-        self.interactions.initialiser_rectangle_selector(self.ax_2d)
-
-        self.zone_affichage_graphe_2d.mpl_connect("button_press_event", self.repondre_apres_clic_souris)
-        self.zone_affichage_graphe_2d.mpl_connect("motion_notify_event", self.info_point)
-
-        # cadre du graphe de correlation (on remplace le graphe 3D dans cet onglet)
-        self.cadre_graphe_correlation = tk.Frame(self.page_principale)
-        self.cadre_graphe_correlation.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
-
-        self.zone_affichage_graphe_correlation = FigureCanvasTkAgg(
-            self.graphe_correlation.fig, master=self.cadre_graphe_correlation
-        )
-        self.zone_affichage_graphe_correlation.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
-
-        # self.cadre_graphe_3d = tk.Frame(self.page_principale)
-        # self.cadre_graphe_3d.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
-
-        # self.zone_affichage_graphe_3d = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.cadre_graphe_3d)
-        # self.zone_affichage_graphe_3d.get_tk_widget().pack(fill="both", expand=True, padx=20, pady=20)
-
-        # FIXME : Corriger l'affichage des graphes qui est coupé sur les bords sur Mac.
-
-    def construire_onglet_graphe_3d(self):
-        # Frame principal qui va contenir le graphique
-        self.frame_3d_individuel = tk.Frame(self.onglets["Graphe 3D"])
-        self.frame_3d_individuel.pack(fill="both", expand=True)
-
-        # Création du canvas matplotlib dans Tkinter
-        self.canvas_3d_individuel = FigureCanvasTkAgg(self.graphe_3d.fig, master=self.frame_3d_individuel)
-        self.canvas_3d_individuel.get_tk_widget().pack(fill="both", expand=True)
-
-        # construire l'onglet graphe correlation , on fait la meme chose que le graphe 3D
-
-    def construire_onglet_correlation(self):
-        # frame qui va contenir le graphe de correlation
-        self.frame_correlation_individuel = tk.Frame(self.onglets["Corrélation"])
-        self.frame_correlation_individuel.pack(fill="both", expand=True)
-
-        # canvas matplotlib pour le graphe de correlation
-        self.zone_affichage_graphe_correlation_individuel = FigureCanvasTkAgg(
-            self.graphe_correlation.fig, master=self.frame_correlation_individuel
-        )
-        self.zone_affichage_graphe_correlation_individuel.get_tk_widget().pack(fill="both", expand=True)
+            self.mettre_a_jour_historique()
 
     # affichage
-
-    def afficher_indisponible(self):
-        messagebox.showinfo("Info", "Fonctionnalité pas encore disponible.")
 
     def afficher_jour_barre_outils(self):
         if self.donnees.est_vide() or self.date_debut is None:
             return
 
-        self.barre_outils_etiquette_jour.config(text=f"Jour affiché : {self.date_debut.strftime("%Y-%m-%d")}")
+        self.barre_outils_jour.modifier_etiquette(f"Jour affiché : {self.date_debut.strftime("%Y-%m-%d")}")
 
     def afficher_aucun_fichier_charge_barre_outils(self):
         if self.donnees.est_vide() or self.date_debut is None:
             return
 
-        self.barre_outils_etiquette_jour.config(text="Aucun fichier chargé.")
+        self.barre_outils_jour.modifier_etiquette(text="Aucun fichier chargé.")
 
     def charger_fichier(self):
         chemin_relatif_initial = self.configuration_utilisateur.chemin_donnees
@@ -395,7 +335,7 @@ class Interface:
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
         self.tracer_graphe_correlation()
-        self.mettre_a_jour_journal()
+        self.mettre_a_jour_historique()
 
     def sauvegarder_fichier(self):
         dossier_resultats = self.configuration_utilisateur.chemin_resultats
@@ -435,14 +375,14 @@ class Interface:
             self.application.destroy()
 
     def mettre_a_jour_trace_graphe_2d(self):
-        self.zone_affichage_graphe_2d.draw()
+        self.barre_onglets.obtenir_toile("Particules", 0).draw()
 
     def mettre_a_jour_trace_graphe_3d(self):
-        self.canvas_3d_individuel.draw()
+        self.barre_onglets.obtenir_toile("Graphe 3D").draw()
 
     def mettre_a_jour_trace_graphe_correlation(self):
-        self.zone_affichage_graphe_correlation.draw()
-        self.zone_affichage_graphe_correlation_individuel.draw()
+        self.barre_onglets.obtenir_toile("Particules", 1).draw()
+        self.barre_onglets.obtenir_toile("Corrélation").draw()
 
     def tracer_graphe_2d(self):
         if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
@@ -461,12 +401,12 @@ class Interface:
         )
 
         # Sauvegarde les limites du graphe après le trace(pour dezzommer et avoir le meme graphe quavant)
-        self.xlim_original = self.ax_2d.get_xlim()
-        self.ylim_original = self.ax_2d.get_ylim()
+        self.xlim_original = self.graphe_2d.ax.get_xlim()
+        self.ylim_original = self.graphe_2d.ax.get_ylim()
 
         # Initialisation de l'infobulle.
         # FIXME : Vérifier si l'initialisation de l'infobulle se fait au bon endroit.
-        self.infobulle: Annotation = self.ax_2d.annotate(
+        self.infobulle: Annotation = self.graphe_2d.ax.annotate(
             "",
             xy=(0, 0),
             xytext=(12, 12),
@@ -572,86 +512,9 @@ class Interface:
 
         self.tracer_graphe_2d()
 
-    def construire_menu_deroulant(self, barre_menus: Menu, nom_menu_deroulant: str, items_menu_deroulant: ItemsMenu):
-        menu_deroulant = tk.Menu(barre_menus, tearoff=False)
-
-        for item in items_menu_deroulant:
-            if item is None:
-                menu_deroulant.add_separator()
-                continue
-
-            etiquette, raccourci, fonction = item
-            menu_deroulant.add_command(label=etiquette, command=fonction, accelerator=raccourci)
-
-        barre_menus.add_cascade(label=nom_menu_deroulant, menu=menu_deroulant)
-
-    def construire_barre_menus(self):
-        barre_menus = tk.Menu(self.application)
-
-        for nom_menu_deroulant, items_menu_deroulant in self.description_barre_menus:
-            self.construire_menu_deroulant(barre_menus, nom_menu_deroulant, items_menu_deroulant)
-
-        self.application.configure(menu=barre_menus)
-
-    def construire_barre_outils(self, description_barre_outils):
-        barre_outils = tk.Frame(self.application, bd=1, relief=tk.RAISED)
-        barre_outils.pack(side=tk.TOP, fill=tk.X)
-
-        for item in description_barre_outils:
-            if item is None:
-                tk.Label(barre_outils, text="  |  ").pack(side=tk.LEFT)
-                continue
-
-            etiquette, fonction = item
-
-            if fonction is None:
-                tk.Button(barre_outils, text=etiquette, state=tk.DISABLED).pack(side=tk.LEFT, padx=2, pady=2)
-                continue
-
-            tk.Button(barre_outils, text=etiquette, command=fonction).pack(side=tk.LEFT, padx=2, pady=2)
-
-        barre_outils_etiquette = tk.Label(barre_outils, text="Aucun fichier chargé.", font=("Arial", 10, "bold"))
-        barre_outils_etiquette.pack(side=tk.RIGHT, padx=10)
-
-        return barre_outils_etiquette
-
-    def construire_barre_onglets(self):
-        self.barre_onglets = ttk.Notebook(self.application)
-        self.barre_onglets.pack(fill=tk.BOTH, expand=True)
-
-        for etiquette in self.description_barre_onglets:
-            onglet = ttk.Frame(self.barre_onglets)
-            self.barre_onglets.add(onglet, text=etiquette)
-
-            self.onglets[etiquette] = onglet
-
-    def afficher_onglet_provisoire(self, etiquette_onglet: str):
-        tk.Label(
-            etiquette_onglet,
-            text="Chargez un fichier CSV via : Fichier → Charger un fichier",
-            font=("Arial", 13),
-            fg="grey",
-        ).place(relx=0.5, rely=0.5, anchor="center")
-
     def construire_raccourcis_clavier(self):
         for raccourci, fonction_appelee in self.description_raccourcis_clavier:
             self.application.bind(raccourci, fonction_appelee)
-
-    def construire_journal(self):
-        self.page_journal = self.onglets["Historique"]
-
-        self.journal = tk.Text(self.page_journal)
-        self.journal.pack(fill=tk.BOTH, expand=True)
-        self.journal.insert("end", "Historique des modifications\n")
-        self.journal.config(state="disabled")
-
-    def mettre_a_jour_journal(self):
-        historique = self.donnees.historique.obtenir_journal()
-        self.journal.config(state="normal")
-        self.journal.delete("1.0", "end")
-        self.journal.insert("end", "Historique des modifications\n\n")
-        self.journal.insert("end", historique + "\n")
-        self.journal.config(state="disabled")
 
     def construire_interface(self):
         self.application.mainloop()
@@ -662,17 +525,17 @@ class Interface:
             return
 
         # delegue le zoome a interaction
-        rafraichir = self.interactions.zoomer_rectangle(self.ax_2d)
+        rafraichir = self.interactions.zoomer_rectangle(self.graphe_2d.ax)
 
         if rafraichir:
             # redessine le grpahe pour que le zomme se fasse
-            self.zone_affichage_graphe_2d.draw()
+            self.barre_onglets.obtenir_toile("Particules", 0).draw()
 
     def dezoomer(self):
         if self.xlim_original is None or self.ylim_original is None:
             return
 
         # remet les nouvelle limite
-        self.ax_2d.set_xlim(self.xlim_original)
-        self.ax_2d.set_ylim(self.ylim_original)
-        self.zone_affichage_graphe_2d.draw()
+        self.graphe_2d.ax.set_xlim(self.xlim_original)
+        self.graphe_2d.ax.set_ylim(self.ylim_original)
+        self.barre_onglets.obtenir_toile("Particules", 0).draw()
