@@ -147,6 +147,9 @@ class BarreOnglets:
 
 class Onglet:
 
+    taille_marge_largeur = 10
+    taille_marge_hauteur = 10
+
     def __init__(self):
         # Un Widget peut être, entre autres, un Frame ou un Text.
 
@@ -158,7 +161,7 @@ class Onglet:
         self.toiles: list[FigureCanvasTkAgg] = [None, None]
 
     def construire_onglet_texte(self):
-        self.widget = tk.Text(self.conteneur)
+        self.widget = tk.Text(self.conteneur, padx=self.taille_marge_largeur, pady=self.taille_marge_hauteur)
 
         self.widget.pack(fill=tk.BOTH, expand=True)
         self.widget.config(state="disabled")
@@ -171,7 +174,7 @@ class Onglet:
 
     def construire_onglet_simple(self, graphe: Graphe):
         self.widget = tk.Frame(self.conteneur)
-        self.widget.pack(fill="both", expand=True)
+        self.widget.pack(fill="both", expand=True, padx=self.taille_marge_largeur, pady=self.taille_marge_hauteur)
 
         self.toiles[0] = FigureCanvasTkAgg(graphe.fig, master=self.widget)
         self.toiles[0].get_tk_widget().pack(fill="both", expand=True)
@@ -185,13 +188,13 @@ class Onglet:
         self.widget.columnconfigure(0, weight=1)
 
         cadre_haut = tk.Frame(self.widget)
-        cadre_haut.grid(row=0, column=0, sticky="nsew")
+        cadre_haut.grid(row=0, column=0, sticky="nsew", padx=self.taille_marge_largeur, pady=self.taille_marge_hauteur)
 
         toile_haute = FigureCanvasTkAgg(graphe_haut.fig, master=cadre_haut)
         toile_haute.get_tk_widget().pack(fill="both", expand=True)
 
         cadre_bas = tk.Frame(self.widget)
-        cadre_bas.grid(row=1, column=0, sticky="nsew")
+        cadre_bas.grid(row=1, column=0, sticky="nsew", padx=self.taille_marge_largeur, pady=self.taille_marge_hauteur)
 
         toile_basse = FigureCanvasTkAgg(graphe_bas.fig, master=cadre_bas)
         toile_basse.get_tk_widget().pack(fill="both", expand=True)
