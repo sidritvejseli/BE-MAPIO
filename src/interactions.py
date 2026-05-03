@@ -106,10 +106,14 @@ class Interactions:
             .obtenir_dataframe()
         )
 
+        self.reinitialiser_rectangle()
+
+        if masque.empty:
+            return False
+
         # si correspond au masque , on le vire
         donnees.invalider_dates(masque)
 
-        self.reinitialiser_rectangle()
         return True
 
     def zoomer_rectangle(self, ax_2d):
