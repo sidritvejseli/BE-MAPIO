@@ -315,12 +315,12 @@ class Interface:
         self.zone_affichage_graphe_correlation_individuel.get_tk_widget().pack(fill="both", expand=True)
 
     def charger_configuration(self, chemin):
-        if os.path.exists(chemin):
-            with open(chemin, "r", encoding="utf-8") as fichier:
-                return yaml.safe_load(fichier) or {}
+        if not os.path.exists(chemin):
+            self.logger.warning(f"Fichier de configuration {chemin} introuvable.")
+            return {}
 
-        self.logger.warning(f"Fichier de configuration {chemin} introuvable.")
-        return {}
+        with open(chemin, "r", encoding="utf-8") as fichier:
+            return yaml.safe_load(fichier) or {}
 
     # affichage
 
@@ -402,6 +402,7 @@ class Interface:
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
         self.tracer_graphe_correlation()
+        self.mettre_a_jour_journal()
 
     def sauvegarder_fichier(self):
         repertoires_configuration = self.config.get("repertoires", {})
