@@ -34,76 +34,6 @@ class Interface:
 
         self.application = tk.Tk()
 
-        self.description_barre_menus: DescriptionBarreMenus = [
-            (
-                "Fichier",
-                [
-                    ("Charger un fichier", None, self.charger_fichier),
-                    ("Fermer sans enregistrer", None, self.fermer_fichier),
-                    None,
-                    ("Enregistrer sous", None, self.sauvegarder_fichier),
-                    None,
-                    ("Quitter", None, self.quitter_programme),
-                ],
-            ),
-            (
-                "Actions",
-                [
-                    ("Invalider toutes les données", None, None),
-                    ("Invalider les données du jour", None, None),
-                    None,
-                    ("Annuler", "Ctrl+Z", self.annuler),
-                    ("Rétablir", "Ctrl+Shift+Z", self.retablir),
-                    None,
-                    ("Appliquer un facteur de correction", None, None),
-                ],
-            ),
-            (
-                "Navigation",
-                [
-                    ("Sauter au premier jour", None, self.sauter_au_premier_jour),
-                    ("Sauter au dernier jour", None, self.sauter_au_dernier_jour),
-                    None,
-                    ("Sauter au jour précédent", None, self.sauter_au_jour_precedent),
-                    ("Sauter au jour suivant", None, self.sauter_au_jour_suivant),
-                ],
-            ),
-        ]
-
-        self.description_barre_outils_jour: DescriptionBarreOutils = [
-            ("|◀ Premier", self.sauter_au_premier_jour),
-            ("◀ Précédent", self.sauter_au_jour_precedent),
-            ("Suivant ▶", self.sauter_au_jour_suivant),
-            ("Dernier ▶|", self.sauter_au_dernier_jour),
-            None,
-            ("smps↔cpc", self.changer_colonne_concentration),
-            None,
-            ("Zoomer", self.zoomer),
-            ("Dezoomer", self.dezoomer),
-        ]
-
-        self.description_barre_outils_validation: DescriptionBarreOutils = [
-            ("Sélectionner plage", self.activer_selection_rectangle),
-            ("Supprimer plage", self.supprimer_plage),
-            None,
-            ("Annuler", self.annuler),
-            ("Rétablir", self.retablir),
-            None,
-            ("Facteur", self.demander_facteur),
-        ]
-
-        # Remarque : Le lien entre le raccorci clavier et sa fonction appelée par Tkinter est sensible à la casse de la touche.
-        self.description_raccourcis_clavier = [
-            ("<Control-z>", lambda evenement: self.annuler()),
-            ("<Control-Z>", lambda evenement: self.annuler()),
-            ("<Control-Shift-z>", lambda evenement: self.retablir()),
-            ("<Control-Shift-Z>", lambda evenement: self.retablir()),
-        ]
-
-        self.construire_raccourcis_clavier()
-
-        self.description_colonnes_concentration = ("smps_concTotal", "cpc_conc")
-
         # Configuration.
         self.configuration_utilisateur: ConfigurationUtilisateur = ConfigurationUtilisateur(
             "configuration_utilisateur.yaml"
@@ -140,9 +70,80 @@ class Interface:
 
         self.teneur_maximum = None  # Remarque : Pour garder une échelle constante de couleur du graphe 3D, on garde en mémoire la valeur maximum.
         self.concentrations_maximum: dict[str, float] = {
-            self.description_colonnes_concentration[0]: None,
-            self.description_colonnes_concentration[1]: None,
+            self.configuration_utilisateur.drapeau_smps: None,
+            self.configuration_utilisateur.drapeau_cpc: None,
         }
+
+        # Construction de l'application.
+
+        self.description_barre_menus: DescriptionBarreMenus = [
+            (
+                "Fichier",
+                [
+                    ("Charger un fichier", None, self.charger_fichier),
+                    ("Fermer sans enregistrer", None, self.fermer_fichier),
+                    None,
+                    ("Enregistrer sous", None, self.sauvegarder_fichier),
+                    None,
+                    ("Quitter", None, self.quitter_programme),
+                ],
+            ),
+            (
+                "Actions",
+                [
+                    ("Invalider toutes les données", None, None),
+                    ("Invalider les données du jour", None, None),
+                    None,
+                    ("Annuler", "Ctrl+Z", self.annuler),
+                    ("Rétablir", "Ctrl+Shift+Z", self.retablir),
+                    None,
+                    ("Appliquer un facteur de correction", None, None),
+                ],
+            ),
+            (
+                "Navigation",
+                [
+                    ("Sauter au premier jour", None, self.sauter_au_premier_jour),
+                    ("Sauter au dernier jour", None, self.sauter_au_dernier_jour),
+                    None,
+                    ("Sauter au jour précédent", None, self.sauter_au_jour_precedent),
+                    ("Sauter au jour suivant", None, self.sauter_au_jour_suivant),
+                ],
+            ),
+        ]
+
+        self.barre_menus = BarreMenus(self.application, self.description_barre_menus)
+        self.barre_menus.construire_barre_menus()
+
+        self.description_barre_outils_jour: DescriptionBarreOutils = [
+            ("|◀ Premier", self.sauter_au_premier_jour),
+            ("◀ Précédent", self.sauter_au_jour_precedent),
+            ("Suivant ▶", self.sauter_au_jour_suivant),
+            ("Dernier ▶|", self.sauter_au_dernier_jour),
+            None,
+            ("smps↔cpc", self.changer_colonne_concentration),
+            None,
+            ("Zoomer", self.zoomer),
+            ("Dezoomer", self.dezoomer),
+        ]
+
+        self.barre_outils_jour = BarreOutils(self.application, self.description_barre_outils_jour)
+        self.barre_outils_jour.construire_barre_outils()
+        self.barre_outils_jour.construire_etiquette()
+
+        self.description_barre_outils_validation: DescriptionBarreOutils = [
+            ("Sélectionner plage", self.activer_selection_rectangle),
+            ("Supprimer plage", self.supprimer_plage),
+            None,
+            ("Annuler", self.annuler),
+            ("Rétablir", self.retablir),
+            None,
+            ("Facteur", self.demander_facteur),
+        ]
+
+        self.barre_outils_validation = BarreOutils(self.application, self.description_barre_outils_validation)
+        self.barre_outils_validation.construire_barre_outils()
+        self.barre_outils_validation.construire_etiquette()
 
         self.description_barre_onglets: DescriptionBarreOnglets = [
             ("Particules", [self.graphe_2d, self.graphe_correlation]),
@@ -151,22 +152,8 @@ class Interface:
             ("Historique", []),
         ]
 
-        # Construction de l'application.
-        self.barre_menus = BarreMenus(self.application, self.description_barre_menus)
-        self.barre_menus.construire_barre_menus()
-
-        self.barre_outils_jour = BarreOutils(self.application, self.description_barre_outils_jour)
-        self.barre_outils_validation = BarreOutils(self.application, self.description_barre_outils_validation)
-
-        self.barre_outils_jour.construire_barre_outils()
-        self.barre_outils_validation.construire_barre_outils()
-
-        self.barre_outils_jour.construire_etiquette()
-        self.barre_outils_validation.construire_etiquette()
-
         self.barre_onglets: BarreOnglets = BarreOnglets(self.application, self.description_barre_onglets)
         self.barre_onglets.construire_barre_onglets()
-
         self.barre_onglets.construire_onglets()
 
         self.interactions.initialiser_rectangle_selector(self.graphe_2d.ax)
@@ -176,6 +163,16 @@ class Interface:
         self.barre_onglets.obtenir_toile("Particules", 1).mpl_connect("motion_notify_event", self.info_point)
 
         self.mettre_a_jour_historique()
+
+        # Remarque : Le lien entre le raccorci clavier et sa fonction appelée par Tkinter est sensible à la casse de la touche.
+        self.description_raccourcis_clavier = [
+            ("<Control-z>", lambda evenement: self.annuler()),
+            ("<Control-Z>", lambda evenement: self.annuler()),
+            ("<Control-Shift-z>", lambda evenement: self.retablir()),
+            ("<Control-Shift-Z>", lambda evenement: self.retablir()),
+        ]
+
+        self.construire_raccourcis_clavier()
 
     def mettre_a_jour_historique(self):
         historique = "Historique des modifications\n\n"
@@ -289,12 +286,12 @@ class Interface:
 
         self.teneur_maximum = self.donnees.obtenir_particules().obtenir_valeur_maximum()
 
-        self.concentrations_maximum[self.description_colonnes_concentration[0]] = (
+        self.concentrations_maximum[self.configuration_utilisateur.drapeau_smps] = (
             self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
         )
 
         self.donnees.echanger_nom_colonne_concentration()
-        self.concentrations_maximum[self.description_colonnes_concentration[1]] = (
+        self.concentrations_maximum[self.configuration_utilisateur.drapeau_cpc] = (
             self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
         )
 
@@ -325,8 +322,8 @@ class Interface:
         self.afficher_aucun_fichier_charge_barre_outils()
         self.teneur_maximum = None
         self.concentrations_maximum: dict[str, float] = {
-            self.description_colonnes_concentration[0]: None,
-            self.description_colonnes_concentration[1]: None,
+            self.configuration_utilisateur.drapeau_smps: None,
+            self.configuration_utilisateur.drapeau_cpc: None,
         }
 
         self.xlim_original = None
@@ -501,8 +498,8 @@ class Interface:
             return
 
         self.donnees.multiplier_concentration(facteur)
-        self.concentrations_maximum[self.description_colonnes_concentration[0]] *= facteur
-        self.concentrations_maximum[self.description_colonnes_concentration[1]] *= facteur
+        self.concentrations_maximum[self.configuration_utilisateur.drapeau_smps] *= facteur
+        self.concentrations_maximum[self.configuration_utilisateur.drapeau_cpc] *= facteur
 
         self.tracer_graphe_2d()
         self.tracer_graphe_correlation()
