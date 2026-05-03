@@ -1,4 +1,3 @@
-import copy
 import logging
 import os
 import pandas as pd
@@ -142,11 +141,12 @@ class Interface:
         self.barre_outils_jour = BarreOutils(self.application, self.description_barre_outils_jour)
         self.barre_outils_jour.construire_barre_outils()
         self.barre_outils_jour.construire_etiquette()
+        self.mettre_a_jour_etiquette_barre_outils_jour()
 
         # Barre des outils de validation.
 
         self.description_barre_outils_validation: DescriptionBarreOutils = [
-            ("Sélectionner plage", self.activer_selection_rectangle),
+            ("Sélectionner plage", self.selectionner_plage),
             ("Supprimer plage", self.supprimer_plage),
             None,
             ("Annuler", self.annuler),
@@ -158,6 +158,7 @@ class Interface:
         self.barre_outils_validation = BarreOutils(self.application, self.description_barre_outils_validation)
         self.barre_outils_validation.construire_barre_outils()
         self.barre_outils_validation.construire_etiquette()
+        self.mettre_a_jour_etiquette_barre_outils_validation()
 
         # Barre des onglets.
 
@@ -238,7 +239,8 @@ class Interface:
             self.tracer_graphe_2d()
             self.tracer_graphe_3d()
             self.tracer_graphe_correlation()
-            self.afficher_jour_barre_outils()
+            self.mettre_a_jour_etiquette_barre_outils_jour()
+            self.mettre_a_jour_etiquette_barre_outils_validation()
 
     # Main.
 
@@ -290,7 +292,7 @@ class Interface:
         self.donnees.fermer_fichier_csv()
         self.date_debut = None
         self.date_fin = None
-        self.afficher_aucun_fichier_charge_barre_outils()
+        self.afficher_aucun_fichier_charge_barre_outils_jour()
         self.teneur_maximum = None
         self.concentrations_maximum: dict[str, float] = {
             self.configuration_utilisateur.drapeau_smps: None,
@@ -319,7 +321,7 @@ class Interface:
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
 
-        self.afficher_jour_barre_outils()
+        self.mettre_a_jour_etiquette_barre_outils_jour()
 
     def sauter_au_jour_suivant(self):
         if self.donnees.est_vide() or self.date_debut >= self.donnees.obtenir_derniere_date():
@@ -329,7 +331,7 @@ class Interface:
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
 
-        self.afficher_jour_barre_outils()
+        self.mettre_a_jour_etiquette_barre_outils_jour()
 
     def sauter_au_jour_precedent(self):
         if self.donnees.est_vide() or self.date_debut <= self.donnees.obtenir_premiere_date():
@@ -339,7 +341,7 @@ class Interface:
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
 
-        self.afficher_jour_barre_outils()
+        self.mettre_a_jour_etiquette_barre_outils_jour()
 
     def sauter_au_dernier_jour(self):
         if self.donnees.est_vide():
@@ -349,7 +351,7 @@ class Interface:
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
 
-        self.afficher_jour_barre_outils()
+        self.mettre_a_jour_etiquette_barre_outils_jour()
 
     def changer_colonne_concentration(self):
         self.donnees.echanger_nom_colonne_concentration()
@@ -377,24 +379,22 @@ class Interface:
         self.graphe_2d.ax.set_ylim(self.ylim_original)
         self.barre_onglets.obtenir_toile("Particules", 0).draw()
 
-    def afficher_jour_barre_outils(self):
+    def mettre_a_jour_etiquette_barre_outils_jour(self):
         if self.donnees.est_vide() or self.date_debut is None:
+            self.barre_outils_jour.modifier_etiquette("")
             return
 
         self.barre_outils_jour.modifier_etiquette(f"Jour affiché : {self.date_debut.strftime("%Y-%m-%d")}")
 
     # Barre des outils de validation.
 
-    def activer_selection_rectangle(self):
-
+    def selectionner_plage(self):
         if self.donnees.est_vide():
-            messagebox.showwarning("Attention !!!", "Aucune donnée chargée")
+            messagebox.showwarning("Attention !", "Aucune donnée à sélectionner.")
             return
 
         self.interactions.activer_mode_rectangle()
-        self.barre_outils_validation.modifier_etiquette(
-            "Dessinez un rectangle sur le graphe, puis cliquez sur 'Supprimer plage'."
-        )
+        self.mettre_a_jour_etiquette_barre_outils_validation()
 
     def supprimer_plage(self):
         if not self.interactions.rectangle_actif:
@@ -439,11 +439,14 @@ class Interface:
         self.tracer_graphe_2d()
         self.tracer_graphe_correlation()
 
-    def afficher_aucun_fichier_charge_barre_outils(self):
+    def mettre_a_jour_etiquette_barre_outils_validation(self):
         if self.donnees.est_vide() or self.date_debut is None:
+            self.barre_outils_validation.modifier_etiquette("Aucune donnée chargée.")
             return
 
-        self.barre_outils_jour.modifier_etiquette(text="Aucun fichier chargé.")
+        self.barre_outils_validation.modifier_etiquette(
+            "Dessinez un rectangle sur le graphe, puis cliquez sur 'Supprimer plage'."
+        )
 
     # Onglets.
 

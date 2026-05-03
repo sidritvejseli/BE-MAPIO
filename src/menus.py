@@ -77,7 +77,7 @@ class BarreOutils:
             tk.Button(self.barre_outils, text=etiquette, command=fonction).pack(side=tk.LEFT, padx=2, pady=2)
 
     def construire_etiquette(self):
-        self.etiquette = tk.Label(self.barre_outils, text="Aucun fichier chargé.", font=("Arial", 10, "bold"))
+        self.etiquette = tk.Label(self.barre_outils, text="", font=("Arial", 10, "bold"))
         self.etiquette.pack(side=tk.RIGHT, padx=10)
 
     def modifier_etiquette(self, message: str):
