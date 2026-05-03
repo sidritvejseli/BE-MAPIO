@@ -49,3 +49,7 @@ class ConfigurationProgramme(Configuration):
         self.titre_fenetre = fenetre.get("titre_fenetre", "")
         self.largeur_fenetre = fenetre.get("largeur_fenetre", 1280)
         self.hauteur_fenetre = fenetre.get("hauteur_fenetre", 720)
+
+        temps = self.fichier_configuration.get("temps", {})
+
+        self.pas_heures = temps.get("pas_heures", 24)

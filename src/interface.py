@@ -8,9 +8,8 @@ import tkinter as tk
 from datetime import datetime
 from matplotlib.backend_bases import Event
 from matplotlib.text import Annotation
-from tkinter import filedialog, Label, messagebox, ttk
+from tkinter import filedialog, messagebox
 from tkinter.simpledialog import askfloat
-from tkinter.ttk import Notebook
 
 
 from donnees import Donnees
@@ -25,6 +24,7 @@ from menus import (
     BarreOutils,
     BarreOnglets,
 )
+from temps import Temps
 
 
 class Interface:
@@ -34,11 +34,16 @@ class Interface:
 
         self.application = tk.Tk()
 
-        # Configuration.
+        # Importation de la configuration.
+
         self.configuration_utilisateur: ConfigurationUtilisateur = ConfigurationUtilisateur(
             "configuration_utilisateur.yaml"
         )
         self.configuration_programme: ConfigurationProgramme = ConfigurationProgramme("configuration_programme.yaml")
+
+        # Gestion de la temporalité.
+
+        self.temps = Temps(self.configuration_programme.pas_heures)
 
         # Données.
         self.donnees = Donnees(self.configuration_utilisateur.drapeau_smps, self.configuration_utilisateur.drapeau_cpc)
@@ -52,13 +57,6 @@ class Interface:
         # Interactions.
         self.interactions = Interactions()
         self.infobulle: Annotation = None
-
-        # Fenêtre.
-        self.application.title(self.configuration_programme.titre_fenetre)
-        largeur = self.configuration_programme.largeur_fenetre
-        hauteur = self.configuration_programme.hauteur_fenetre
-        self.application.geometry(f"{largeur}x{hauteur}")
-        self.application.resizable(True, True)
 
         # Graphes.
         self.graphe_2d: Graphe2D = Graphe2D()
@@ -76,6 +74,12 @@ class Interface:
         }
 
         # Construction de l'application.
+
+        self.application.title(self.configuration_programme.titre_fenetre)
+        self.application.geometry(
+            f"{self.configuration_programme.largeur_fenetre}x{self.configuration_programme.hauteur_fenetre}"
+        )
+        self.application.resizable(True, True)
 
         self.description_barre_menus: DescriptionBarreMenus = [
             (
@@ -300,7 +304,7 @@ class Interface:
 
         if not self.donnees.est_vide():
             self.date_debut = self.donnees.obtenir_minuit_premiere_date()
-            self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
+            self.date_fin = self.temps.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
             self.tracer_graphe_2d()
             self.tracer_graphe_3d()
             self.tracer_graphe_correlation()
@@ -389,7 +393,7 @@ class Interface:
             return
 
         self.interactions.reinitialiser_rectangle()
-        self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
+        self.date_fin = self.temps.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
 
         self.graphe_2d.tracer_graphe_2d(
             self.donnees,
@@ -421,7 +425,7 @@ class Interface:
             self.mettre_a_jour_trace_graphe_3d()
             return
 
-        self.date_fin = self.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
+        self.date_fin = self.temps.ajouter_23_heures_59_minutes_et_59_secondes(self.date_debut)
 
         self.graphe_3d.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin, self.teneur_maximum)
 
@@ -442,20 +446,11 @@ class Interface:
 
         self.mettre_a_jour_trace_graphe_correlation()
 
-    def ajouter_24_heures(self, jour: datetime):
-        return jour + pd.Timedelta(days=1)
-
-    def soustraire_24_heures(self, jour: datetime):
-        return jour - pd.Timedelta(days=1)
-
-    def ajouter_23_heures_59_minutes_et_59_secondes(self, jour: datetime):
-        return jour + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
-
     def sauter_au_jour_suivant(self):
         if self.donnees.est_vide() or self.date_debut >= self.donnees.obtenir_derniere_date():
             return
 
-        self.date_debut = self.ajouter_24_heures(self.date_debut)
+        self.date_debut = self.temps.ajouter_24_heures(self.date_debut)
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
 
@@ -465,7 +460,7 @@ class Interface:
         if self.donnees.est_vide() or self.date_debut <= self.donnees.obtenir_premiere_date():
             return
 
-        self.date_debut = self.soustraire_24_heures(self.date_debut)
+        self.date_debut = self.temps.soustraire_24_heures(self.date_debut)
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
 
