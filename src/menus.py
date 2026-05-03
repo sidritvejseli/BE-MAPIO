@@ -44,8 +44,8 @@ class BarreMenus:
         barre_menus.add_cascade(label=nom_menu_deroulant, menu=menu_deroulant)
 
 
-DescriptionBarreOutils: TypeAlias = list[tuple[str, Callable]]
 # (Titre de l'outil, Fonction appelée).
+DescriptionBarreOutils: TypeAlias = list[tuple[str, Callable]]
 
 
 class BarreOutils:
@@ -83,6 +83,10 @@ class BarreOutils:
         self.etiquette.config(text=message)
 
 
+# (Titre de l'onglet, Graphes à afficher).
+# Si la liste de graphes est vide, on affiche un onglet de texte.
+# Si la liste contient deux graphes, alors on affiche un onglet double.
+# Sinon, si la liste contient un unique graphe, alors on l'affiche normalement.
 DescriptionBarreOnglets: TypeAlias = list[tuple[str, list[Graphe]]]
 
 
@@ -140,9 +144,6 @@ class BarreOnglets:
         self.onglets[nom_onglet].modifier_onglet_texte(message)
 
 
-# FIXME : Corriger l'affichage des graphes qui est coupé sur les bords sur Mac.
-
-
 class Onglet:
 
     def __init__(self):
@@ -195,3 +196,6 @@ class Onglet:
         toile_basse.get_tk_widget().pack(fill="both", expand=True)
 
         self.toiles = [toile_haute, toile_basse]
+
+
+# FIXME : Corriger l'affichage des graphes qui est coupé sur les bords sur Mac.

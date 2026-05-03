@@ -66,6 +66,7 @@ class Interface:
         self.ylim_original = None
 
         self.graphe_3d: Graphe3D = Graphe3D()
+
         self.graphe_correlation: GrapheCorrelation = GrapheCorrelation()
 
         self.teneur_maximum = None  # Remarque : Pour garder une échelle constante de couleur du graphe 3D, on garde en mémoire la valeur maximum.

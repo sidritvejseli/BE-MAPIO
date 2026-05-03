@@ -17,7 +17,8 @@ from donnees import Donnees
 
 
 class Graphe:
-    pass
+
+    marge_relative = 0.05
 
 
 class Graphe2D(Graphe):
@@ -92,12 +93,15 @@ class Graphe2D(Graphe):
 
         self.ax.tick_params(axis="x")
 
-        self.ax.set_xlim(date_debut, date_fin)
+        duree = date_fin - date_debut
+        marge = duree * self.marge_relative
+
+        self.ax.set_xlim(date_debut - marge, date_fin + marge)
 
     def legender_ordonnees(self, concentration_maximum):
         self.ax.set_ylabel("Concentration totale")
 
-        self.ax.set_ylim(0, concentration_maximum)
+        self.ax.set_ylim(0, (1 + self.marge_relative) * concentration_maximum)
 
     def legender_boite(self):
         self.ax.legend()
@@ -203,12 +207,12 @@ class GrapheCorrelation(Graphe):
     def legender_abscisses(self, concentration_maximum_smps):
         self.ax.set_ylabel("Concentration total SMPS (smps_concTotal)")
 
-        self.ax.set_xlim(0, 1.05 * concentration_maximum_smps)
+        self.ax.set_xlim(0, (1 + self.marge_relative) * concentration_maximum_smps)
 
     def legender_ordonnees(self, concentration_maximum_cpc):
         self.ax.set_xlabel("ConcentrationCPC (cpc_conc)")
 
-        self.ax.set_ylim(0, 1.05 * concentration_maximum_cpc)
+        self.ax.set_ylim(0, (1 + self.marge_relative) * concentration_maximum_cpc)
 
     def legender_boite(self):
         self.ax.legend(fontsize=8)
@@ -229,6 +233,8 @@ class GrapheCorrelation(Graphe):
 
         self.tracer_grille()
         self.legender_titre()
+
+        self.fig.tight_layout()
 
     def tracer_donnees(
         self,
