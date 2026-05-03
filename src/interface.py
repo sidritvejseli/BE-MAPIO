@@ -126,8 +126,10 @@ class Interface:
         self.configuration_programme: ConfigurationProgramme = ConfigurationProgramme("configuration_programme.yaml")
 
         # Données.
-        self.donnees = Donnees(self.description_colonnes_concentration)
-        self.donnees_sans_modification = Donnees(self.description_colonnes_concentration)
+        self.donnees = Donnees(self.configuration_utilisateur.drapeau_smps, self.configuration_utilisateur.drapeau_cpc)
+        self.donnees_sans_modification = Donnees(
+            self.configuration_utilisateur.drapeau_smps, self.configuration_utilisateur.drapeau_cpc
+        )
         self.fichier_courant = None
         self.date_debut: datetime = None
         self.date_fin: datetime = None
@@ -455,7 +457,7 @@ class Interface:
             self.donnees,
             self.date_debut,
             self.date_fin,
-            self.concentrations_maximum[self.donnees.nom_colonne_concentration],
+            self.concentrations_maximum[self.donnees.nom_colonne_concentration_courante],
         )
 
         # Sauvegarde les limites du graphe après le trace(pour dezzommer et avoir le meme graphe quavant)

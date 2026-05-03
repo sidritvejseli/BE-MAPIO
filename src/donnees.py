@@ -14,16 +14,15 @@ from typing import TypeAlias
 
 from historique import Historique
 
-NomConcentrationSMPS: TypeAlias = str
-NomConcentrationCPC: TypeAlias = str
-
 
 class Donnees:
 
-    def __init__(self, noms_colonnes_concentrations: tuple[NomConcentrationSMPS, NomConcentrationCPC]):
+    def __init__(self, nom_colonne_smps: str, nom_colonne_cpc: str):
         self.logger = logging.getLogger()
-        self.noms_colonnes_concentrations = list(noms_colonnes_concentrations)
-        self.nom_colonne_concentration = self.noms_colonnes_concentrations[0]
+
+        self.nom_colonne_smps: str = nom_colonne_smps
+        self.nom_colonne_cpc: str = nom_colonne_cpc
+        self.nom_colonne_concentration_courante = self.nom_colonne_smps
 
         self.initialiser_donnees()
 
@@ -37,7 +36,7 @@ class Donnees:
         return self.dataframe.empty
 
     def est_tout_na_concentration(self) -> bool:
-        return self.dataframe[self.nom_colonne_concentration].isna().all()
+        return self.dataframe[self.nom_colonne_concentration_courante].isna().all()
 
     def obtenir_dataframe(self) -> DataFrame:
         return self.dataframe
@@ -50,16 +49,18 @@ class Donnees:
 
     def obtenir_colonne_concentration(self) -> Donnees:
         colonne_concentrations = copy.copy(self)
-        colonne_concentrations.dataframe = colonne_concentrations.dataframe[self.nom_colonne_concentration]
+        colonne_concentrations.dataframe = colonne_concentrations.dataframe[self.nom_colonne_concentration_courante]
 
         return colonne_concentrations
 
     def obtenir_colonnes_concentrations(self) -> Donnees:
         colonnes_concentrations = copy.copy(self)
-        colonnes_concentrations.dataframe = colonnes_concentrations.dataframe[self.noms_colonnes_concentrations]
+        colonnes_concentrations.dataframe = colonnes_concentrations.dataframe[
+            [self.nom_colonne_smps, self.nom_colonne_cpc]
+        ]
 
         # enlever les valeurs NaN
-        df = colonnes_concentrations.dataframe.dropna(subset=self.noms_colonnes_concentrations)
+        df = colonnes_concentrations.dataframe.dropna(subset=[self.nom_colonne_smps, self.nom_colonne_cpc])
         colonnes_concentrations.dataframe = df
         return colonnes_concentrations
 
@@ -70,23 +71,17 @@ class Donnees:
         return donnees_supprimees
 
     def supprimer_donnees_manquantes_colonnes_concentrations(self):
-        donnees_supprimees = self.supprimer_donnees_manquantes_colonne_concentration(
-            self.noms_colonnes_concentrations[0]
-        )
-        donnees_supprimees = donnees_supprimees.supprimer_donnees_manquantes_colonne_concentration(
-            self.noms_colonnes_concentrations[1]
-        )
+        donnees_supprimees = self.supprimer_donnees_manquantes_colonne_concentration(self.nom_colonne_smps)
+        donnees_supprimees = donnees_supprimees.supprimer_donnees_manquantes_colonne_concentration(self.nom_colonne_cpc)
 
         return donnees_supprimees
 
     def echanger_nom_colonne_concentration(self) -> None:
-        smps, cpc = self.noms_colonnes_concentrations
+        if self.nom_colonne_concentration_courante == self.nom_colonne_smps:
+            self.nom_colonne_concentration_courante = self.nom_colonne_cpc
 
-        if self.nom_colonne_concentration == smps:
-            self.nom_colonne_concentration = cpc
-
-        elif self.nom_colonne_concentration == cpc:
-            self.nom_colonne_concentration = smps
+        elif self.nom_colonne_concentration_courante == self.nom_colonne_cpc:
+            self.nom_colonne_concentration_courante = self.nom_colonne_smps
 
     def obtenir_valeur_maximum(self):
         return self.dataframe.max().max()
@@ -197,8 +192,8 @@ class Donnees:
     def obtenir_concentration_intervalle(self, concentration_minimum, concentration_maximum) -> Donnees:
         intervalle = copy.copy(self)
 
-        masque = (intervalle.dataframe[self.nom_colonne_concentration] >= concentration_minimum) & (
-            intervalle.dataframe[self.nom_colonne_concentration] <= concentration_maximum
+        masque = (intervalle.dataframe[self.nom_colonne_concentration_courante] >= concentration_minimum) & (
+            intervalle.dataframe[self.nom_colonne_concentration_courante] <= concentration_maximum
         )
 
         intervalle.dataframe = intervalle.dataframe[masque]
@@ -246,12 +241,12 @@ class Donnees:
         self.historique.ajouter_action(self.dataframe.loc[masque].index)
 
     def est_tout_invalide(self) -> bool:
-        colonnes = self.noms_colonnes_concentrations
+        colonnes = [self.nom_colonne_smps, self.nom_colonne_cpc]
         dataframe_non_nan = self.dataframe[colonnes].notna().all(axis=1)
         return (self.dataframe.loc[dataframe_non_nan, "smps_flag"] == 1).all()
 
     def multiplier_concentration(self, facteur) -> None:
-        self.dataframe[self.noms_colonnes_concentrations] *= facteur
+        self.dataframe[[self.nom_colonne_smps, self.nom_colonne_cpc]] *= facteur
 
     def convertir_titre_particules_en_float(self) -> None:
         self.dataframe.columns = [float(colonne.split("_")[2]) for colonne in self.dataframe.columns]

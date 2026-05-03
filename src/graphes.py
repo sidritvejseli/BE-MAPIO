@@ -49,7 +49,7 @@ class Graphe2D:
             legende_boite=f"Invalidés ({donnees_invalides.obtenir_nombre_dates()})",
         )
 
-        self.legender_titre(date_debut, donnees.nom_colonne_concentration)
+        self.legender_titre(date_debut, donnees.nom_colonne_concentration_courante)
         self.legender_abscisses(date_debut, date_fin)
         self.legender_ordonnees(concentration_maximum)
         # self.legender_boite()
@@ -217,10 +217,10 @@ class GrapheCorrelation:
 
         self.tracer_donnees(donnees)
 
-        concentration_maximum_smps = concentrations_maximum[donnees.noms_colonnes_concentrations[0]]
+        concentration_maximum_smps = concentrations_maximum[donnees.nom_colonne_smps]
         self.legender_abscisses(concentration_maximum_smps)
 
-        concentration_maximum_cpc = concentrations_maximum[donnees.noms_colonnes_concentrations[1]]
+        concentration_maximum_cpc = concentrations_maximum[donnees.nom_colonne_cpc]
         self.legender_ordonnees(concentration_maximum_cpc)
 
         self.tracer_grille()
