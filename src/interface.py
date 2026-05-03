@@ -3,7 +3,6 @@ import logging
 import os
 import pandas as pd
 import tkinter as tk
-import yaml
 
 
 from datetime import datetime
@@ -19,6 +18,7 @@ from typing import Callable, TypeAlias
 from donnees import Donnees
 from graphes import Graphe2D, Graphe3D, GrapheCorrelation
 from interactions import Interactions
+from configuration import ConfigurationUtilisateur, ConfigurationProgramme
 
 # -
 ItemsMenu: TypeAlias = list[tuple[str, str, Callable]]
@@ -37,9 +37,6 @@ Onglets: TypeAlias = dict[str, ttk.Frame]
 class Interface:
 
     def __init__(self):
-
-        super().__init__()
-
         self.logger = logging.getLogger()
 
         self.application = tk.Tk()
@@ -123,7 +120,10 @@ class Interface:
         self.description_colonnes_concentration = ("smps_concTotal", "cpc_conc")
 
         # Configuration.
-        self.config = self.charger_configuration("config.yaml")
+        self.configuration_utilisateur: ConfigurationUtilisateur = ConfigurationUtilisateur(
+            "configuration_utilisateur.yaml"
+        )
+        self.configuration_programme: ConfigurationProgramme = ConfigurationProgramme("configuration_programme.yaml")
 
         # Données.
         self.donnees = Donnees(self.description_colonnes_concentration)
@@ -137,10 +137,9 @@ class Interface:
         self.infobulle: Annotation = None
 
         # Fenêtre.
-        configuration_affichage = self.config.get("affichage", {})
-        self.application.title(configuration_affichage.get("titre", "Outil SMPS - MAP-IO"))
-        largeur = configuration_affichage.get("largeur", 1400)
-        hauteur = configuration_affichage.get("hauteur", 800)
+        self.application.title(self.configuration_programme.titre_fenetre)
+        largeur = self.configuration_programme.largeur_fenetre
+        hauteur = self.configuration_programme.hauteur_fenetre
         self.application.geometry(f"{largeur}x{hauteur}")
         self.application.resizable(True, True)
 
@@ -314,14 +313,6 @@ class Interface:
         )
         self.zone_affichage_graphe_correlation_individuel.get_tk_widget().pack(fill="both", expand=True)
 
-    def charger_configuration(self, chemin):
-        if not os.path.exists(chemin):
-            self.logger.warning(f"Fichier de configuration {chemin} introuvable.")
-            return {}
-
-        with open(chemin, "r", encoding="utf-8") as fichier:
-            return yaml.safe_load(fichier) or {}
-
     # affichage
 
     def afficher_indisponible(self):
@@ -340,7 +331,7 @@ class Interface:
         self.barre_outils_etiquette_jour.config(text="Aucun fichier chargé.")
 
     def charger_fichier(self):
-        chemin_relatif_initial = self.config.get("repertoires", {}).get("donnees", "")
+        chemin_relatif_initial = self.configuration_utilisateur.chemin_donnees
 
         # FIXME : Le chemin initial est relatif, bug potentiel si le répertoire de données inscrit dans le fichier config.yaml n'est pas dans le même dossier que le programme.
 
@@ -405,9 +396,8 @@ class Interface:
         self.mettre_a_jour_journal()
 
     def sauvegarder_fichier(self):
-        repertoires_configuration = self.config.get("repertoires", {})
-        dossier_resultats = repertoires_configuration.get("resultats", "resultats/")
-        dossier_flags = repertoires_configuration.get("flags", "resultats/flags/")
+        dossier_resultats = self.configuration_utilisateur.chemin_resultats
+        dossier_flags = self.configuration_utilisateur.chemin_drapeaux
 
         if self.donnees.est_vide():
             messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
