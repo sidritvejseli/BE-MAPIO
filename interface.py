@@ -449,6 +449,7 @@ class Interface:
 
     def mettre_a_jour_trace_graphe_correlation(self):
         self.zone_affichage_graphe_correlation.draw()
+        self.zone_affichage_graphe_correlation_individuel.draw()
 
     def tracer_graphe_2d(self):
         if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
