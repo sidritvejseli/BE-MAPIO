@@ -52,4 +52,5 @@ class ConfigurationProgramme(Configuration):
 
         temps = self.fichier_configuration.get("temps", {})
 
-        self.pas_heures = temps.get("pas_heures", 24)
+        self.pas_heures_graphe = temps.get("pas_heures_graphe", 24)
+        self.pas_heures_suivant = temps.get("pas_heures_suivant", 24)

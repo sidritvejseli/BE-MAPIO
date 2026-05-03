@@ -17,12 +17,22 @@ from historique import Historique
 
 class Donnees:
 
-    def __init__(self, nom_colonne_smps: str, nom_colonne_cpc: str):
+    def __init__(
+        self,
+        nom_colonne_smps: str,
+        nom_colonne_cpc: str,
+        nom_colonne_drapeau_sauvegarde: str,
+        nom_drapeau_prefixe_particules: str,
+    ):
         self.logger = logging.getLogger()
 
         self.nom_colonne_smps: str = nom_colonne_smps
         self.nom_colonne_cpc: str = nom_colonne_cpc
         self.nom_colonne_concentration_courante = self.nom_colonne_smps
+
+        self.nom_colonne_drapeau_sauvegarde: str = nom_colonne_drapeau_sauvegarde
+
+        self.nom_drapeau_prefixe_particules: str = nom_drapeau_prefixe_particules
 
         self.initialiser_donnees()
 
@@ -172,19 +182,19 @@ class Donnees:
 
     def obtenir_donnees_valides(self) -> Donnees:
         donnees_valides = copy.copy(self)
-        donnees_valides.dataframe = donnees_valides.dataframe.query("smps_flag == 0")
+        donnees_valides.dataframe = donnees_valides.dataframe.query(f"{self.nom_colonne_drapeau_sauvegarde} == 0")
 
         return donnees_valides
 
     def obtenir_donnees_invalides(self) -> Donnees:
         donnees_invalides = copy.copy(self)
-        donnees_invalides.dataframe = donnees_invalides.dataframe.query("smps_flag == 1")
+        donnees_invalides.dataframe = donnees_invalides.dataframe.query(f"{self.nom_colonne_drapeau_sauvegarde} == 1")
 
         return donnees_invalides
 
     def obtenir_particules(self) -> Donnees:
         particules = copy.copy(self)
-        masque = particules.dataframe.columns.str.startswith("smps_d_")
+        masque = particules.dataframe.columns.str.startswith(self.nom_drapeau_prefixe_particules)
         particules.dataframe = particules.dataframe.loc[:, masque]
 
         return particules
@@ -208,10 +218,10 @@ class Donnees:
     # Si l'on souhaite copier réellement l'objet, remplacer copy.copy() par copy.deepcopy().
 
     def invalider_drapeau_date(self, date: datetime) -> None:
-        self.dataframe.loc[date, "smps_flag"] = 1
+        self.dataframe.loc[date, self.nom_colonne_drapeau_sauvegarde] = 1
 
     def valider_drapeau_date(self, date: datetime) -> None:
-        self.dataframe.loc[date, "smps_flag"] = 0
+        self.dataframe.loc[date, self.nom_colonne_drapeau_sauvegarde] = 0
 
     def invalider_date(self, date: datetime) -> None:
         self.invalider_drapeau_date(date)
@@ -234,7 +244,7 @@ class Donnees:
             self.invalider_drapeau_date(date)
 
     def invalider_drapeau_dates(self, masque: list[datetime]) -> None:
-        self.dataframe.loc[masque, "smps_flag"] = 1
+        self.dataframe.loc[masque, self.nom_colonne_drapeau_sauvegarde] = 1
 
     def invalider_dates(self, masque: list[datetime]) -> None:
         self.invalider_drapeau_dates(masque)
@@ -243,7 +253,7 @@ class Donnees:
     def est_tout_invalide(self) -> bool:
         colonnes = [self.nom_colonne_smps, self.nom_colonne_cpc]
         dataframe_non_nan = self.dataframe[colonnes].notna().all(axis=1)
-        return (self.dataframe.loc[dataframe_non_nan, "smps_flag"] == 1).all()
+        return (self.dataframe.loc[dataframe_non_nan, self.nom_colonne_drapeau_sauvegarde] == 1).all()
 
     def multiplier_concentration(self, facteur) -> None:
         self.dataframe[[self.nom_colonne_smps, self.nom_colonne_cpc]] *= facteur
@@ -258,4 +268,4 @@ class Donnees:
         # par Not A Number, en raison du drapeau "coerce".
 
     def ajouter_drapeaux(self) -> None:
-        self.dataframe["smps_flag"] = 0
+        self.dataframe[self.nom_colonne_drapeau_sauvegarde] = 0

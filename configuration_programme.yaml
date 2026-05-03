@@ -4,4 +4,5 @@ fenetre:
   hauteur_fenetre: 1080
 
 temps:
-  pas_heures: 24
+  pas_heures_graphe: 72
+  pas_heures_suivant: 24

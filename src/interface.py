@@ -42,11 +42,17 @@ class Interface:
 
         # Gestion de la temporalité.
 
-        self.temps = Temps(self.configuration_programme.pas_heures)
+        self.temps_graphe = Temps(self.configuration_programme.pas_heures_graphe)
+        self.temps_suivant = Temps(self.configuration_programme.pas_heures_suivant)
 
         # Gestion des données.
 
-        self.donnees = Donnees(self.configuration_utilisateur.drapeau_smps, self.configuration_utilisateur.drapeau_cpc)
+        self.donnees = Donnees(
+            self.configuration_utilisateur.drapeau_smps,
+            self.configuration_utilisateur.drapeau_cpc,
+            self.configuration_utilisateur.drapeau_sauvegarde,
+            self.configuration_utilisateur.drapeau_prefixe_particules,
+        )
 
         # Graphe 2D.
         self.graphe_2d: Graphe2D = Graphe2D()
@@ -235,7 +241,7 @@ class Interface:
 
         if not self.donnees.est_vide():
             self.date_debut = self.donnees.obtenir_minuit_premiere_date()
-            self.date_fin = self.temps.ajouter_pas_heures_moins_une_seconde(self.date_debut)
+            self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
             self.tracer_graphe_2d()
             self.tracer_graphe_3d()
             self.tracer_graphe_correlation()
@@ -327,7 +333,7 @@ class Interface:
         if self.donnees.est_vide() or self.date_debut >= self.donnees.obtenir_derniere_date():
             return
 
-        self.date_debut = self.temps.ajouter_pas_heures(self.date_debut)
+        self.date_debut = self.temps_suivant.ajouter_pas_heures(self.date_debut)
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
 
@@ -337,7 +343,7 @@ class Interface:
         if self.donnees.est_vide() or self.date_debut <= self.donnees.obtenir_premiere_date():
             return
 
-        self.date_debut = self.temps.soustraire_pas_heures(self.date_debut)
+        self.date_debut = self.temps_suivant.soustraire_pas_heures(self.date_debut)
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
 
@@ -467,7 +473,7 @@ class Interface:
             return
 
         self.interactions.reinitialiser_rectangle()
-        self.date_fin = self.temps.ajouter_pas_heures_moins_une_seconde(self.date_debut)
+        self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
 
         self.graphe_2d.tracer_graphe_2d(
             self.donnees,
@@ -499,7 +505,7 @@ class Interface:
             self.mettre_a_jour_trace_graphe_3d()
             return
 
-        self.date_fin = self.temps.ajouter_pas_heures_moins_une_seconde(self.date_debut)
+        self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
 
         self.graphe_3d.tracer_graphe_3d(self.donnees, self.date_debut, self.date_fin, self.teneur_maximum)
 
