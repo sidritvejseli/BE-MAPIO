@@ -10,3 +10,6 @@ env/
 
 # Dossier test de la sauvegarde
 resultats/
+
+# Paramètres MacOS
+.DS_Store
