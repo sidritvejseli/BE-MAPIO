@@ -160,7 +160,7 @@ class Interface:
         self.barre_onglets.obtenir_toile("Particules", 0).mpl_connect(
             "button_press_event", self.repondre_apres_clic_souris
         )
-        self.barre_onglets.obtenir_toile("Particules", 1).mpl_connect("motion_notify_event", self.info_point)
+        self.barre_onglets.obtenir_toile("Particules", 0).mpl_connect("motion_notify_event", self.info_point)
 
         self.mettre_a_jour_historique()
 
