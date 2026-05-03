@@ -5,6 +5,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import ttk, Menu, Frame, Label, Widget
 from typing import Callable, TypeAlias
 
+
 from graphes import Graphe
 
 # (Titre de l'item, Raccourci, Fonction appelée). Pour un séparateur, on met None.
