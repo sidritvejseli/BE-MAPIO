@@ -209,6 +209,11 @@ class Interface:
 
         self.construire_raccourcis_clavier()
 
+    # Main.
+
+    def construire_interface(self):
+        self.application.mainloop()
+
     # Barre des menus déroulants.
 
     def charger_fichier(self):
@@ -247,11 +252,6 @@ class Interface:
             self.tracer_graphe_correlation()
             self.mettre_a_jour_etiquette_barre_outils_jour()
             self.mettre_a_jour_etiquette_barre_outils_validation()
-
-    # Main.
-
-    def construire_interface(self):
-        self.application.mainloop()
 
     # Barre des menus déroulants.
 
