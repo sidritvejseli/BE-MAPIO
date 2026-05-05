@@ -8,4 +8,4 @@ temps:
   pas_heures_suivant: 24
 
 graphe3D:
-  echelle_logarithmique_taille_particules: true
+  echelle_logarithmique_taille_particules: false

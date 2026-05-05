@@ -57,4 +57,4 @@ class ConfigurationProgramme(Configuration):
 
         graphe3D = self.fichier_configuration.get("graphe3D", {})
 
-        self.echelle_logarithmique_taille_particules = graphe3D.get("echelle_logarithmique_taille_particules", {})
+        self.echelle_logarithmique_taille_particules = graphe3D.get("echelle_logarithmique_taille_particules", False)
