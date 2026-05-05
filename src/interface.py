@@ -115,7 +115,7 @@ class Interface:
                     ("Annuler", "Ctrl+Z", self.annuler),
                     ("Rétablir", "Ctrl+Shift+Z", self.retablir),
                     None,
-                    ("Appliquer un facteur de correction", None, None),
+                    ("Appliquer un facteur de correction", None, self.demander_facteur),
                 ],
             ),
             (
@@ -162,6 +162,8 @@ class Interface:
             ("Rétablir", self.retablir),
             None,
             ("Facteur", self.demander_facteur),
+            None,
+            ("Actualiser", self.actualiser),
         ]
 
         self.barre_outils_validation = BarreOutils(self.application, self.description_barre_outils_validation)
@@ -341,8 +343,6 @@ class Interface:
             self.donnees.supprimer_concentration_courante_non_definie().obtenir_colonne_dates().obtenir_dataframe()
         )
         self.tracer_graphe_2d()
-        self.tracer_graphe_3d()
-        self.tracer_graphe_correlation()
         self.mettre_a_jour_historique()
 
     def invalider_donnees_affichees(self):
@@ -354,8 +354,6 @@ class Interface:
             .obtenir_dataframe()
         )
         self.tracer_graphe_2d()
-        self.tracer_graphe_3d()
-        self.tracer_graphe_correlation()
         self.mettre_a_jour_historique()
 
     # Barre des outils du jour.
@@ -455,22 +453,16 @@ class Interface:
 
         if rafraichir:
             self.tracer_graphe_2d()
-            self.tracer_graphe_3d()
-            self.tracer_graphe_correlation()
             self.mettre_a_jour_historique()
 
     def annuler(self):
         self.donnees.annuler_invalidation_date()
         self.tracer_graphe_2d()
-        self.tracer_graphe_3d()
-        self.tracer_graphe_correlation()
         self.mettre_a_jour_historique()
 
     def retablir(self):
         self.donnees.retablir_invalidation_date()
         self.tracer_graphe_2d()
-        self.tracer_graphe_3d()
-        self.tracer_graphe_correlation()
         self.mettre_a_jour_historique()
 
     def demander_facteur(self):
@@ -484,6 +476,10 @@ class Interface:
         self.concentrations_maximum[self.configuration_utilisateur.drapeau_cpc] *= facteur
 
         self.tracer_graphe_2d()
+        self.tracer_graphe_correlation()
+
+    def actualiser(self):
+        self.tracer_graphe_3d()
         self.tracer_graphe_correlation()
 
     def mettre_a_jour_etiquette_barre_outils_validation(self):
@@ -608,8 +604,6 @@ class Interface:
 
         if doit_rafraichir:
             self.tracer_graphe_2d()
-            self.tracer_graphe_3d()
-            self.tracer_graphe_correlation()
             self.mettre_a_jour_historique()
 
     # Raccourcis clavier.
