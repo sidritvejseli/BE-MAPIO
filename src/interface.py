@@ -1,6 +1,5 @@
 import logging
 import os
-import pandas as pd
 import tkinter as tk
 
 
@@ -333,6 +332,7 @@ class Interface:
 
     def quitter_programme(self):
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
+            self.application.quit()
             self.application.destroy()
 
     # Actions.
