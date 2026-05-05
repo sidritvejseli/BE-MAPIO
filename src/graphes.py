@@ -1,12 +1,14 @@
 import logging
+from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 import matplotlib.dates as mdates
 import matplotlib.ticker as mticker
 
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from matplotlib.image import AxesImage
 from sklearn.linear_model import LinearRegression
 from scipy.stats import gaussian_kde
@@ -115,15 +117,6 @@ class Graphe3D(Graphe):
         self.fig, self.ax = plt.subplots()
         self.colorbar = None
 
-    def calculer_bords(self, valeurs):
-        valeurs = np.array(valeurs, dtype=float)
-        milieux = (valeurs[1:] + valeurs[:-1]) / 2
-
-        debut = valeurs[0]
-        fin = valeurs[-1]
-
-        return np.concatenate([[debut], milieux, [fin]])
-
     def tracer_graphe_3d(self, donnees: Donnees, date_debut: datetime, date_fin: datetime, teneur_maximum):
         self.effacer_graphe_3d()
 
@@ -139,30 +132,28 @@ class Graphe3D(Graphe):
 
         # Suppression des données invalidées dans le graphe 3D.
         particules_valides = particules.soustraire_donnees(particules_invalides)
-        particules_valides = particules_valides.completer_valeurs_manquantes_jour(date_debut, date_fin)
+        particules_valides = particules_valides.completer_valeurs_manquantes_jour(
+            date_debut, date_fin + timedelta(seconds=1)
+        )
 
         particules_valides_taille_particules_converties_float = particules_valides.convertir_titre_particules_en_float()
 
         dataframe = particules_valides_taille_particules_converties_float.obtenir_dataframe()
 
-        bords_dates = self.calculer_bords(mdates.date2num(dataframe.index))
-        bords_tailles_particules = self.calculer_bords(dataframe.columns)
-
         self.ax.set_yscale("log")
 
         carte_thermique = self.ax.pcolormesh(
-            bords_dates,
-            bords_tailles_particules,
-            dataframe.T,
+            dataframe.index,
+            dataframe.columns,
+            dataframe.iloc[:-1, 1:].T,
             cmap="Spectral_r",
-            shading="auto",
-            vmin=0,
-            vmax=teneur_maximum,
+            shading="flat",
+            # norm=LogNorm(vmin=1, vmax=teneur_maximum),
         )
 
         self.legender_titre(date_debut, donnees.nom_drapeau_prefixe_particules)
         self.legender_abscisses()
-        self.legender_ordonnees()
+        self.legender_ordonnees(dataframe.columns.min(), dataframe.columns.max())
         self.legender_barre_couleurs(carte_thermique)
 
         self.fig.tight_layout()
@@ -185,12 +176,13 @@ class Graphe3D(Graphe):
 
         self.ax.tick_params(axis="x")
 
-    def legender_ordonnees(self):
+    def legender_ordonnees(self, taille_minimum, taille_maximum):
         self.ax.set_ylabel("Taille des particules (µm)")
 
         self.ax.yaxis.set_major_locator(mticker.LogLocator(base=10))
         self.ax.yaxis.set_major_formatter(mticker.LogFormatter())
 
+        # self.ax.set_ylim(taille_minimum, taille_maximum)
         self.ax.tick_params(axis="y")
 
         # FIXME : Les ordonnées ne sont pas sur une échelle linéaire.
