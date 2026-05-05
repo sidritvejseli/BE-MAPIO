@@ -337,6 +337,9 @@ class Interface:
     # Actions.
 
     def invalider_toutes_donnees(self):
+        if self.donnees.est_vide():
+            return
+
         # On invalide toutes les données, sauf celles qui ne sont pas définies.
         self.donnees.invalider_dates(
             self.donnees.supprimer_concentration_courante_non_definie().obtenir_colonne_dates().obtenir_dataframe()
@@ -345,6 +348,9 @@ class Interface:
         self.mettre_a_jour_historique()
 
     def invalider_donnees_affichees(self):
+        if self.donnees.est_vide():
+            return
+
         # On invalide les données affichées sur le graphe actuel, sauf celles qui ne sont pas définies.
         self.donnees.invalider_dates(
             self.donnees.supprimer_concentration_courante_non_definie()
