@@ -101,7 +101,7 @@ class Interactions:
             donnees.obtenir_donnees_valides()
             .obtenir_dates(date_debut, date_fin)
             .obtenir_concentration_intervalle(y_min, y_max)
-            .obtenir_colonne_concentration()
+            .obtenir_colonne_concentration_courante_non_nulle()
             .obtenir_colonne_dates()
             .obtenir_dataframe()
         )

@@ -66,15 +66,50 @@ class Donnees:
 
         return colonne_concentrations
 
+    def supprimer_concentration_smps_non_definie(self) -> Donnees:
+        concentration_definie = copy.copy(self)
+        concentration_definie.dataframe = concentration_definie.dataframe.dropna(subset=[self.nom_colonne_smps])
+
+        return concentration_definie
+
+    def supprimer_concentration_cpc_non_definie(self) -> Donnees:
+        concentration_definie = copy.copy(self)
+        concentration_definie.dataframe = concentration_definie.dataframe.dropna(subset=[self.nom_colonne_cpc])
+
+        return concentration_definie
+
+    def supprimer_concentration_courante_non_definie(self) -> Donnees:
+        concentration_definie = copy.copy(self)
+        concentration_definie.dataframe = concentration_definie.dataframe.dropna(
+            subset=[self.nom_colonne_concentration_courante]
+        )
+
+        return concentration_definie
+
     def obtenir_colonnes_concentrations(self) -> Donnees:
         colonnes_concentrations = copy.copy(self)
         colonnes_concentrations.dataframe = colonnes_concentrations.dataframe[
             [self.nom_colonne_smps, self.nom_colonne_cpc]
         ]
 
-        # enlever les valeurs NaN
-        df = colonnes_concentrations.dataframe.dropna(subset=[self.nom_colonne_smps, self.nom_colonne_cpc])
-        colonnes_concentrations.dataframe = df
+        return colonnes_concentrations
+
+    def obtenir_colonnes_concentrations_non_nulles(self) -> Donnees:
+        colonnes_concentrations = copy.copy(self)
+        colonnes_concentrations = (
+            colonnes_concentrations.supprimer_concentration_smps_non_definie()
+            .supprimer_concentration_cpc_non_definie()
+            .obtenir_colonnes_concentrations()
+        )
+
+        return colonnes_concentrations
+
+    def obtenir_colonne_concentration_courante_non_nulle(self) -> Donnees:
+        colonnes_concentrations = copy.copy(self)
+        colonnes_concentrations = (
+            colonnes_concentrations.supprimer_concentration_courante_non_definie().obtenir_colonnes_concentrations()
+        )
+
         return colonnes_concentrations
 
     def obtenir_drapeaux_sauvegarde(self) -> Donnees:

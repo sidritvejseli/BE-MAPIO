@@ -243,7 +243,7 @@ class GrapheCorrelation(Graphe):
         marqueur: str = "o",
         legende_boite: str = "",
     ):
-        df_colonnes = donnees.obtenir_donnees_valides().obtenir_colonnes_concentrations()
+        df_colonnes = donnees.obtenir_donnees_valides().obtenir_colonnes_concentrations_non_nulles()
 
         # FIXME : Utiliser le nom déclaré dans la config plutôt que l'indice de colonne.
         smps_total = df_colonnes.obtenir_dataframe().iloc[:, 0]

@@ -109,8 +109,8 @@ class Interface:
             (
                 "Actions",
                 [
-                    ("Invalider toutes les données", None, None),
-                    ("Invalider les données du jour", None, None),
+                    ("Invalider toutes les données", None, self.invalider_toutes_donnees),
+                    ("Invalider les données du jour", None, self.invalider_donnees_affichees),
                     None,
                     ("Annuler", "Ctrl+Z", self.annuler),
                     ("Rétablir", "Ctrl+Shift+Z", self.retablir),
@@ -332,6 +332,31 @@ class Interface:
     def quitter_programme(self):
         if messagebox.askyesno("Quitter", "Voulez-vous vraiment quitter ?"):
             self.application.destroy()
+
+    # Actions.
+
+    def invalider_toutes_donnees(self):
+        # On invalide toutes les données, sauf celles qui ne sont pas définies.
+        self.donnees.invalider_dates(
+            self.donnees.supprimer_concentration_courante_non_definie().obtenir_colonne_dates().obtenir_dataframe()
+        )
+        self.tracer_graphe_2d()
+        self.tracer_graphe_3d()
+        self.tracer_graphe_correlation()
+        self.mettre_a_jour_historique()
+
+    def invalider_donnees_affichees(self):
+        # On invalide les données affichées sur le graphe actuel, sauf celles qui ne sont pas définies.
+        self.donnees.invalider_dates(
+            self.donnees.supprimer_concentration_courante_non_definie()
+            .obtenir_dates(self.date_debut, self.date_fin)
+            .obtenir_colonne_dates()
+            .obtenir_dataframe()
+        )
+        self.tracer_graphe_2d()
+        self.tracer_graphe_3d()
+        self.tracer_graphe_correlation()
+        self.mettre_a_jour_historique()
 
     # Barre des outils du jour.
 
