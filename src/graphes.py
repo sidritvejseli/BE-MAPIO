@@ -1,5 +1,5 @@
 import logging
-from matplotlib.colors import LogNorm
+from matplotlib.colors import LogNorm, Normalize
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -113,11 +113,22 @@ class Graphe2D(Graphe):
 
 class Graphe3D(Graphe):
 
-    def __init__(self):
+    def __init__(
+        self,
+        echelle_logarithmique: bool = False,
+    ):
         self.fig, self.ax = plt.subplots()
         self.colorbar = None
 
-    def tracer_graphe_3d(self, donnees: Donnees, date_debut: datetime, date_fin: datetime, teneur_maximum):
+        self.echelle_logarithmique: bool = echelle_logarithmique
+
+    def tracer_graphe_3d(
+        self,
+        donnees: Donnees,
+        date_debut: datetime,
+        date_fin: datetime,
+        teneur_maximum,
+    ):
         self.effacer_graphe_3d()
 
         donnees_dates = donnees.obtenir_dates(date_debut, date_fin)
@@ -142,18 +153,23 @@ class Graphe3D(Graphe):
 
         self.ax.set_yscale("log")
 
+        if self.echelle_logarithmique:
+            norme = LogNorm(vmin=1, vmax=teneur_maximum)
+        else:
+            norme = Normalize(vmin=0, vmax=teneur_maximum)
+
         carte_thermique = self.ax.pcolormesh(
             dataframe.index,
             dataframe.columns,
             dataframe.iloc[:-1, 1:].T,
             cmap="Spectral_r",
             shading="flat",
-            # norm=LogNorm(vmin=1, vmax=teneur_maximum),
+            norm=norme,
         )
 
         self.legender_titre(date_debut, donnees.nom_drapeau_prefixe_particules)
         self.legender_abscisses()
-        self.legender_ordonnees(dataframe.columns.min(), dataframe.columns.max())
+        self.legender_ordonnees()
         self.legender_barre_couleurs(carte_thermique)
 
         self.fig.tight_layout()
@@ -176,13 +192,12 @@ class Graphe3D(Graphe):
 
         self.ax.tick_params(axis="x")
 
-    def legender_ordonnees(self, taille_minimum, taille_maximum):
+    def legender_ordonnees(self):
         self.ax.set_ylabel("Taille des particules (µm)")
 
         self.ax.yaxis.set_major_locator(mticker.LogLocator(base=10))
         self.ax.yaxis.set_major_formatter(mticker.LogFormatter())
 
-        # self.ax.set_ylim(taille_minimum, taille_maximum)
         self.ax.tick_params(axis="y")
 
         # FIXME : Les ordonnées ne sont pas sur une échelle linéaire.

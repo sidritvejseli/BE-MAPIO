@@ -54,3 +54,7 @@ class ConfigurationProgramme(Configuration):
 
         self.pas_heures_graphe = temps.get("pas_heures_graphe", 24)
         self.pas_heures_suivant = temps.get("pas_heures_suivant", 24)
+
+        graphe3D = self.fichier_configuration.get("graphe3D", {})
+
+        self.echelle_logarithmique_taille_particules = graphe3D.get("echelle_logarithmique_taille_particules", {})

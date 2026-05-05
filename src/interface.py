@@ -69,7 +69,7 @@ class Interface:
 
         # Graphe 3D
 
-        self.graphe_3d: Graphe3D = Graphe3D()
+        self.graphe_3d: Graphe3D = Graphe3D(self.configuration_programme.echelle_logarithmique_taille_particules)
 
         # Pour garder une échelle constante de couleur du graphe 3D, on garde en mémoire la valeur maximum.
         self.teneur_maximum = None
