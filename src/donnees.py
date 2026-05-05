@@ -320,8 +320,13 @@ class Donnees:
     def multiplier_concentration(self, facteur) -> None:
         self.dataframe[[self.nom_colonne_smps, self.nom_colonne_cpc]] *= facteur
 
-    def convertir_titre_particules_en_float(self) -> None:
-        self.dataframe.columns = [float(colonne.split("_")[2]) for colonne in self.dataframe.columns]
+    def convertir_titre_particules_en_float(self) -> Donnees:
+        titre_particules_en_float = copy.deepcopy(self)
+        titre_particules_en_float.dataframe.columns = [
+            float(colonne.split("_")[2]) for colonne in self.dataframe.columns
+        ]
+
+        return titre_particules_en_float
 
     def convertir_donnees_en_float(self) -> None:
         self.dataframe = self.dataframe.apply(pd.to_numeric, errors="coerce")

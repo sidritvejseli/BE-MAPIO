@@ -2,7 +2,6 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 import matplotlib.dates as mdates
 import matplotlib.ticker as mticker
 
@@ -116,6 +115,15 @@ class Graphe3D(Graphe):
         self.fig, self.ax = plt.subplots()
         self.colorbar = None
 
+    def calculer_bords(self, valeurs):
+        valeurs = np.array(valeurs, dtype=float)
+        milieux = (valeurs[1:] + valeurs[:-1]) / 2
+
+        debut = valeurs[0]
+        fin = valeurs[-1]
+
+        return np.concatenate([[debut], milieux, [fin]])
+
     def tracer_graphe_3d(self, donnees: Donnees, date_debut: datetime, date_fin: datetime, teneur_maximum):
         self.effacer_graphe_3d()
 
@@ -133,19 +141,22 @@ class Graphe3D(Graphe):
         particules_valides = particules.soustraire_donnees(particules_invalides)
         particules_valides = particules_valides.completer_valeurs_manquantes_jour(date_debut, date_fin)
 
-        dataframe = particules_valides.obtenir_dataframe()
+        particules_valides_taille_particules_converties_float = particules_valides.convertir_titre_particules_en_float()
+
+        dataframe = particules_valides_taille_particules_converties_float.obtenir_dataframe()
+
+        bords_dates = self.calculer_bords(mdates.date2num(dataframe.index))
+        bords_tailles_particules = self.calculer_bords(dataframe.columns)
 
         carte_thermique = self.ax.pcolormesh(
-            dataframe.index,
-            dataframe.columns,
+            bords_dates,
+            bords_tailles_particules,
             dataframe.T,
             cmap="Spectral_r",
             shading="auto",
             vmin=0,
             vmax=teneur_maximum,
         )
-
-        particules.convertir_titre_particules_en_float()
 
         self.legender_titre(date_debut)
         self.legender_abscisses()
