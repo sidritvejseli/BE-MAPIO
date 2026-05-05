@@ -298,7 +298,8 @@ class Interface:
         self.donnees.fermer_fichier_csv()
         self.date_debut = None
         self.date_fin = None
-        self.afficher_aucun_fichier_charge_barre_outils_jour()
+        self.mettre_a_jour_etiquette_barre_outils_jour()
+        self.mettre_a_jour_etiquette_barre_outils_validation()
         self.teneur_maximum = None
         self.concentrations_maximum: dict[str, float] = {
             self.configuration_utilisateur.drapeau_smps: None,
