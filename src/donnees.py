@@ -77,6 +77,18 @@ class Donnees:
         colonnes_concentrations.dataframe = df
         return colonnes_concentrations
 
+    def obtenir_drapeaux_sauvegarde(self) -> Donnees:
+        drapeaux_sauvegarde = copy.copy(self)
+        drapeaux_sauvegarde.dataframe = drapeaux_sauvegarde.dataframe[self.nom_colonne_drapeau_sauvegarde]
+
+        return drapeaux_sauvegarde
+
+    def supprimer_drapeaux_sauvegarde(self) -> Donnees:
+        drapeaux_sauvegarde = copy.copy(self)
+        drapeaux_sauvegarde.dataframe = drapeaux_sauvegarde.dataframe.drop(self.nom_colonne_drapeau_sauvegarde, axis=1)
+
+        return drapeaux_sauvegarde
+
     def supprimer_lignes_polluees(self) -> Donnees:
         lignes_non_polluees = copy.copy(self)
         lignes_non_polluees.dataframe = lignes_non_polluees.dataframe.loc[
@@ -143,13 +155,14 @@ class Donnees:
 
         self.initialiser_donnees()
 
-    def sauvegarder_fichier_csv(self, chemin_absolu_donnees_filtrees, chemin_absolu_flags) -> None:
-        donnees_valides = self.obtenir_donnees_valides()
+    def sauvegarder_fichier_filtre_csv(self, chemin_absolu_donnees_filtrees) -> None:
+        donnees_valides = self.obtenir_donnees_valides().supprimer_drapeaux_sauvegarde()
         donnees_valides.obtenir_dataframe().to_csv(chemin_absolu_donnees_filtrees)
 
         self.logger.info(f"Fichier filtré {self.nom_fichier} sauvegardé en {chemin_absolu_donnees_filtrees}.")
 
-        donnees_invalides = self.obtenir_donnees_invalides()
+    def sauvegarder_fichier_drapeaux_csv(self, chemin_absolu_flags) -> None:
+        donnees_invalides = self.obtenir_donnees_invalides().obtenir_drapeaux_sauvegarde()
         donnees_invalides.obtenir_dataframe().to_csv(chemin_absolu_flags)
 
         self.logger.info(f"Fichier flags {self.nom_fichier} sauvegardé en {chemin_absolu_flags}.")

@@ -100,7 +100,8 @@ class Interface:
                     ("Charger un fichier", None, self.charger_fichier),
                     ("Fermer sans enregistrer", None, self.fermer_fichier),
                     None,
-                    ("Enregistrer sous", None, self.sauvegarder_fichier),
+                    ("Enregistrer sous", None, self.sauvegarder_fichier_filtre),
+                    ("Enregistrer drapeaux sous", None, self.sauvegarder_fichier_drapeaux),
                     None,
                     ("Quitter", None, self.quitter_programme),
                 ],
@@ -257,9 +258,8 @@ class Interface:
 
     # Barre des menus déroulants.
 
-    def sauvegarder_fichier(self):
+    def sauvegarder_fichier_filtre(self):
         dossier_resultats = self.configuration_utilisateur.chemin_resultats
-        dossier_flags = self.configuration_utilisateur.chemin_drapeaux
 
         if self.donnees.est_vide():
             messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
@@ -267,7 +267,6 @@ class Interface:
 
         # on cree les dossiers s'ils n'existent pas
         os.makedirs(dossier_resultats, exist_ok=True)
-        os.makedirs(dossier_flags, exist_ok=True)
 
         # sauvegarde du fichier filtre (lignes valides uniquement)
         chemin_absolu_donnees_filtrees = filedialog.asksaveasfilename(
@@ -277,6 +276,20 @@ class Interface:
             filetypes=[("CSV files", "*.csv")],
         )
 
+        if not chemin_absolu_donnees_filtrees:
+            return
+
+        self.donnees.sauvegarder_fichier_filtre_csv(chemin_absolu_donnees_filtrees)
+
+    def sauvegarder_fichier_drapeaux(self):
+        dossier_flags = self.configuration_utilisateur.chemin_drapeaux
+
+        if self.donnees.est_vide():
+            messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
+            return
+
+        os.makedirs(dossier_flags, exist_ok=True)
+
         # sauvegarde du fichier des flags (lignes invalidees)
         chemin_absolu_flags = filedialog.asksaveasfilename(
             title="Sauvegarder le fichier des flags",
@@ -285,10 +298,10 @@ class Interface:
             filetypes=[("CSV files", "*.csv")],
         )
 
-        if not chemin_absolu_donnees_filtrees or not chemin_absolu_flags:
+        if not chemin_absolu_flags:
             return
 
-        self.donnees.sauvegarder_fichier_csv(chemin_absolu_donnees_filtrees, chemin_absolu_flags)
+        self.donnees.sauvegarder_fichier_drapeaux_csv(chemin_absolu_flags)
 
     def fermer_fichier(self):
         if self.donnees.est_vide():
