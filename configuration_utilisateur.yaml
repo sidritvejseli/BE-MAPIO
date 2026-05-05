@@ -1,3 +1,4 @@
+# Le chemin est relatif au répertoire dans lequel on se place en exécutant le programme.
 repertoires:
   chemin_donnees: "data/"           
   chemin_resultats: "resultats/"     

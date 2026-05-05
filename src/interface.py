@@ -8,7 +8,7 @@ from matplotlib.backend_bases import Event
 from matplotlib.text import Annotation
 from tkinter import filedialog, messagebox
 from tkinter.simpledialog import askfloat
-
+from pathlib import Path
 
 from donnees import Donnees
 from graphes import Graphe2D, Graphe3D, GrapheCorrelation
@@ -34,10 +34,14 @@ class Interface:
 
         # Importation de la configuration.
 
+        self.chemin_repertoire_parent = Path(__file__).resolve().parent.parent
+
         self.configuration_utilisateur: ConfigurationUtilisateur = ConfigurationUtilisateur(
-            "configuration_utilisateur.yaml"
+            self.chemin_repertoire_parent / "configuration_utilisateur.yaml"
         )
-        self.configuration_programme: ConfigurationProgramme = ConfigurationProgramme("configuration_programme.yaml")
+        self.configuration_programme: ConfigurationProgramme = ConfigurationProgramme(
+            self.chemin_repertoire_parent / "configuration_programme.yaml"
+        )
 
         # Gestion de la temporalité.
 
@@ -266,9 +270,6 @@ class Interface:
             messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
             return
 
-        # on cree les dossiers s'ils n'existent pas
-        os.makedirs(dossier_resultats, exist_ok=True)
-
         # sauvegarde du fichier filtre (lignes valides uniquement)
         chemin_absolu_donnees_filtrees = filedialog.asksaveasfilename(
             title="Sauvegarder les données filtrées",
@@ -288,8 +289,6 @@ class Interface:
         if self.donnees.est_vide():
             messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
             return
-
-        os.makedirs(dossier_flags, exist_ok=True)
 
         # sauvegarde du fichier des flags (lignes invalidees)
         chemin_absolu_flags = filedialog.asksaveasfilename(
