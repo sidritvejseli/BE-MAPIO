@@ -245,6 +245,7 @@ class GrapheCorrelation(Graphe):
     ):
         df_colonnes = donnees.obtenir_donnees_valides().obtenir_colonnes_concentrations()
 
+        # FIXME : Utiliser le nom déclaré dans la config plutôt que l'indice de colonne.
         smps_total = df_colonnes.obtenir_dataframe().iloc[:, 0]
         cpc_conc = df_colonnes.obtenir_dataframe().iloc[:, 1]
 

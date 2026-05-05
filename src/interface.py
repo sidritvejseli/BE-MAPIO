@@ -72,7 +72,8 @@ class Interface:
 
         # Graphe de corrélation.
 
-        self.graphe_correlation: GrapheCorrelation = GrapheCorrelation()
+        self.graphe_correlation_onglet_particules: GrapheCorrelation = GrapheCorrelation()
+        self.graphe_correlation_onglet_correlation: GrapheCorrelation = GrapheCorrelation()
 
         # Pour garder une échelle constante du graphe de corrélation,
         # on garde en mémoire la valeur maximum des abscisses et des ordonnées.
@@ -169,9 +170,9 @@ class Interface:
         # Barre des onglets.
 
         self.description_barre_onglets: DescriptionBarreOnglets = [
-            ("Particules", [self.graphe_2d, self.graphe_correlation]),
+            ("Particules", [self.graphe_2d, self.graphe_correlation_onglet_particules]),
             ("Graphe 3D", [self.graphe_3d]),
-            ("Corrélation", [self.graphe_correlation]),
+            ("Corrélation", [self.graphe_correlation_onglet_correlation]),
             ("Historique", []),
         ]
 
@@ -519,11 +520,14 @@ class Interface:
             or self.date_debut is None
             or self.date_fin is None
         ):
-            self.graphe_correlation.effacer_graphe_correlation()
+            self.graphe_correlation_onglet_particules.effacer_graphe_correlation()
+            self.graphe_correlation_onglet_correlation.effacer_graphe_correlation()
             self.mettre_a_jour_trace_graphe_correlation()
             return
 
-        self.graphe_correlation.tracer_graphe_correlation(self.donnees, self.concentrations_maximum)
+        self.graphe_correlation_onglet_particules.tracer_graphe_correlation(self.donnees, self.concentrations_maximum)
+        self.graphe_correlation_onglet_correlation.tracer_graphe_correlation(self.donnees, self.concentrations_maximum)
+        # FIXME : Le graphe de corrélation est calculé deux fois, une fois pour chaque onglet.
 
         self.mettre_a_jour_trace_graphe_correlation()
 
