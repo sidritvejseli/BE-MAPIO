@@ -148,6 +148,8 @@ class Graphe3D(Graphe):
         bords_dates = self.calculer_bords(mdates.date2num(dataframe.index))
         bords_tailles_particules = self.calculer_bords(dataframe.columns)
 
+        self.ax.set_yscale("log")
+
         carte_thermique = self.ax.pcolormesh(
             bords_dates,
             bords_tailles_particules,
@@ -186,9 +188,8 @@ class Graphe3D(Graphe):
     def legender_ordonnees(self):
         self.ax.set_ylabel("Taille des particules (nanomètres)")
 
-        self.ax.yaxis.set_major_locator(mticker.MaxNLocator(nbins=10))
-
-        self.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.2f"))
+        self.ax.yaxis.set_major_locator(mticker.LogLocator(base=10))
+        self.ax.yaxis.set_major_formatter(mticker.LogFormatter())
 
         self.ax.tick_params(axis="y")
 
