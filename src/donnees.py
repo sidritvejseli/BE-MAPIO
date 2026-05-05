@@ -23,6 +23,7 @@ class Donnees:
         nom_colonne_cpc: str,
         nom_colonne_drapeau_sauvegarde: str,
         nom_drapeau_prefixe_particules: str,
+        nom_drapeau_pollution: str,
     ):
         self.logger = logging.getLogger()
 
@@ -33,6 +34,8 @@ class Donnees:
         self.nom_colonne_drapeau_sauvegarde: str = nom_colonne_drapeau_sauvegarde
 
         self.nom_drapeau_prefixe_particules: str = nom_drapeau_prefixe_particules
+
+        self.nom_drapeau_pollution: str = nom_drapeau_pollution
 
         self.initialiser_donnees()
 
@@ -73,6 +76,14 @@ class Donnees:
         df = colonnes_concentrations.dataframe.dropna(subset=[self.nom_colonne_smps, self.nom_colonne_cpc])
         colonnes_concentrations.dataframe = df
         return colonnes_concentrations
+
+    def supprimer_lignes_polluees(self) -> Donnees:
+        lignes_non_polluees = copy.copy(self)
+        lignes_non_polluees.dataframe = lignes_non_polluees.dataframe.loc[
+            lignes_non_polluees.dataframe[self.nom_drapeau_pollution] == 0
+        ]
+
+        return lignes_non_polluees
 
     def supprimer_donnees_manquantes_colonne_concentration(self, nom_colonne_concentration: str):
         donnees_supprimees = copy.deepcopy(self)
@@ -122,6 +133,8 @@ class Donnees:
 
         self.convertir_donnees_en_float()
         self.ajouter_drapeaux()
+
+        self.dataframe = self.supprimer_lignes_polluees().dataframe
 
         self.logger.info(f"Fichier {self.nom_fichier} chargé.")
 

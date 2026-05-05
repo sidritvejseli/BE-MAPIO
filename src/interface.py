@@ -52,6 +52,7 @@ class Interface:
             self.configuration_utilisateur.drapeau_cpc,
             self.configuration_utilisateur.drapeau_sauvegarde,
             self.configuration_utilisateur.drapeau_prefixe_particules,
+            self.configuration_utilisateur.drapeau_pollution,
         )
 
         # Graphe 2D.
