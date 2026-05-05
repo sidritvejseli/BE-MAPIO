@@ -186,7 +186,7 @@ class Graphe3D(Graphe):
         self.ax.tick_params(axis="x")
 
     def legender_ordonnees(self):
-        self.ax.set_ylabel("Taille des particules (nanomètres)")
+        self.ax.set_ylabel("Taille des particules (µm)")
 
         self.ax.yaxis.set_major_locator(mticker.LogLocator(base=10))
         self.ax.yaxis.set_major_formatter(mticker.LogFormatter())
