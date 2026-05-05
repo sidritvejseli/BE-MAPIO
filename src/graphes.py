@@ -160,7 +160,7 @@ class Graphe3D(Graphe):
             vmax=teneur_maximum,
         )
 
-        self.legender_titre(date_debut)
+        self.legender_titre(date_debut, donnees.nom_drapeau_prefixe_particules)
         self.legender_abscisses()
         self.legender_ordonnees()
         self.legender_barre_couleurs(carte_thermique)
@@ -174,8 +174,8 @@ class Graphe3D(Graphe):
 
         self.ax.clear()
 
-    def legender_titre(self, date: datetime):
-        self.ax.set_title(f"Jour : {date.date()}")
+    def legender_titre(self, date: datetime, nom: str):
+        self.ax.set_title(f"Jour : {date.date()}\n{nom}")
 
     def legender_abscisses(self):
         self.ax.set_xlabel("Heure")
