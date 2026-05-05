@@ -281,8 +281,14 @@ class Donnees:
     def invalider_drapeau_date(self, date: datetime) -> None:
         self.dataframe.loc[date, self.nom_colonne_drapeau_sauvegarde] = 1
 
+    def invalider_drapeau_dates(self, masque: list[datetime]) -> None:
+        self.dataframe.loc[masque, self.nom_colonne_drapeau_sauvegarde] = 1
+
     def valider_drapeau_date(self, date: datetime) -> None:
         self.dataframe.loc[date, self.nom_colonne_drapeau_sauvegarde] = 0
+
+    def valider_drapeau_dates(self, masque: list[datetime]) -> None:
+        self.dataframe.loc[masque, self.nom_colonne_drapeau_sauvegarde] = 0
 
     def invalider_date(self, date: datetime) -> None:
         self.invalider_drapeau_date(date)
@@ -293,19 +299,14 @@ class Donnees:
             return
 
         dates = self.historique.retourner_en_arriere()
-        for date in dates:
-            self.valider_drapeau_date(date)
+        self.valider_drapeau_dates(dates)
 
     def retablir_invalidation_date(self) -> None:
         if not self.historique.est_possible_retour_avant():
             return
 
         dates = self.historique.retourner_en_avant()
-        for date in dates:
-            self.invalider_drapeau_date(date)
-
-    def invalider_drapeau_dates(self, masque: list[datetime]) -> None:
-        self.dataframe.loc[masque, self.nom_colonne_drapeau_sauvegarde] = 1
+        self.invalider_drapeau_dates(dates)
 
     def invalider_dates(self, masque: list[datetime]) -> None:
         self.invalider_drapeau_dates(masque)
