@@ -342,7 +342,10 @@ class Interface:
 
         # On invalide toutes les données, sauf celles qui ne sont pas définies.
         self.donnees.invalider_dates(
-            self.donnees.supprimer_concentration_courante_non_definie().obtenir_colonne_dates().obtenir_dataframe()
+            self.donnees.supprimer_concentration_courante_non_definie()
+            .obtenir_donnees_valides()
+            .obtenir_colonne_dates()
+            .obtenir_dataframe()
         )
         self.tracer_graphe_2d()
         self.mettre_a_jour_historique()
@@ -354,6 +357,7 @@ class Interface:
         # On invalide les données affichées sur le graphe actuel, sauf celles qui ne sont pas définies.
         self.donnees.invalider_dates(
             self.donnees.supprimer_concentration_courante_non_definie()
+            .obtenir_donnees_valides()
             .obtenir_dates(self.date_debut, self.date_fin)
             .obtenir_colonne_dates()
             .obtenir_dataframe()
