@@ -202,6 +202,14 @@ class Donnees:
 
         self.logger.info(f"Fichier flags {self.nom_fichier} sauvegardé en {chemin_absolu_flags}.")
 
+    """exporter le fichier tel quel avec la colonne smps_flag, pour pouvoir reprendre le travail dessus plus tard"""
+    def exporter_fichier_csv(self, chemin_absolu_export) -> None:
+        self.dataframe.to_csv(chemin_absolu_export)
+
+        self.logger.info(f"Fichier exporté {self.nom_fichier} sauvegardé en {chemin_absolu_export}.")
+    
+    """------------------------------------------------"""
+
     def obtenir_nombre_dates(self) -> int:
         return self.dataframe.shape[0]
 

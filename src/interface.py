@@ -105,6 +105,7 @@ class Interface:
                     None,
                     ("Enregistrer sous", None, self.sauvegarder_fichier_filtre),
                     ("Enregistrer drapeaux sous", None, self.sauvegarder_fichier_drapeaux),
+                    ("Exporter", None, self.exporter_fichier), #nouveau
                     None,
                     ("Quitter", None, self.quitter_programme),
                 ],
@@ -302,6 +303,27 @@ class Interface:
             return
 
         self.donnees.sauvegarder_fichier_drapeaux_csv(chemin_absolu_flags)
+
+    def exporter_fichier(self):
+        
+        if self.donnees.est_vide():
+            messagebox.showwarning("Attention", "Aucune donnée à exporter.")
+            return
+
+        chemin_absolu_export = filedialog.asksaveasfilename(
+            title="Exporter le fichier de travail",
+            initialdir=self.configuration_utilisateur.chemin_resultats,
+            initialfile=self.donnees.nom_fichier,
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")],
+        )
+
+        if not chemin_absolu_export:
+            return
+
+        self.donnees.exporter_fichier_csv(chemin_absolu_export)
+        messagebox.showinfo("Export", f"Fichier exporté avec succès :\n{chemin_absolu_export}")
+
 
     def fermer_fichier(self):
         if self.donnees.est_vide():
