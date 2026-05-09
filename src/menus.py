@@ -97,22 +97,23 @@ class BarreOnglets:
         self.application = application
         self.description_barre_onglets = description_barre_onglets
 
-        self.onglets: dict[str, Onglet] = {}
+        self.onglets_par_nom: dict[str, Onglet] = {}
+        self.toiles_par_graphe: dict[Graphe, FigureCanvasTkAgg] = {}
 
     def construire_barre_onglets(self):
         self.barre_onglets = ttk.Notebook(self.application)
         self.barre_onglets.pack(fill=tk.BOTH, expand=True)
 
         for nom_onglet, _ in self.description_barre_onglets:
-            self.onglets[nom_onglet] = Onglet()
+            self.onglets_par_nom[nom_onglet] = Onglet()
 
             conteneur = ttk.Frame(self.barre_onglets)
-            self.definir_conteneur(nom_onglet, conteneur)
+            self.onglets_par_nom[nom_onglet].conteneur = conteneur
             self.barre_onglets.add(conteneur, text=nom_onglet)
 
     def construire_onglets(self):
         for nom_onglet, liste_graphes in self.description_barre_onglets:
-            onglet = self.onglets[nom_onglet]
+            onglet = self.onglets_par_nom[nom_onglet]
 
             if len(liste_graphes) == 0:
                 onglet.construire_onglet_texte()
@@ -123,26 +124,17 @@ class BarreOnglets:
             elif len(liste_graphes) == 2:
                 onglet.construire_onglet_double(*liste_graphes)
 
-    def obtenir_conteneur(self, nom_onglet: str):
-        return self.onglets[nom_onglet].conteneur
+            elif len(liste_graphes) == 3:
+                onglet.construire_onglet_triple(*liste_graphes)
 
-    def definir_conteneur(self, nom_onglet: str, onglet: Frame):
-        self.onglets[nom_onglet].conteneur = onglet
+            for graphe, toile in zip(liste_graphes, self.onglets_par_nom[nom_onglet].toiles):
+                self.toiles_par_graphe[graphe] = toile
 
-    def obtenir_widget(self, nom_onglet: str):
-        return self.onglets[nom_onglet].widget
+    def obtenir_toile(self, graphe: Graphe) -> FigureCanvasTkAgg:
+        return self.toiles_par_graphe[graphe]
 
-    def definir_widget(self, nom_onglet: str, widget: Widget):
-        self.onglets[nom_onglet].widget = widget
-
-    def obtenir_toile(self, nom_onglet: str, numero_toile: int = 0):
-        return self.onglets[nom_onglet].toiles[numero_toile]
-
-    def definir_toile(self, nom_onglet: str, liste_toiles: list[FigureCanvasTkAgg]):
-        self.onglets[nom_onglet].toiles = liste_toiles
-
-    def definir_texte(self, nom_onglet: str, message: str):
-        self.onglets[nom_onglet].modifier_onglet_texte(message)
+    def modifier_texte(self, nom_onglet: str, message: str) -> None:
+        self.onglets_par_nom[nom_onglet].modifier_onglet_texte(message)
 
 
 class Onglet:
@@ -200,6 +192,37 @@ class Onglet:
         toile_basse.get_tk_widget().pack(fill="both", expand=True)
 
         self.toiles = [toile_haute, toile_basse]
+
+    def construire_onglet_triple(self, graphe_haut: Graphe, graphe_milieu: Graphe, graphe_bas: Graphe):
+        self.widget = tk.Frame(self.conteneur)
+        self.widget.pack(fill="both", expand=True)
+
+        self.widget.rowconfigure(0, weight=1)
+        self.widget.rowconfigure(1, weight=1)
+        self.widget.rowconfigure(2, weight=1)
+        self.widget.columnconfigure(0, weight=1)
+
+        cadre_haut = tk.Frame(self.widget)
+        cadre_haut.grid(row=0, column=0, sticky="nsew", padx=self.taille_marge_largeur, pady=self.taille_marge_hauteur)
+
+        toile_haute = FigureCanvasTkAgg(graphe_haut.fig, master=cadre_haut)
+        toile_haute.get_tk_widget().pack(fill="both", expand=True)
+
+        cadre_milieu = tk.Frame(self.widget)
+        cadre_milieu.grid(
+            row=1, column=0, sticky="nsew", padx=self.taille_marge_largeur, pady=self.taille_marge_hauteur
+        )
+
+        toile_milieu = FigureCanvasTkAgg(graphe_milieu.fig, master=cadre_milieu)
+        toile_milieu.get_tk_widget().pack(fill="both", expand=True)
+
+        cadre_bas = tk.Frame(self.widget)
+        cadre_bas.grid(row=2, column=0, sticky="nsew", padx=self.taille_marge_largeur, pady=self.taille_marge_hauteur)
+
+        toile_basse = FigureCanvasTkAgg(graphe_bas.fig, master=cadre_bas)
+        toile_basse.get_tk_widget().pack(fill="both", expand=True)
+
+        self.toiles = [toile_haute, toile_milieu, toile_basse]
 
 
 # FIXME : Corriger l'affichage des graphes qui est coupé sur les bords sur Mac.
