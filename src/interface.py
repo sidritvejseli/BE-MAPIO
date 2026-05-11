@@ -158,8 +158,8 @@ class Interface:
         # Barre des outils de validation.
 
         self.description_barre_outils_validation: DescriptionBarreOutils = [
-            ("Sélectionner plage", self.selectionner_plage),
             ("Supprimer plage", self.supprimer_plage),
+            ("Restaurer plage", self.restaurer_plage),
             None,
             ("Annuler", self.annuler),
             ("Rétablir", self.retablir),
@@ -255,6 +255,7 @@ class Interface:
         if not self.donnees.est_vide():
             self.date_debut = self.donnees.obtenir_minuit_premiere_date()
             self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
+            self.interactions.rectangle_selector.set_active(True)#active le rectangle quand un fichier charger
             self.tracer_graphe_2d()
             self.tracer_graphe_3d()
             self.tracer_graphe_correlation()
@@ -323,6 +324,7 @@ class Interface:
 
         self.xlim_original = None
         self.ylim_original = None
+        self.interactions.rectangle_selector.set_active(False)#pas de fichier pas de selction de rectangle
 
         self.tracer_graphe_2d()
         self.tracer_graphe_3d()
@@ -442,27 +444,34 @@ class Interface:
 
     # Barre des outils de validation.
 
-    def selectionner_plage(self):
-        if self.donnees.est_vide():
-            messagebox.showwarning("Attention !", "Aucune donnée à sélectionner.")
-            return
 
-        self.interactions.activer_mode_rectangle()
-        self.mettre_a_jour_etiquette_barre_outils_validation()
-
-    def supprimer_plage(self):
+    def mode_plage(self, mode:str):
+        #aucun rectangle dessiner on infore l'utilisateur
         if not self.interactions.rectangle_actif:
             messagebox.showinfo(
                 "Info",
-                "Aucun rectangle sélectionné.\n Cliquez d'abord sur 'Sélectionner plage' et dessinez un rectangle sur le graphe. ",
+                "Aucun rectangle sélectionné.\n Il faut dessiner un rectangle sur le graphe.",
             )
             return
 
-        rafraichir = self.interactions.supprimer_plage_rectangle(self.donnees)
+        #selon le mode  on supprime ou restaure
+        if mode == "supprimer":
+            rafraichir = self.interactions.supprimer_plage_rectangle(self.donnees)
+        else:
+            rafraichir = self.interactions.restaurer_plage_rectangle(self.donnees)
 
+        #si des points modifier on redessine le graphe
         if rafraichir:
             self.tracer_graphe_2d()
             self.mettre_a_jour_historique()
+
+    
+    def supprimer_plage(self):
+        self.mode_plage("supprimer")
+
+    def restaurer_plage(self):
+        self.mode_plage("restaurer")
+
 
     def annuler(self):
         self.donnees.annuler_invalidation_date()
@@ -526,7 +535,9 @@ class Interface:
             self.date_debut,
             self.date_fin,
             self.concentrations_maximum[self.donnees.nom_colonne_concentration_courante],
-        )
+        )#dessine les points
+
+        self.mettre_a_jour_trace_graphe_2d()#draw() donc on voit a lecran
 
         # Sauvegarde les limites du graphe après le trace(pour dezzommer et avoir le meme graphe quavant)
         self.xlim_original = self.graphe_2d.ax.get_xlim()
@@ -543,7 +554,7 @@ class Interface:
             visible=False,
         )
 
-        self.mettre_a_jour_trace_graphe_2d()
+      
 
     def tracer_graphe_3d(self):
         if self.donnees.est_vide() or self.date_debut is None or self.date_fin is None:
@@ -581,10 +592,15 @@ class Interface:
         self.barre_onglets.definir_texte("Historique", historique)
 
     # Interactions.
-
+    # Bug corrige : rectangledessine + relache sur un point,l'infobulle reste affichée 
     def info_point(self, evenement: Event):
-        # quand rectangle actif , priorite
-        if self.interactions.rectangle_selector is not None and self.interactions.rectangle_selector.active:
+        #rect selector existe + actif
+        if self.interactions.rectangle_selector is not None and self.interactions.rectangle_actif:
+            #infobulle existe
+            if self.infobulle is not None:
+                #cache infobulle
+                self.infobulle.set_visible(False)
+                self.mettre_a_jour_trace_graphe_2d()
             return
 
         doit_rafraichir = self.interactions.info_point(
@@ -599,8 +615,12 @@ class Interface:
         if doit_rafraichir:
             self.barre_onglets.obtenir_toile("Particules", 0).draw_idle()
 
+    # Bug corriger : après avoir dessine un rectangle, un clic gauche pour l annuler
     def repondre_apres_clic_souris(self, evenement: Event):
-        if self.interactions.rectangle_selector is not None and self.interactions.rectangle_selector.active:
+        if self.interactions.rectangle_selector is not None and self.interactions.rectangle_actif and evenement.button != 3:
+            # evenement.button != 3 : le clic droit passe toujours, meme si rectangle dessine
+            if evenement.button == 1:
+                self.interactions.reinitialiser_rectangle()#remettre rectangle_actif a false si clique gauche(1)
             return
 
         doit_rafraichir = self.interactions.repondre_apres_clic_souris(

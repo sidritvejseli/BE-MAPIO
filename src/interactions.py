@@ -51,7 +51,7 @@ class Interactions:
                 linestyle="--",
             ),
         )
-        self.rectangle_selector.set_active(False)  # on desactive le rect apres
+        self.rectangle_selector.set_active(False) #on desactive le rectangle pour lactiver seulement qaund le fichier est charger
 
     # utile pour apres relacher (stock les infos)
     def enregistrement_rectangle(self, clique, relache):
@@ -63,58 +63,89 @@ class Interactions:
         self.rectangle_actif = True
         # self.logger.info("Rectangle sélectionné.")
 
-    # appler par le bouton selectinner plage
-    def activer_mode_rectangle(self):
-        if self.rectangle_selector is None:
-            return
-        self.reinitialiser_rectangle()
-        self.rectangle_selector.set_active(True)
 
     # remet tout a zero
     def reinitialiser_rectangle(self):
-        # effache les cordonner stocker en haut
+        # effache les cordonner des 4 coins a none
         self.rect_x1 = self.rect_x2 = None
         self.rect_y1 = self.rect_y2 = None
-        # remet le flag a faux pour dire plus rine a supprimer
-        self.rectangle_actif = False
-        if self.rectangle_selector is not None:
-            self.rectangle_selector.set_active(False)
+        
+        self.rectangle_actif = False#aucun rect nest dessiner pour l'instant 
+       
+        if self.rectangle_selector is not None:#verif si rectangle selector existe avant de le manipuler
+             # efface le dessin du rectangle sur le graphe
             self.rectangle_selector.clear()
+            
+            self.rectangle_selector.set_active(True) # reactive le widget pour pouvoir dessiner un nouveau rectangle
 
-    # Invalide tous les points valides contenus dans le rectangle def supprimer_plage_rectangle(self, donnees: Donnees) -> bool:
-    def supprimer_plage_rectangle(self, donnees: Donnees):
-
+    
+    
+    
+    
+    
+    
+    
+    
+    def mode_rectangle(self, donnees: Donnees, mode: str):
         # Si aucun rectangle dessine, on ne fait rien
         if not self.rectangle_actif:
-            self.logger.info("Suppression des données impossible car aucun rectangle sélectionné.")
+            self.logger.info(f"L'action est impossible : aucun rectangle sélectionné.")
             return False
 
-        # replace(tzinfo=None) pour pas que pandas plante (vuseau pas attendu)
+        #conversion des cordonnees x en data
+        # replace(tzinfo=None) pour pas que pandas plante (fuseau  horraire pas attendu)
         date_debut = mdates.num2date(self.rect_x1).replace(tzinfo=None)
-        date_fin = mdates.num2date(self.rect_x2).replace(tzinfo=None)
+        date_fin   = mdates.num2date(self.rect_x2).replace(tzinfo=None)
         y_min = self.rect_y1
         y_max = self.rect_y2
 
-        # On récupère le tableau pandas complet
-        # le point est dans le  rectangle et il est encore valide
+        # selection du mode
+        if mode == "supprimer":
+            source = donnees.obtenir_donnees_valides()#cible point valide
+        else:
+            source = donnees.obtenir_donnees_invalides()#cible point invalide
+
+        # on filtre les points qui sont dans le rectangle
         masque = (
-            donnees.obtenir_donnees_valides()
+            source
             .obtenir_dates(date_debut, date_fin)
             .obtenir_concentration_intervalle(y_min, y_max)
             .obtenir_colonne_concentration_courante_non_nulle()
             .obtenir_colonne_dates()
             .obtenir_dataframe()
         )
-
+        #efface rectangle avant de modif
         self.reinitialiser_rectangle()
 
         if masque.empty:
             return False
 
-        # si correspond au masque , on le vire
-        donnees.invalider_dates(masque)
+        if mode == "supprimer":
+            # si correspond au masque , on le vire
+            donnees.invalider_dates(masque)
+        else:
+            # remet le flag a 0 au lieu de 1
+            donnees.valider_drapeau_dates(masque)
+            #ajout dans l'historique
+            donnees.historique.ajouter_action(masque)
 
         return True
+
+    
+    # Invalide tous les points valides contenus dans le rectangle def supprimer_plage_rectangle(self, donnees: Donnees) -> bool:
+    def supprimer_plage_rectangle(self, donnees: Donnees):
+         return self.mode_rectangle(donnees, "supprimer")
+    
+
+
+    # on cherche les point invalide =1 et on les remet valides  =0
+    def restaurer_plage_rectangle(self, donnees: Donnees):
+        return self.mode_rectangle(donnees, "restaurer")
+
+
+
+
+
 
     def zoomer_rectangle(self, ax_2d):
 
