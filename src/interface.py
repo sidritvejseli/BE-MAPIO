@@ -103,9 +103,9 @@ class Interface:
                     ("Charger un fichier", None, self.charger_fichier),
                     ("Fermer sans enregistrer", None, self.fermer_fichier),
                     None,
-                    ("Enregistrer sous", None, self.sauvegarder_fichier_filtre),
-                    ("Enregistrer drapeaux sous", None, self.sauvegarder_fichier_drapeaux),
-                    ("Exporter", None, self.exporter_fichier), #nouveau
+                    ("Enregistrer sous", None, self.enregistrer_fichier),
+                    ("Exporter final", None, self.exporter_fichier_final),
+                    ("Exporter drapeaux", None, self.exporter_fichier_drapeaux), #nouveau
                     None,
                     ("Quitter", None, self.quitter_programme),
                 ],
@@ -264,7 +264,7 @@ class Interface:
 
     # Barre des menus déroulants.
 
-    def sauvegarder_fichier_filtre(self):
+    def exporter_fichier_final(self):
         dossier_resultats = self.configuration_utilisateur.chemin_resultats
 
         if self.donnees.est_vide():
@@ -272,48 +272,9 @@ class Interface:
             return
 
         # sauvegarde du fichier filtre (lignes valides uniquement)
-        chemin_absolu_donnees_filtrees = filedialog.asksaveasfilename(
+        chemin_absolu_export = filedialog.asksaveasfilename(
             title="Sauvegarder les données filtrées",
             initialdir=dossier_resultats,
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv")],
-        )
-
-        if not chemin_absolu_donnees_filtrees:
-            return
-
-        self.donnees.sauvegarder_fichier_filtre_csv(chemin_absolu_donnees_filtrees)
-
-    def sauvegarder_fichier_drapeaux(self):
-        dossier_flags = self.configuration_utilisateur.chemin_drapeaux
-
-        if self.donnees.est_vide():
-            messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
-            return
-
-        # sauvegarde du fichier des flags (lignes invalidees)
-        chemin_absolu_flags = filedialog.asksaveasfilename(
-            title="Sauvegarder le fichier des flags",
-            initialdir=dossier_flags,
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv")],
-        )
-
-        if not chemin_absolu_flags:
-            return
-
-        self.donnees.sauvegarder_fichier_drapeaux_csv(chemin_absolu_flags)
-
-    def exporter_fichier(self):
-        
-        if self.donnees.est_vide():
-            messagebox.showwarning("Attention", "Aucune donnée à exporter.")
-            return
-
-        chemin_absolu_export = filedialog.asksaveasfilename(
-            title="Exporter le fichier de travail",
-            initialdir=self.configuration_utilisateur.chemin_resultats,
-            initialfile=self.donnees.nom_fichier,
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv")],
         )
@@ -321,8 +282,47 @@ class Interface:
         if not chemin_absolu_export:
             return
 
-        self.donnees.exporter_fichier_csv(chemin_absolu_export)
-        messagebox.showinfo("Export", f"Fichier exporté avec succès :\n{chemin_absolu_export}")
+        self.donnees.exporter_fichier_final_csv(chemin_absolu_export)
+        messagebox.showinfo("Succès", f"Fichier final exporté :\n{chemin_absolu_export}")
+
+
+    def exporter_fichier_drapeaux(self):
+        if self.donnees.est_vide():
+            messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
+            return
+
+        chemin_absolu_flags = filedialog.asksaveasfilename(
+            title="Sauvegarder le fichier des flags",
+            initialdir=self.configuration_utilisateur.chemin_drapeaux,
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")],
+        )
+
+        if not chemin_absolu_flags:
+            return
+
+        self.donnees.exporter_fichier_drapeaux_csv(chemin_absolu_flags)
+        messagebox.showinfo("Succès", f"Fichiers flags sauvegardés dans :\n{chemin_absolu_flags}")
+
+    def enregistrer_fichier(self):
+        
+        if self.donnees.est_vide():
+            messagebox.showwarning("Attention", "Aucune donnée à exporter.")
+            return
+
+        chemin_absolu_enregistrement = filedialog.asksaveasfilename(
+            title="Exporter le fichier de travail",
+            initialdir=self.configuration_utilisateur.chemin_resultats,
+            initialfile=self.donnees.nom_fichier,
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")],
+        )
+
+        if not chemin_absolu_enregistrement:
+            return
+
+        self.donnees.enregistrer_fichier_csv(chemin_absolu_enregistrement)
+        messagebox.showinfo("Succès", f"Fichier enregistré :\n{chemin_absolu_enregistrement}")
 
 
     def fermer_fichier(self):
