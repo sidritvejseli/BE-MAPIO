@@ -226,9 +226,11 @@ class Interface:
     # Barre des menus déroulants.
 
     def charger_fichier(self):
-        chemin_relatif_initial = self.configuration_utilisateur.chemin_donnees
+        #chemin_relatif_initial = self.configuration_utilisateur.chemin_donnees
 
-        # FIXME : Le chemin initial est relatif, bug potentiel si le répertoire de données inscrit dans le fichier config.yaml n'est pas dans le même dossier que le programme.
+        # Chemin absolu vers le dossier de données, calculé par rapport à l'emplacement
+        # de main.py pour éviter tout bug si le programme est lancé depuis un autre répertoire.
+        chemin_relatif_initial = self.chemin_repertoire_parent / self.configuration_utilisateur.chemin_donnees
 
         chemin_absolu_chargement = filedialog.askopenfilename(
             initialdir=chemin_relatif_initial,
@@ -237,6 +239,24 @@ class Interface:
 
         if not chemin_absolu_chargement:
             return
+        
+        # Si un fichier est déjà chargé, on demande confirmation avant de le remplacer
+        if not self.donnees.est_vide():
+            if not messagebox.askyesno(
+                "Confirmer",
+                "Un fichier est déjà chargé. Voulez-vous le fermer et charger un nouveau fichier ?"
+            ):
+                return
+            self.donnees.fermer_fichier_csv()
+            self.date_debut = None
+            self.date_fin = None
+            self.teneur_maximum = None
+            self.concentrations_maximum = {
+                self.configuration_utilisateur.drapeau_smps: None,
+                self.configuration_utilisateur.drapeau_cpc: None,
+            }
+            self.xlim_original = None
+            self.ylim_original = None
 
         self.donnees.charger_fichier_csv(chemin_absolu_chargement)
 
