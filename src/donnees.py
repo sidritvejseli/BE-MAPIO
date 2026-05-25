@@ -285,9 +285,9 @@ class Donnees:
 
         with open(chemin_fichier, "w", newline="", encoding="utf-8") as f:
             #f.write("sep=,\n")  #force Excel à utiliser la virgule
-            f.write("start_date;end_date;flag\n")
+            f.write("start_date,end_date,flag\n")
             for enr in df_jour.itertuples():
-                f.write(f"{enr.start_date};{enr.end_date};{enr.flag}\n")
+                f.write(f"{enr.start_date},{enr.end_date},{enr.flag}\n")
 
         self.logger.info(f"Fichier flags AERIS sauvegardé : {chemin_fichier}")
 
