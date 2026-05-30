@@ -563,22 +563,30 @@ class Interface:
             messagebox.showinfo("Info", "Aucun rectangle sélectionné.\n Cliquez d'abord sur 'Sélectionner plage' ")
             return
 
+        # Sauvegarde les limites du graphe après le trace(pour dezzommer et avoir le meme graphe quavant)
+        if self.xlim_original is None:
+            self.xlim_original = self.graphe_2d_smps.ax.get_xlim()
+        if self.ylim_original is None:
+            self.ylim_original = self.graphe_2d_smps.ax.get_ylim()
+
         # delegue le zoome a interaction
         rafraichir = self.interactions.zoomer_rectangle(self.graphe_2d_smps.ax)
 
         if rafraichir:
-            # redessine le grpahe pour que le zomme se fasse
-            self.barre_onglets.obtenir_toile(self.graphe_2d_smps).draw()
+            self.mettre_a_jour_trace_graphe_2d(self.graphe_2d_smps)
 
     def dezoomer(self):
-        # FIXME : Supprimer ou restaurer des données empêche le dézoomage de se faire correctement.
         if self.xlim_original is None or self.ylim_original is None:
             return
 
         # remet les nouvelle limite
         self.graphe_2d_smps.ax.set_xlim(self.xlim_original)
         self.graphe_2d_smps.ax.set_ylim(self.ylim_original)
-        self.barre_onglets.obtenir_toile(self.graphe_2d_smps).draw()
+
+        self.xlim_original = None
+        self.ylim_original = None
+
+        self.mettre_a_jour_trace_graphe_2d(self.graphe_2d_smps)
 
     def mettre_a_jour_etiquette_barre_outils_jour(self):
         if self.donnees.est_vide() or self.date_debut is None:
@@ -723,10 +731,6 @@ class Interface:
             date_fin,
             self.concentrations_maximum[nom_colonne_concentration],
         )  # dessine les points
-
-        # Sauvegarde les limites du graphe après le trace(pour dezzommer et avoir le meme graphe quavant)
-        self.xlim_original = graphe_2d.ax.get_xlim()
-        self.ylim_original = graphe_2d.ax.get_ylim()
 
         # FIXME : Vérifier si l'initialisation de l'infobulle se fait au bon endroit.
         self.infobulle = self.graphe_2d_smps.ax.annotate(
