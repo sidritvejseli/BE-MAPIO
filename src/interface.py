@@ -642,6 +642,9 @@ class Interface:
             self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
         )
         self.tracer_graphe_2d(
+            self.graphe_2d_cpc, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_cpc
+        )
+        self.tracer_graphe_2d(
             self.graphe_2d_recapitulatif,
             self.date_minimum,
             self.date_maximum,
@@ -653,6 +656,9 @@ class Interface:
         self.donnees.retablir_action()
         self.tracer_graphe_2d(
             self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_cpc, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_cpc
         )
         self.tracer_graphe_2d(
             self.graphe_2d_recapitulatif,
