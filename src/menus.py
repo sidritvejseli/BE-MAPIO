@@ -194,6 +194,7 @@ class Onglet:
         self.toiles = [toile_haute, toile_basse]
 
     def construire_onglet_triple(self, graphe_haut: Graphe, graphe_milieu: Graphe, graphe_bas: Graphe):
+        # TODO : Factoriser ces fonctions en une (boucler sur le nombre de lignes et de colonnes).
         self.widget = tk.Frame(self.conteneur)
         self.widget.pack(fill="both", expand=True)
 

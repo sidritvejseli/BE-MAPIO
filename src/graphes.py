@@ -55,7 +55,7 @@ class Graphe2D(Graphe):
             legende_boite=f"Invalidés ({donnees_invalides.obtenir_nombre_dates()})",
         )
 
-        self.legender_titre(date_debut, donnees.nom_colonne_concentration_courante)
+        self.legender_titre(date_debut)
         self.legender_abscisses(date_debut, date_fin)
         self.legender_ordonnees(concentration_maximum)
         # self.legender_boite()
@@ -66,24 +66,6 @@ class Graphe2D(Graphe):
 
     def effacer_graphe_2d(self):
         self.ax.clear()
-
-    def tracer_donnees(
-        self, donnees: Donnees, taille: int = "1", couleur: str = "blue", marqueur: str = "x", legende_boite: str = ""
-    ):
-        dataframe_dates = donnees.obtenir_colonne_dates().obtenir_dataframe()
-        dataframe_concentration = donnees.obtenir_colonne_concentration().obtenir_dataframe()
-
-        self.ax.scatter(
-            dataframe_dates,
-            dataframe_concentration,
-            s=taille,
-            color=couleur,
-            marker=marqueur,
-            label=legende_boite,
-        )
-
-    def legender_titre(self, date: datetime, nom_colonne_concentration: str):
-        self.ax.set_title(f"Jour : {date.date()}\n{nom_colonne_concentration}")
 
     def legender_abscisses(self, date_debut: datetime, date_fin: datetime):
         self.ax.set_xlabel("Heure")
@@ -109,6 +91,48 @@ class Graphe2D(Graphe):
 
     def tracer_grille(self):
         self.ax.grid(True, linestyle="--")
+
+
+class GrapheSMPS(Graphe2D):
+
+    def tracer_donnees(
+        self, donnees: Donnees, taille: int = "1", couleur: str = "blue", marqueur: str = "x", legende_boite: str = ""
+    ):
+        dataframe_dates = donnees.obtenir_colonne_dates().obtenir_dataframe()
+        dataframe_concentration = donnees.obtenir_colonne_concentration_smps().obtenir_dataframe()
+
+        self.ax.scatter(
+            dataframe_dates,
+            dataframe_concentration,
+            s=taille,
+            color=couleur,
+            marker=marqueur,
+            label=legende_boite,
+        )
+
+    def legender_titre(self, date: datetime):
+        self.ax.set_title(f"Jour : {date.date()}\nSMPS")
+
+
+class GrapheCPC(Graphe2D):
+
+    def tracer_donnees(
+        self, donnees: Donnees, taille: int = "1", couleur: str = "blue", marqueur: str = "x", legende_boite: str = ""
+    ):
+        dataframe_dates = donnees.obtenir_colonne_dates().obtenir_dataframe()
+        dataframe_concentration = donnees.obtenir_colonne_concentration_cpc().obtenir_dataframe()
+
+        self.ax.scatter(
+            dataframe_dates,
+            dataframe_concentration,
+            s=taille,
+            color=couleur,
+            marker=marqueur,
+            label=legende_boite,
+        )
+
+    def legender_titre(self, date: datetime):
+        self.ax.set_title(f"Jour : {date.date()}\nCPC")
 
 
 class Graphe3D(Graphe):

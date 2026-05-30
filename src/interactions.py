@@ -51,7 +51,9 @@ class Interactions:
                 linestyle="--",
             ),
         )
-        self.rectangle_selector.set_active(False) #on desactive le rectangle pour lactiver seulement qaund le fichier est charger
+        self.rectangle_selector.set_active(
+            False
+        )  # on desactive le rectangle pour lactiver seulement qaund le fichier est charger
 
     # utile pour apres relacher (stock les infos)
     def enregistrement_rectangle(self, clique, relache):
@@ -63,58 +65,48 @@ class Interactions:
         self.rectangle_actif = True
         # self.logger.info("Rectangle sélectionné.")
 
-
     # remet tout a zero
     def reinitialiser_rectangle(self):
         # effache les cordonner des 4 coins a none
         self.rect_x1 = self.rect_x2 = None
         self.rect_y1 = self.rect_y2 = None
-        
-        self.rectangle_actif = False#aucun rect nest dessiner pour l'instant 
-       
-        if self.rectangle_selector is not None:#verif si rectangle selector existe avant de le manipuler
-             # efface le dessin du rectangle sur le graphe
-            self.rectangle_selector.clear()
-            
-            self.rectangle_selector.set_active(True) # reactive le widget pour pouvoir dessiner un nouveau rectangle
 
-    
-    
-    
-    
-    
-    
-    
-    
+        self.rectangle_actif = False  # aucun rect nest dessiner pour l'instant
+
+        if self.rectangle_selector is not None:  # verif si rectangle selector existe avant de le manipuler
+            # efface le dessin du rectangle sur le graphe
+            self.rectangle_selector.clear()
+
+            self.rectangle_selector.set_active(True)  # reactive le widget pour pouvoir dessiner un nouveau rectangle
+
     def mode_rectangle(self, donnees: Donnees, mode: str):
         # Si aucun rectangle dessine, on ne fait rien
         if not self.rectangle_actif:
             self.logger.info(f"L'action est impossible : aucun rectangle sélectionné.")
             return False
 
-        #conversion des cordonnees x en data
+        # conversion des cordonnees x en data
         # replace(tzinfo=None) pour pas que pandas plante (fuseau  horraire pas attendu)
         date_debut = mdates.num2date(self.rect_x1).replace(tzinfo=None)
-        date_fin   = mdates.num2date(self.rect_x2).replace(tzinfo=None)
+        date_fin = mdates.num2date(self.rect_x2).replace(tzinfo=None)
         y_min = self.rect_y1
         y_max = self.rect_y2
 
         # selection du mode
         if mode == "supprimer":
-            source = donnees.obtenir_donnees_valides()#cible point valide
+            source = donnees.obtenir_donnees_valides()  # cible point valide
         else:
-            source = donnees.obtenir_donnees_invalides()#cible point invalide
+            source = donnees.obtenir_donnees_invalides()  # cible point invalide
 
         # on filtre les points qui sont dans le rectangle
         masque = (
-            source
-            .obtenir_dates(date_debut, date_fin)
-            .obtenir_concentration_intervalle(y_min, y_max)
-            .obtenir_colonne_concentration_courante_non_nulle()
+            source.obtenir_dates(date_debut, date_fin)
+            .obtenir_concentration_smps_intervalle(y_min, y_max)
+            .obtenir_colonne_concentration_smps_courante_non_nulle()
             .obtenir_colonne_dates()
             .obtenir_dataframe()
         )
-        #efface rectangle avant de modif
+        # efface rectangle avant de modif
         self.reinitialiser_rectangle()
 
         if masque.empty:
@@ -126,26 +118,18 @@ class Interactions:
         else:
             # remet le flag a 0 au lieu de 1
             donnees.valider_drapeau_dates(masque)
-            #ajout dans l'historique
+            # ajout dans l'historique
             donnees.historique.ajouter_action(masque)
 
         return True
 
-    
     # Invalide tous les points valides contenus dans le rectangle def supprimer_plage_rectangle(self, donnees: Donnees) -> bool:
     def supprimer_plage_rectangle(self, donnees: Donnees):
-         return self.mode_rectangle(donnees, "supprimer")
-    
-
+        return self.mode_rectangle(donnees, "supprimer")
 
     # on cherche les point invalide =1 et on les remet valides  =0
     def restaurer_plage_rectangle(self, donnees: Donnees):
         return self.mode_rectangle(donnees, "restaurer")
-
-
-
-
-
 
     def zoomer_rectangle(self, ax_2d):
 
@@ -161,9 +145,8 @@ class Interactions:
 
     # calcule la distance normalisee entre chaque point et la souris
     def calculer_distances(self, evenement: Event, donnees: Donnees, ax_2d: Axes) -> DataFrame:
-
         x_points = mdates.date2num(donnees.obtenir_colonne_dates().obtenir_dataframe())
-        y_points = donnees.obtenir_colonne_concentration().obtenir_dataframe()
+        y_points = donnees.obtenir_colonne_concentration_smps().obtenir_dataframe()
 
         x_souris = evenement.xdata
         y_souris = evenement.ydata
@@ -185,8 +168,6 @@ class Interactions:
 
     # retourne la date du point le plus proche de la souris
     def trouver_date_plus_proche(self) -> datetime:
-        if self.points_valides.est_vide():
-            return
 
         return self.distances_point_souris.idxmin()
 
@@ -209,6 +190,7 @@ class Interactions:
         date_fin: datetime,
         infobulle: Annotation,
     ):
+        # FIXME : L'infobulle ne s'affiche qu'après avoir fait un clic droit.
         doit_rafraichir = False
 
         # si pas de donnees ou pas de tooltip on ne fait rien du tout
@@ -229,6 +211,10 @@ class Interactions:
             return doit_rafraichir
 
         self.maj_distances(evenement, ax_2d)
+
+        if self.distances_point_souris.isna().all():
+            return doit_rafraichir
+
         date_plus_proche = self.trouver_date_plus_proche()
 
         # Seuil adaptatif (2% de la diagonale du graphe).
@@ -239,7 +225,7 @@ class Interactions:
 
         # recupere la concentration du point le plus proche
         concentration = (
-            self.points_valides.obtenir_colonne_concentration().obtenir_date(date_plus_proche).obtenir_dataframe()
+            self.points_valides.obtenir_colonne_concentration_smps().obtenir_date(date_plus_proche).obtenir_dataframe()
         )
 
         # met a jour le texte et la position du tooltip sur le graphe

@@ -29,7 +29,6 @@ class Donnees:
 
         self.nom_colonne_smps: str = nom_colonne_smps
         self.nom_colonne_cpc: str = nom_colonne_cpc
-        self.nom_colonne_concentration_courante = self.nom_colonne_smps
 
         self.nom_colonne_drapeau_sauvegarde: str = nom_colonne_drapeau_sauvegarde
 
@@ -49,7 +48,7 @@ class Donnees:
         return self.dataframe.empty
 
     def est_tout_na_concentration(self) -> bool:
-        return self.dataframe[self.nom_colonne_concentration_courante].isna().all()
+        return self.dataframe[self.nom_colonne_smps].isna().all() and self.dataframe[self.nom_colonne_cpc].isna().all()
 
     def obtenir_dataframe(self) -> DataFrame:
         return self.dataframe
@@ -60,9 +59,15 @@ class Donnees:
 
         return colonne_dates
 
-    def obtenir_colonne_concentration(self) -> Donnees:
+    def obtenir_colonne_concentration_smps(self) -> Donnees:
         colonne_concentrations = copy.copy(self)
-        colonne_concentrations.dataframe = colonne_concentrations.dataframe[self.nom_colonne_concentration_courante]
+        colonne_concentrations.dataframe = colonne_concentrations.dataframe[self.nom_colonne_smps]
+
+        return colonne_concentrations
+
+    def obtenir_colonne_concentration_cpc(self) -> Donnees:
+        colonne_concentrations = copy.copy(self)
+        colonne_concentrations.dataframe = colonne_concentrations.dataframe[self.nom_colonne_cpc]
 
         return colonne_concentrations
 
@@ -75,14 +80,6 @@ class Donnees:
     def supprimer_concentration_cpc_non_definie(self) -> Donnees:
         concentration_definie = copy.copy(self)
         concentration_definie.dataframe = concentration_definie.dataframe.dropna(subset=[self.nom_colonne_cpc])
-
-        return concentration_definie
-
-    def supprimer_concentration_courante_non_definie(self) -> Donnees:
-        concentration_definie = copy.copy(self)
-        concentration_definie.dataframe = concentration_definie.dataframe.dropna(
-            subset=[self.nom_colonne_concentration_courante]
-        )
 
         return concentration_definie
 
@@ -104,10 +101,18 @@ class Donnees:
 
         return colonnes_concentrations
 
-    def obtenir_colonne_concentration_courante_non_nulle(self) -> Donnees:
+    def obtenir_colonne_concentration_smps_courante_non_nulle(self) -> Donnees:
         colonnes_concentrations = copy.copy(self)
         colonnes_concentrations = (
-            colonnes_concentrations.supprimer_concentration_courante_non_definie().obtenir_colonnes_concentrations()
+            colonnes_concentrations.supprimer_concentration_smps_non_definie().obtenir_colonnes_concentrations()
+        )
+
+        return colonnes_concentrations
+
+    def obtenir_colonne_concentration_cpc_courante_non_nulle(self) -> Donnees:
+        colonnes_concentrations = copy.copy(self)
+        colonnes_concentrations = (
+            colonnes_concentrations.supprimer_concentration_cpc_non_definie().obtenir_colonnes_concentrations()
         )
 
         return colonnes_concentrations
@@ -143,13 +148,6 @@ class Donnees:
         donnees_supprimees = donnees_supprimees.supprimer_donnees_manquantes_colonne_concentration(self.nom_colonne_cpc)
 
         return donnees_supprimees
-
-    def echanger_nom_colonne_concentration(self) -> None:
-        if self.nom_colonne_concentration_courante == self.nom_colonne_smps:
-            self.nom_colonne_concentration_courante = self.nom_colonne_cpc
-
-        elif self.nom_colonne_concentration_courante == self.nom_colonne_cpc:
-            self.nom_colonne_concentration_courante = self.nom_colonne_smps
 
     def obtenir_valeur_maximum(self):
         return self.dataframe.max().max()
@@ -192,13 +190,10 @@ class Donnees:
 
     def exporter_fichier_final_csv(self, chemin_absolu) -> None:
         donnees_valides = self.obtenir_donnees_valides().supprimer_drapeaux_sauvegarde()
-        dataframe = donnees_valides.obtenir_dataframe().drop(
-            columns=[self.nom_drapeau_pollution], errors="ignore"
-        )
+        dataframe = donnees_valides.obtenir_dataframe().drop(columns=[self.nom_drapeau_pollution], errors="ignore")
         dataframe.to_csv(chemin_absolu)
         self.logger.info(f"Fichier final exporté : {chemin_absolu}.")
 
-    
     def exporter_fichier_drapeaux_csv(self, chemin_absolu_flags) -> None:
         donnees_invalides = self.obtenir_donnees_invalides().obtenir_dataframe()
 
@@ -211,16 +206,15 @@ class Donnees:
 
         self.logger.info(f"Fichiers flags AERIS sauvegardés : {chemin_absolu_flags}.")
 
-
     def _construire_dataframe_aeris(self, donnees_invalides) -> pd.DataFrame:
         """
         L'encadrant nous a demander de Construire un DataFrame au format AERIS à partir des données invalidées.
-    
+
         Au lieu de lister chaque point invalidé individuellement, on regroupe
         les points consécutifs en intervalles (start_date → end_date).
         Deux points sont considérés consécutifs si l'écart entre eux est
         inférieur ou égal à 10 minutes (600 secondes).
-    
+
         Exemple : si on invalide les points 05:25, 05:30, 05:35, 05:55,
         ils seront regroupés en un seul intervalle :
         start_date = 05:25 | end_date = 05:55 | flag = 0.456
@@ -236,19 +230,23 @@ class Donnees:
             if (date - fin_intervalle).total_seconds() <= 600:
                 fin_intervalle = date
             else:
-                intervalles.append({
-                    "start_date": debut_intervalle,
-                    "end_date": fin_intervalle,
-                    "flag": 0.456,
-                })
+                intervalles.append(
+                    {
+                        "start_date": debut_intervalle,
+                        "end_date": fin_intervalle,
+                        "flag": 0.456,
+                    }
+                )
                 debut_intervalle = date
                 fin_intervalle = date
 
-        intervalles.append({
-            "start_date": debut_intervalle,
-            "end_date": fin_intervalle,
-            "flag": 0.456,
-        })
+        intervalles.append(
+            {
+                "start_date": debut_intervalle,
+                "end_date": fin_intervalle,
+                "flag": 0.456,
+            }
+        )
 
         df_aeris = pd.DataFrame(intervalles)
         df_aeris["start_date"] = pd.to_datetime(df_aeris["start_date"])
@@ -268,8 +266,8 @@ class Donnees:
 
         while jour_courant <= dernier_jour_dt:
             df_jour = df_aeris[
-                (df_aeris["start_date"] >= jour_courant) &
-                (df_aeris["start_date"] < jour_courant + pd.Timedelta(days=1))
+                (df_aeris["start_date"] >= jour_courant)
+                & (df_aeris["start_date"] < jour_courant + pd.Timedelta(days=1))
             ]
 
             if not df_jour.empty:
@@ -284,7 +282,7 @@ class Donnees:
         chemin_fichier = os.path.join(dossier, nom_fichier)
 
         with open(chemin_fichier, "w", newline="", encoding="utf-8") as f:
-            #f.write("sep=,\n")  #force Excel à utiliser la virgule
+            # f.write("sep=,\n")  #force Excel à utiliser la virgule
             f.write("start_date,end_date,flag\n")
             for enr in df_jour.itertuples():
                 f.write(f"{enr.start_date},{enr.end_date},{enr.flag}\n")
@@ -292,11 +290,12 @@ class Donnees:
         self.logger.info(f"Fichier flags AERIS sauvegardé : {chemin_fichier}")
 
     """exporter le fichier tel quel avec la colonne smps_flag, pour pouvoir reprendre le travail dessus plus tard"""
+
     def enregistrer_fichier_csv(self, chemin_absolu_export) -> None:
         self.dataframe.to_csv(chemin_absolu_export)
 
         self.logger.info(f"Fichier exporté {self.nom_fichier} sauvegardé en {chemin_absolu_export}.")
-    
+
     """------------------------------------------------"""
 
     def obtenir_nombre_dates(self) -> int:
@@ -360,16 +359,26 @@ class Donnees:
 
         return particules
 
-    def obtenir_concentration_intervalle(self, concentration_minimum, concentration_maximum) -> Donnees:
+    def obtenir_concentration_intervalle(
+        self, concentration_minimum, concentration_maximum, nom_colonne_concentration
+    ) -> Donnees:
         intervalle = copy.copy(self)
 
-        masque = (intervalle.dataframe[self.nom_colonne_concentration_courante] >= concentration_minimum) & (
-            intervalle.dataframe[self.nom_colonne_concentration_courante] <= concentration_maximum
+        masque = (intervalle.dataframe[nom_colonne_concentration] >= concentration_minimum) & (
+            intervalle.dataframe[nom_colonne_concentration] <= concentration_maximum
         )
 
         intervalle.dataframe = intervalle.dataframe[masque]
 
         return intervalle
+
+    def obtenir_concentration_smps_intervalle(self, concentration_minimum, concentration_maximum) -> Donnees:
+        return self.obtenir_concentration_intervalle(
+            concentration_minimum, concentration_maximum, self.nom_colonne_smps
+        )
+
+    def obtenir_concentration_cpc_intervalle(self, concentration_minimum, concentration_maximum) -> Donnees:
+        return self.obtenir_concentration_intervalle(concentration_minimum, concentration_maximum, self.nom_colonne_cpc)
 
     # Remarque : copy.copy() renvoie une vue de l'objet Donnees.
     # Le DataFrame du champ donnees est donc partagé par ces deux objets.

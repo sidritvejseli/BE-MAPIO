@@ -11,7 +11,7 @@ from tkinter.simpledialog import askfloat
 from pathlib import Path
 
 from donnees import Donnees
-from graphes import Graphe2D, Graphe3D, GrapheCorrelation
+from graphes import Graphe2D, GrapheSMPS, GrapheCPC, Graphe3D, GrapheCorrelation
 from interactions import Interactions
 from configuration import ConfigurationUtilisateur, ConfigurationProgramme
 from menus import (
@@ -59,8 +59,9 @@ class Interface:
         )
 
         # Graphe 2D.
-        self.graphe_2d: Graphe2D = Graphe2D()
-        self.graphe_2d_recapitulatif: Graphe2D = Graphe2D()
+        self.graphe_2d_smps: GrapheSMPS = GrapheSMPS()
+        self.graphe_2d_cpc: GrapheCPC = GrapheCPC()
+        self.graphe_2d_recapitulatif: GrapheSMPS = GrapheSMPS()
 
         self.date_minimum: datetime = None
         self.date_debut: datetime = None
@@ -81,7 +82,6 @@ class Interface:
 
         # Graphe de corrélation.
 
-        self.graphe_correlation_onglet_particules: GrapheCorrelation = GrapheCorrelation()
         self.graphe_correlation_onglet_correlation: GrapheCorrelation = GrapheCorrelation()
         self.graphe_correlation_recapitulatif: GrapheCorrelation = GrapheCorrelation()
 
@@ -151,8 +151,6 @@ class Interface:
             ("Suivant ▶", self.sauter_au_jour_suivant),
             ("Dernier ▶|", self.sauter_au_dernier_jour),
             None,
-            ("smps↔cpc", self.changer_colonne_concentration),
-            None,
             ("Zoomer", self.zoomer),
             ("Dezoomer", self.dezoomer),
         ]
@@ -186,7 +184,7 @@ class Interface:
         self.description_barre_onglets: DescriptionBarreOnglets = [
             (
                 "Particules",
-                [self.graphe_2d, self.graphe_correlation_onglet_particules],
+                [self.graphe_2d_smps, self.graphe_2d_cpc],
             ),
             (
                 "Graphe 3D",
@@ -221,11 +219,11 @@ class Interface:
         self.interactions = Interactions()
 
         self.infobulle: Annotation = None
-        self.interactions.initialiser_rectangle_selector(self.graphe_2d.ax)
-        self.barre_onglets.obtenir_toile(self.graphe_2d).mpl_connect(
+        self.interactions.initialiser_rectangle_selector(self.graphe_2d_smps.ax)
+        self.barre_onglets.obtenir_toile(self.graphe_2d_smps).mpl_connect(
             "button_press_event", self.repondre_apres_clic_souris
         )
-        self.barre_onglets.obtenir_toile(self.graphe_2d).mpl_connect("motion_notify_event", self.info_point)
+        self.barre_onglets.obtenir_toile(self.graphe_2d_smps).mpl_connect("motion_notify_event", self.info_point)
 
         # Raccourcis clavier.
 
@@ -283,15 +281,12 @@ class Interface:
         self.teneur_maximum = self.donnees.obtenir_particules().obtenir_valeur_maximum()
 
         self.concentrations_maximum[self.configuration_utilisateur.drapeau_smps] = (
-            self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
+            self.donnees.obtenir_colonne_concentration_smps().obtenir_valeur_maximum()
         )
 
-        self.donnees.echanger_nom_colonne_concentration()
         self.concentrations_maximum[self.configuration_utilisateur.drapeau_cpc] = (
-            self.donnees.obtenir_colonne_concentration().obtenir_valeur_maximum()
+            self.donnees.obtenir_colonne_concentration_cpc().obtenir_valeur_maximum()
         )
-
-        self.donnees.echanger_nom_colonne_concentration()
 
         if self.donnees.est_vide():
             return
@@ -303,12 +298,21 @@ class Interface:
         self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
         self.date_maximum = self.donnees.obtenir_minuit_derniere_date()
 
-        self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
+        self.tracer_graphe_2d(
+            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_cpc, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_cpc
+        )
         self.tracer_graphe_3d(self.graphe_3d, self.date_debut, self.date_fin)
         self.tracer_graphe_correlation(self.graphe_correlation_onglet_correlation)
-        self.tracer_graphe_correlation(self.graphe_correlation_onglet_particules)
 
-        self.tracer_graphe_2d(self.graphe_2d_recapitulatif, self.date_minimum, self.date_maximum)
+        self.tracer_graphe_2d(
+            self.graphe_2d_recapitulatif,
+            self.date_minimum,
+            self.date_maximum,
+            self.configuration_utilisateur.drapeau_smps,
+        )
         self.tracer_graphe_3d(self.graphe_3d_recapitulatif, self.date_minimum, self.date_maximum)
         self.tracer_graphe_correlation(self.graphe_correlation_recapitulatif)
 
@@ -384,8 +388,10 @@ class Interface:
             return
 
         self.donnees.fermer_fichier_csv()
+        self.date_minimum = None
         self.date_debut = None
         self.date_fin = None
+        self.date_maximum = None
         self.mettre_a_jour_etiquette_barre_outils_jour()
         self.mettre_a_jour_etiquette_barre_outils_validation()
         self.teneur_maximum = None
@@ -393,17 +399,27 @@ class Interface:
             self.configuration_utilisateur.drapeau_smps: None,
             self.configuration_utilisateur.drapeau_cpc: None,
         }
+        self.infobulle = None
 
         self.xlim_original = None
         self.ylim_original = None
         self.interactions.rectangle_selector.set_active(False)  # pas de fichier pas de selction de rectangle
 
-        self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
+        self.tracer_graphe_2d(
+            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_cpc, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_cpc
+        )
         self.tracer_graphe_3d(self.graphe_3d, self.date_debut, self.date_fin)
         self.tracer_graphe_correlation(self.graphe_correlation_onglet_correlation)
-        self.tracer_graphe_correlation(self.graphe_correlation_onglet_particules)
 
-        self.tracer_graphe_2d(self.graphe_2d_recapitulatif, self.date_minimum, self.date_maximum)
+        self.tracer_graphe_2d(
+            self.graphe_2d_recapitulatif,
+            self.date_minimum,
+            self.date_maximum,
+            self.configuration_utilisateur.drapeau_smps,
+        )
         self.tracer_graphe_3d(self.graphe_3d_recapitulatif, self.date_minimum, self.date_maximum)
         self.tracer_graphe_correlation(self.graphe_correlation_recapitulatif)
 
@@ -427,8 +443,15 @@ class Interface:
             .obtenir_colonne_dates()
             .obtenir_dataframe()
         )
-        self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
-        self.tracer_graphe_2d(self.graphe_2d_recapitulatif, self.date_minimum, self.date_maximum)
+        self.tracer_graphe_2d(
+            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_recapitulatif,
+            self.date_minimum,
+            self.date_maximum,
+            self.configuration_utilisateur.drapeau_smps,
+        )
         self.mettre_a_jour_historique()
 
     def invalider_donnees_affichees(self):
@@ -443,8 +466,15 @@ class Interface:
             .obtenir_colonne_dates()
             .obtenir_dataframe()
         )
-        self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
-        self.tracer_graphe_2d(self.graphe_2d_recapitulatif, self.date_minimum, self.date_maximum)
+        self.tracer_graphe_2d(
+            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_recapitulatif,
+            self.date_minimum,
+            self.date_maximum,
+            self.configuration_utilisateur.drapeau_smps,
+        )
         self.mettre_a_jour_historique()
 
     # Barre des outils du jour.
@@ -456,7 +486,12 @@ class Interface:
         self.date_debut = self.donnees.obtenir_premiere_date()
         self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
 
-        self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
+        self.tracer_graphe_2d(
+            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_cpc, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_cpc
+        )
         self.tracer_graphe_3d(self.graphe_3d, self.date_debut, self.date_fin)
 
         self.mettre_a_jour_etiquette_barre_outils_jour()
@@ -468,7 +503,12 @@ class Interface:
         self.date_debut = self.temps_suivant.ajouter_pas_heures(self.date_debut)
         self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
 
-        self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
+        self.tracer_graphe_2d(
+            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_cpc, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_cpc
+        )
         self.tracer_graphe_3d(self.graphe_3d, self.date_debut, self.date_fin)
 
         self.mettre_a_jour_etiquette_barre_outils_jour()
@@ -480,7 +520,12 @@ class Interface:
         self.date_debut = self.temps_suivant.soustraire_pas_heures(self.date_debut)
         self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
 
-        self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
+        self.tracer_graphe_2d(
+            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_cpc, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_cpc
+        )
         self.tracer_graphe_3d(self.graphe_3d, self.date_debut, self.date_fin)
 
         self.mettre_a_jour_etiquette_barre_outils_jour()
@@ -492,16 +537,15 @@ class Interface:
         self.date_debut = self.donnees.obtenir_derniere_date()
         self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
 
-        self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
+        self.tracer_graphe_2d(
+            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_cpc, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_cpc
+        )
         self.tracer_graphe_3d(self.graphe_3d, self.date_debut, self.date_fin)
 
         self.mettre_a_jour_etiquette_barre_outils_jour()
-
-    def changer_colonne_concentration(self):
-        self.donnees.echanger_nom_colonne_concentration()
-
-        self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
-        self.tracer_graphe_2d(self.graphe_2d_recapitulatif, self.date_minimum, self.date_maximum)
 
     def zoomer(self):
         if not self.interactions.rectangle_actif:
@@ -509,20 +553,21 @@ class Interface:
             return
 
         # delegue le zoome a interaction
-        rafraichir = self.interactions.zoomer_rectangle(self.graphe_2d.ax)
+        rafraichir = self.interactions.zoomer_rectangle(self.graphe_2d_smps.ax)
 
         if rafraichir:
             # redessine le grpahe pour que le zomme se fasse
-            self.barre_onglets.obtenir_toile(self.graphe_2d).draw()
+            self.barre_onglets.obtenir_toile(self.graphe_2d_smps).draw()
 
     def dezoomer(self):
+        # FIXME : Supprimer ou restaurer des données empêche le dézoomage de se faire correctement.
         if self.xlim_original is None or self.ylim_original is None:
             return
 
         # remet les nouvelle limite
-        self.graphe_2d.ax.set_xlim(self.xlim_original)
-        self.graphe_2d.ax.set_ylim(self.ylim_original)
-        self.barre_onglets.obtenir_toile(self.graphe_2d).draw()
+        self.graphe_2d_smps.ax.set_xlim(self.xlim_original)
+        self.graphe_2d_smps.ax.set_ylim(self.ylim_original)
+        self.barre_onglets.obtenir_toile(self.graphe_2d_smps).draw()
 
     def mettre_a_jour_etiquette_barre_outils_jour(self):
         if self.donnees.est_vide() or self.date_debut is None:
@@ -552,8 +597,18 @@ class Interface:
 
         # si des points modifier on redessine le graphe
         if rafraichir:
-            self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
-            self.tracer_graphe_2d(self.graphe_2d_recapitulatif, self.date_minimum, self.date_maximum)
+            self.tracer_graphe_2d(
+                self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+            )
+            self.tracer_graphe_2d(
+                self.graphe_2d_cpc, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_cpc
+            )
+            self.tracer_graphe_2d(
+                self.graphe_2d_recapitulatif,
+                self.date_minimum,
+                self.date_maximum,
+                self.configuration_utilisateur.drapeau_smps,
+            )
             self.mettre_a_jour_historique()
 
     def supprimer_plage(self):
@@ -564,14 +619,28 @@ class Interface:
 
     def annuler(self):
         self.donnees.annuler_invalidation_date()
-        self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
-        self.tracer_graphe_2d(self.graphe_2d_recapitulatif, self.date_minimum, self.date_maximum)
+        self.tracer_graphe_2d(
+            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_recapitulatif,
+            self.date_minimum,
+            self.date_maximum,
+            self.configuration_utilisateur.drapeau_smps,
+        )
         self.mettre_a_jour_historique()
 
     def retablir(self):
         self.donnees.retablir_invalidation_date()
-        self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
-        self.tracer_graphe_2d(self.graphe_2d_recapitulatif, self.date_minimum, self.date_maximum)
+        self.tracer_graphe_2d(
+            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_recapitulatif,
+            self.date_minimum,
+            self.date_maximum,
+            self.configuration_utilisateur.drapeau_smps,
+        )
         self.mettre_a_jour_historique()
 
     def demander_facteur(self):
@@ -584,17 +653,25 @@ class Interface:
         self.concentrations_maximum[self.configuration_utilisateur.drapeau_smps] *= facteur
         self.concentrations_maximum[self.configuration_utilisateur.drapeau_cpc] *= facteur
 
-        self.tracer_graphe_2d(self.graphe_2d, self.date_debut, self.date_fin)
+        self.tracer_graphe_2d(
+            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_cpc, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_cpc
+        )
         self.tracer_graphe_correlation(self.graphe_correlation_onglet_correlation)
-        self.tracer_graphe_correlation(self.graphe_correlation_onglet_particules)
 
-        self.tracer_graphe_2d(self.graphe_2d_recapitulatif, self.date_minimum, self.date_maximum)
+        self.tracer_graphe_2d(
+            self.graphe_2d_recapitulatif,
+            self.date_minimum,
+            self.date_maximum,
+            self.configuration_utilisateur.drapeau_smps,
+        )
         self.tracer_graphe_correlation(self.graphe_correlation_recapitulatif)
 
     def actualiser(self):
         self.tracer_graphe_3d(self.graphe_3d, self.date_debut, self.date_fin)
         self.tracer_graphe_correlation(self.graphe_correlation_onglet_correlation)
-        self.tracer_graphe_correlation(self.graphe_correlation_onglet_particules)
 
         self.tracer_graphe_3d(self.graphe_3d_recapitulatif, self.date_minimum, self.date_maximum)
         self.tracer_graphe_correlation(self.graphe_correlation_recapitulatif)
@@ -619,7 +696,9 @@ class Interface:
     def mettre_a_jour_trace_graphe_correlation(self, graphe_correlation: GrapheCorrelation):
         self.barre_onglets.obtenir_toile(graphe_correlation).draw()
 
-    def tracer_graphe_2d(self, graphe_2d: Graphe2D, date_debut: datetime, date_fin: datetime):
+    def tracer_graphe_2d(
+        self, graphe_2d: Graphe2D, date_debut: datetime, date_fin: datetime, nom_colonne_concentration: str
+    ):
         if self.donnees.est_vide() or date_debut is None or date_fin is None:
             graphe_2d.effacer_graphe_2d()
             self.mettre_a_jour_trace_graphe_2d(graphe_2d)
@@ -631,16 +710,15 @@ class Interface:
             self.donnees,
             date_debut,
             date_fin,
-            self.concentrations_maximum[self.donnees.nom_colonne_concentration_courante],
+            self.concentrations_maximum[nom_colonne_concentration],
         )  # dessine les points
 
         # Sauvegarde les limites du graphe après le trace(pour dezzommer et avoir le meme graphe quavant)
         self.xlim_original = graphe_2d.ax.get_xlim()
         self.ylim_original = graphe_2d.ax.get_ylim()
 
-        # Initialisation de l'infobulle.
         # FIXME : Vérifier si l'initialisation de l'infobulle se fait au bon endroit.
-        self.infobulle: Annotation = graphe_2d.ax.annotate(
+        self.infobulle = self.graphe_2d_smps.ax.annotate(
             "",
             xy=(0, 0),
             xytext=(12, 12),
@@ -684,49 +762,41 @@ class Interface:
     # Interactions.
     # Bug corrige : rectangledessine + relache sur un point,l'infobulle reste affichée
     def info_point(self, evenement: Event):
-        # rect selector existe + actif
-        if self.interactions.rectangle_selector is not None and self.interactions.rectangle_actif:
-            # infobulle existe
-            if self.infobulle is not None:
-                # cache infobulle
-                self.infobulle.set_visible(False)
-                self.mettre_a_jour_trace_graphe_2d(self.graphe_2d)
-            return
-
         doit_rafraichir = self.interactions.info_point(
             evenement,
             self.donnees,
-            self.graphe_2d.ax,
+            self.graphe_2d_smps.ax,
             self.date_debut,
             self.date_fin,
             self.infobulle,
         )
 
         if doit_rafraichir:
-            self.barre_onglets.obtenir_toile(self.graphe_2d).draw_idle()
+            self.mettre_a_jour_trace_graphe_2d(self.graphe_2d_smps)
 
     # Bug corriger : après avoir dessine un rectangle, un clic gauche pour l annuler
     def repondre_apres_clic_souris(self, evenement: Event):
         if (
             self.interactions.rectangle_selector is not None
             and self.interactions.rectangle_actif
-            and evenement.button != 3
+            and evenement.button == 1
         ):
             # evenement.button != 3 : le clic droit passe toujours, meme si rectangle dessine
-            if evenement.button == 1:
-                self.interactions.reinitialiser_rectangle()  # remettre rectangle_actif a false si clique gauche(1)
+            self.interactions.reinitialiser_rectangle()  # remettre rectangle_actif a false si clique gauche(1)
             return
 
         doit_rafraichir = self.interactions.repondre_apres_clic_souris(
             evenement,
             self.donnees,
-            self.graphe_2d.ax,
+            self.graphe_2d_smps.ax,
             self.date_debut,
             self.date_fin,
         )
 
         if doit_rafraichir:
-            self.tracer_graphe_2d()
+            self.tracer_graphe_2d(
+                self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+            )
             self.mettre_a_jour_historique()
 
     # Raccourcis clavier.
