@@ -109,8 +109,9 @@ class Interface:
                     ("Charger un fichier", None, self.charger_fichier),
                     ("Fermer sans enregistrer", None, self.fermer_fichier),
                     None,
-                    ("Enregistrer sous", None, self.sauvegarder_fichier_filtre),
-                    ("Enregistrer drapeaux sous", None, self.sauvegarder_fichier_drapeaux),
+                    ("Enregistrer sous", None, self.enregistrer_fichier),
+                    ("Exporter final", None, self.exporter_fichier_final),
+                    ("Exporter drapeaux", None, self.exporter_fichier_drapeaux), #nouveau
                     None,
                     ("Quitter", None, self.quitter_programme),
                 ],
@@ -246,9 +247,11 @@ class Interface:
     # Barre des menus déroulants.
 
     def charger_fichier(self):
-        chemin_relatif_initial = self.configuration_utilisateur.chemin_donnees
+        #chemin_relatif_initial = self.configuration_utilisateur.chemin_donnees
 
-        # FIXME : Le chemin initial est relatif, bug potentiel si le répertoire de données inscrit dans le fichier config.yaml n'est pas dans le même dossier que le programme.
+        # Chemin absolu vers le dossier de données, calculé par rapport à l'emplacement
+        # de main.py pour éviter tout bug si le programme est lancé depuis un autre répertoire.
+        chemin_relatif_initial = self.chemin_repertoire_parent / self.configuration_utilisateur.chemin_donnees
 
         chemin_absolu_chargement = filedialog.askopenfilename(
             initialdir=chemin_relatif_initial,
@@ -257,6 +260,24 @@ class Interface:
 
         if not chemin_absolu_chargement:
             return
+        
+        # Si un fichier est déjà chargé, on demande confirmation avant de le remplacer
+        if not self.donnees.est_vide():
+            if not messagebox.askyesno(
+                "Confirmer",
+                "Un fichier est déjà chargé. Voulez-vous le fermer et charger un nouveau fichier ?"
+            ):
+                return
+            self.donnees.fermer_fichier_csv()
+            self.date_debut = None
+            self.date_fin = None
+            self.teneur_maximum = None
+            self.concentrations_maximum = {
+                self.configuration_utilisateur.drapeau_smps: None,
+                self.configuration_utilisateur.drapeau_cpc: None,
+            }
+            self.xlim_original = None
+            self.ylim_original = None
 
         self.donnees.charger_fichier_csv(chemin_absolu_chargement)
 
@@ -295,7 +316,7 @@ class Interface:
 
     # Barre des menus déroulants.
 
-    def sauvegarder_fichier_filtre(self):
+    def exporter_fichier_final(self):
         dossier_resultats = self.configuration_utilisateur.chemin_resultats
 
         if self.donnees.est_vide():
@@ -303,29 +324,28 @@ class Interface:
             return
 
         # sauvegarde du fichier filtre (lignes valides uniquement)
-        chemin_absolu_donnees_filtrees = filedialog.asksaveasfilename(
+        chemin_absolu_export = filedialog.asksaveasfilename(
             title="Sauvegarder les données filtrées",
             initialdir=dossier_resultats,
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv")],
         )
 
-        if not chemin_absolu_donnees_filtrees:
+        if not chemin_absolu_export:
             return
 
-        self.donnees.sauvegarder_fichier_filtre_csv(chemin_absolu_donnees_filtrees)
+        self.donnees.exporter_fichier_final_csv(chemin_absolu_export)
+        messagebox.showinfo("Succès", f"Fichier final exporté :\n{chemin_absolu_export}")
 
-    def sauvegarder_fichier_drapeaux(self):
-        dossier_flags = self.configuration_utilisateur.chemin_drapeaux
 
+    def exporter_fichier_drapeaux(self):
         if self.donnees.est_vide():
             messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
             return
 
-        # sauvegarde du fichier des flags (lignes invalidees)
         chemin_absolu_flags = filedialog.asksaveasfilename(
             title="Sauvegarder le fichier des flags",
-            initialdir=dossier_flags,
+            initialdir=self.configuration_utilisateur.chemin_drapeaux,
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv")],
         )
@@ -333,7 +353,29 @@ class Interface:
         if not chemin_absolu_flags:
             return
 
-        self.donnees.sauvegarder_fichier_drapeaux_csv(chemin_absolu_flags)
+        self.donnees.exporter_fichier_drapeaux_csv(chemin_absolu_flags)
+        messagebox.showinfo("Succès", f"Fichiers flags sauvegardés dans :\n{chemin_absolu_flags}")
+
+    def enregistrer_fichier(self):
+        
+        if self.donnees.est_vide():
+            messagebox.showwarning("Attention", "Aucune donnée à exporter.")
+            return
+
+        chemin_absolu_enregistrement = filedialog.asksaveasfilename(
+            title="Exporter le fichier de travail",
+            initialdir=self.configuration_utilisateur.chemin_resultats,
+            initialfile=self.donnees.nom_fichier,
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")],
+        )
+
+        if not chemin_absolu_enregistrement:
+            return
+
+        self.donnees.enregistrer_fichier_csv(chemin_absolu_enregistrement)
+        messagebox.showinfo("Succès", f"Fichier enregistré :\n{chemin_absolu_enregistrement}")
+
 
     def fermer_fichier(self):
         if self.donnees.est_vide():

@@ -190,17 +190,114 @@ class Donnees:
 
         self.initialiser_donnees()
 
-    def sauvegarder_fichier_filtre_csv(self, chemin_absolu_donnees_filtrees) -> None:
+    def exporter_fichier_final_csv(self, chemin_absolu) -> None:
         donnees_valides = self.obtenir_donnees_valides().supprimer_drapeaux_sauvegarde()
-        donnees_valides.obtenir_dataframe().to_csv(chemin_absolu_donnees_filtrees)
+        dataframe = donnees_valides.obtenir_dataframe().drop(
+            columns=[self.nom_drapeau_pollution], errors="ignore"
+        )
+        dataframe.to_csv(chemin_absolu)
+        self.logger.info(f"Fichier final exporté : {chemin_absolu}.")
 
-        self.logger.info(f"Fichier filtré {self.nom_fichier} sauvegardé en {chemin_absolu_donnees_filtrees}.")
+    
+    def exporter_fichier_drapeaux_csv(self, chemin_absolu_flags) -> None:
+        donnees_invalides = self.obtenir_donnees_invalides().obtenir_dataframe()
 
-    def sauvegarder_fichier_drapeaux_csv(self, chemin_absolu_flags) -> None:
-        donnees_invalides = self.obtenir_donnees_invalides().obtenir_drapeaux_sauvegarde()
-        donnees_invalides.obtenir_dataframe().to_csv(chemin_absolu_flags)
+        if donnees_invalides.empty:
+            self.logger.info("Aucune donnée invalidée à sauvegarder.")
+            return
 
-        self.logger.info(f"Fichier flags {self.nom_fichier} sauvegardé en {chemin_absolu_flags}.")
+        df_aeris = self._construire_dataframe_aeris(donnees_invalides)
+        self._sauvegarder_fichiers_par_jour(df_aeris, chemin_absolu_flags)
+
+        self.logger.info(f"Fichiers flags AERIS sauvegardés : {chemin_absolu_flags}.")
+
+
+    def _construire_dataframe_aeris(self, donnees_invalides) -> pd.DataFrame:
+        """
+        L'encadrant nous a demander de Construire un DataFrame au format AERIS à partir des données invalidées.
+    
+        Au lieu de lister chaque point invalidé individuellement, on regroupe
+        les points consécutifs en intervalles (start_date → end_date).
+        Deux points sont considérés consécutifs si l'écart entre eux est
+        inférieur ou égal à 10 minutes (600 secondes).
+    
+        Exemple : si on invalide les points 05:25, 05:30, 05:35, 05:55,
+        ils seront regroupés en un seul intervalle :
+        start_date = 05:25 | end_date = 05:55 | flag = 0.456
+        c'est ça le format AERIS
+        """
+        intervalles = []
+        dates = donnees_invalides.index.sort_values()
+
+        debut_intervalle = dates[0]
+        fin_intervalle = dates[0]
+
+        for date in dates[1:]:
+            if (date - fin_intervalle).total_seconds() <= 600:
+                fin_intervalle = date
+            else:
+                intervalles.append({
+                    "start_date": debut_intervalle,
+                    "end_date": fin_intervalle,
+                    "flag": 0.456,
+                })
+                debut_intervalle = date
+                fin_intervalle = date
+
+        intervalles.append({
+            "start_date": debut_intervalle,
+            "end_date": fin_intervalle,
+            "flag": 0.456,
+        })
+
+        df_aeris = pd.DataFrame(intervalles)
+        df_aeris["start_date"] = pd.to_datetime(df_aeris["start_date"])
+        df_aeris["end_date"] = pd.to_datetime(df_aeris["end_date"])
+
+        return df_aeris
+
+    def _sauvegarder_fichiers_par_jour(self, df_aeris: pd.DataFrame, chemin_absolu_flags: str) -> None:
+        dossier = os.path.dirname(chemin_absolu_flags)
+        nom_base = os.path.splitext(os.path.basename(chemin_absolu_flags))[0]  # nom sans extension
+
+        premier_jour = df_aeris["start_date"].iloc[0].date()
+        dernier_jour = df_aeris["start_date"].iloc[-1].date()
+
+        jour_courant = datetime.combine(premier_jour, datetime.min.time())
+        dernier_jour_dt = datetime.combine(dernier_jour, datetime.min.time())
+
+        while jour_courant <= dernier_jour_dt:
+            df_jour = df_aeris[
+                (df_aeris["start_date"] >= jour_courant) &
+                (df_aeris["start_date"] < jour_courant + pd.Timedelta(days=1))
+            ]
+
+            if not df_jour.empty:
+                self._ecrire_fichier_aeris(df_jour, dossier, nom_base, jour_courant)
+
+            jour_courant += pd.Timedelta(days=1)
+
+    def _ecrire_fichier_aeris(self, df_jour: pd.DataFrame, dossier: str, nom_base: str, jour: datetime) -> None:
+        str_date = jour.strftime("%Y%m%d")
+        # nom = ce que l'utilisateur a écrit + la date du jour
+        nom_fichier = f"{nom_base}_{str_date}.csv"
+        chemin_fichier = os.path.join(dossier, nom_fichier)
+
+        with open(chemin_fichier, "w", newline="", encoding="utf-8") as f:
+            #f.write("sep=,\n")  #force Excel à utiliser la virgule
+            f.write("start_date,end_date,flag\n")
+            for enr in df_jour.itertuples():
+                f.write(f"{enr.start_date},{enr.end_date},{enr.flag}\n")
+
+        self.logger.info(f"Fichier flags AERIS sauvegardé : {chemin_fichier}")
+
+    """exporter le fichier tel quel avec la colonne smps_flag, pour pouvoir reprendre le travail dessus plus tard"""
+    def enregistrer_fichier_csv(self, chemin_absolu_export) -> None:
+        self.dataframe.to_csv(chemin_absolu_export)
+
+        self.logger.info(f"Fichier exporté {self.nom_fichier} sauvegardé en {chemin_absolu_export}.")
+    
+    """------------------------------------------------"""
 
     def obtenir_nombre_dates(self) -> int:
         return self.dataframe.shape[0]
