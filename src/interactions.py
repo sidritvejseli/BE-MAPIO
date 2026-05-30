@@ -166,12 +166,10 @@ class Interactions:
 
     # retourne la date du point le plus proche de la souris
     def trouver_date_plus_proche(self) -> datetime:
-
         return self.distances_point_souris.idxmin()
 
     def maj_donnees_affichees(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
-        self.points_valides = donnees.obtenir_donnees_valides()
-        self.points_valides = self.points_valides.obtenir_dates(date_debut, date_fin)
+        self.points_valides = donnees.obtenir_dates(date_debut, date_fin)
 
     # recalcule les distances entre les points valides et la souris
     def maj_distances(self, evenement: Event, ax_2d: Axes):
@@ -285,7 +283,10 @@ class Interactions:
         if self.distances_point_souris.loc[date_plus_proche] > seuil:
             return doit_rafraichir
 
-        donnees.invalider_date(date_plus_proche)
+        if donnees.est_valide_date(date_plus_proche):
+            donnees.invalider_date(date_plus_proche)
+        else:
+            donnees.restaurer_date(date_plus_proche)
 
         doit_rafraichir = True
         return doit_rafraichir

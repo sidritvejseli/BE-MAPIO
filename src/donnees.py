@@ -387,6 +387,9 @@ class Donnees:
     # C'est le comportement souhaité par souci d'optimisation.
     # Si l'on souhaite copier réellement l'objet, remplacer copy.copy() par copy.deepcopy().
 
+    def est_valide_date(self, date: datetime) -> bool:
+        return self.dataframe.loc[date, self.nom_colonne_drapeau_sauvegarde] == 0
+
     def invalider_drapeau_date(self, date: datetime) -> None:
         self.dataframe.loc[date, self.nom_colonne_drapeau_sauvegarde] = 1
 
