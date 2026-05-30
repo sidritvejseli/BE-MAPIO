@@ -1,3 +1,4 @@
+from enum import Enum
 import logging
 import os
 import tkinter as tk
@@ -12,6 +13,7 @@ from pathlib import Path
 
 from donnees import Donnees
 from graphes import Graphe2D, GrapheSMPS, GrapheCPC, Graphe3D, GrapheCorrelation
+from historique import Action
 from interactions import Interactions
 from configuration import ConfigurationUtilisateur, ConfigurationProgramme
 from menus import (
@@ -119,8 +121,27 @@ class Interface:
             (
                 "Actions",
                 [
-                    ("Invalider toutes les données", None, self.invalider_toutes_donnees),
-                    ("Invalider les données du jour", None, self.invalider_donnees_affichees),
+                    (
+                        "Invalider toutes les données",
+                        None,
+                        lambda: self.agir_donnees(Action.SUPPRIMER, self.ZoneAction.TOUTES),
+                    ),
+                    (
+                        "Invalider les données du jour",
+                        None,
+                        lambda: self.agir_donnees(Action.SUPPRIMER, self.ZoneAction.FENETRE),
+                    ),
+                    None,
+                    (
+                        "Restaurer toutes les données",
+                        None,
+                        lambda: self.agir_donnees(Action.RESTAURER, self.ZoneAction.TOUTES),
+                    ),
+                    (
+                        "Restaurer les données du jour",
+                        None,
+                        lambda: self.agir_donnees(Action.RESTAURER, self.ZoneAction.FENETRE),
+                    ),
                     None,
                     ("Annuler", "Ctrl+Z", self.annuler),
                     ("Rétablir", "Ctrl+Shift+Z", self.retablir),
@@ -432,40 +453,31 @@ class Interface:
 
     # Actions.
 
-    def invalider_toutes_donnees(self):
+    class ZoneAction(Enum):
+        TOUTES = 1
+        FENETRE = 2
+
+    def agir_donnees(self, action: Action, zone_action: ZoneAction):
         if self.donnees.est_vide():
             return
 
-        # On invalide toutes les données, sauf celles qui ne sont pas définies.
-        self.donnees.invalider_dates(
-            self.donnees.supprimer_concentration_courante_non_definie()
-            .obtenir_donnees_valides()
-            .obtenir_colonne_dates()
-            .obtenir_dataframe()
-        )
-        self.tracer_graphe_2d(
-            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
-        )
-        self.tracer_graphe_2d(
-            self.graphe_2d_recapitulatif,
-            self.date_minimum,
-            self.date_maximum,
-            self.configuration_utilisateur.drapeau_smps,
-        )
-        self.mettre_a_jour_historique()
+        selection = self.donnees.supprimer_concentration_smps_non_definie()
 
-    def invalider_donnees_affichees(self):
-        if self.donnees.est_vide():
-            return
+        if action is Action.SUPPRIMER:
+            selection = selection.obtenir_donnees_valides()
+        elif action is Action.RESTAURER:
+            selection = selection.obtenir_donnees_invalides()
 
-        # On invalide les données affichées sur le graphe actuel, sauf celles qui ne sont pas définies.
-        self.donnees.invalider_dates(
-            self.donnees.supprimer_concentration_courante_non_definie()
-            .obtenir_donnees_valides()
-            .obtenir_dates(self.date_debut, self.date_fin)
-            .obtenir_colonne_dates()
-            .obtenir_dataframe()
-        )
+        if zone_action is self.ZoneAction.FENETRE:
+            selection = selection.obtenir_dates(self.date_debut, self.date_fin)
+
+        selection = selection.obtenir_colonne_dates().obtenir_dataframe()
+
+        if action is Action.SUPPRIMER:
+            self.donnees.invalider_dates(selection)
+        elif action is Action.RESTAURER:
+            self.donnees.restaurer_dates(selection)
+
         self.tracer_graphe_2d(
             self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
         )
@@ -760,6 +772,7 @@ class Interface:
         self.barre_onglets.modifier_texte("Historique", historique)
 
     # Interactions.
+
     # Bug corrige : rectangledessine + relache sur un point,l'infobulle reste affichée
     def info_point(self, evenement: Event):
         doit_rafraichir = self.interactions.info_point(
