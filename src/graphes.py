@@ -224,14 +224,13 @@ class GrapheCorrelation(Graphe):
         self.ax.set_title(f"SMPS vs CPC (Pente: {self.pente:.2f})")
 
     def legender_abscisses(self, concentration_maximum_smps):
-        self.ax.set_ylabel("Concentration total SMPS (smps_concTotal)")
-
         self.ax.set_xlim(0, (1 + self.marge_relative) * concentration_maximum_smps)
+        self.ax.set_xlabel("Concentration total SMPS (smps_concTotal)")
 
     def legender_ordonnees(self, concentration_maximum_cpc):
-        self.ax.set_xlabel("ConcentrationCPC (cpc_conc)")
-
         self.ax.set_ylim(0, (1 + self.marge_relative) * concentration_maximum_cpc)
+        self.ax.set_ylabel("ConcentrationCPC (cpc_conc)")
+
 
     def legender_boite(self):
         self.ax.legend(fontsize=8)
@@ -285,7 +284,6 @@ class GrapheCorrelation(Graphe):
 
         self.tracer_regression(smps_total, cpc_conc)
 
-    # FIXME verfier quel paramettre est l'abscisse et quel est l'ordonnee
     def tracer_regression(self, x, y):
         x_data = x.values.reshape(-1, 1)
         y_data = y.values
