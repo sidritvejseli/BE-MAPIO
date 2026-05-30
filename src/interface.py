@@ -247,8 +247,6 @@ class Interface:
             ),
         ]
 
-        # FIXME : Corriger le tight_layout de l'onglet récapitulatif qui ne se charge que après actualisation.
-
         self.barre_onglets: BarreOnglets = BarreOnglets(self.application, self.description_barre_onglets)
         self.barre_onglets.construire_barre_onglets()
 

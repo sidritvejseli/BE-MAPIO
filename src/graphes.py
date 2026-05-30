@@ -62,7 +62,7 @@ class Graphe2D(Graphe):
 
         self.tracer_grille()
 
-        self.fig.tight_layout()
+        self.fig.set_tight_layout(True)
 
     def effacer_graphe_2d(self):
         self.ax.clear()
@@ -196,7 +196,7 @@ class Graphe3D(Graphe):
         self.legender_ordonnees()
         self.legender_barre_couleurs(carte_thermique)
 
-        self.fig.tight_layout()
+        self.fig.set_tight_layout(True)
 
     def effacer_graphe_3d(self):
         if self.colorbar is not None:
@@ -273,7 +273,7 @@ class GrapheCorrelation(Graphe):
         self.tracer_grille()
         self.legender_titre()
 
-        self.fig.tight_layout()
+        self.fig.set_tight_layout(True)
 
     def tracer_donnees(
         self,
