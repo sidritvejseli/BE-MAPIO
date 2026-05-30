@@ -618,7 +618,7 @@ class Interface:
         self.mode_plage("restaurer")
 
     def annuler(self):
-        self.donnees.annuler_invalidation_date()
+        self.donnees.annuler_action()
         self.tracer_graphe_2d(
             self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
         )
@@ -631,7 +631,7 @@ class Interface:
         self.mettre_a_jour_historique()
 
     def retablir(self):
-        self.donnees.retablir_invalidation_date()
+        self.donnees.retablir_action()
         self.tracer_graphe_2d(
             self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
         )

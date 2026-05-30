@@ -117,9 +117,7 @@ class Interactions:
             donnees.invalider_dates(masque)
         else:
             # remet le flag a 0 au lieu de 1
-            donnees.valider_drapeau_dates(masque)
-            # ajout dans l'historique
-            donnees.historique.ajouter_action(masque)
+            donnees.restaurer_dates(masque)
 
         return True
 

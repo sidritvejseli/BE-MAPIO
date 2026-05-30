@@ -12,7 +12,7 @@ from pandas import DataFrame, Index
 from typing import TypeAlias
 
 
-from historique import Historique
+from historique import Historique, Action
 
 
 class Donnees:
@@ -401,25 +401,39 @@ class Donnees:
 
     def invalider_date(self, date: datetime) -> None:
         self.invalider_drapeau_date(date)
-        self.historique.ajouter_action([date])
+        self.historique.ajouter_action(Action.SUPPRIMER, [date])
 
-    def annuler_invalidation_date(self) -> None:
+    def restaurer_date(self, date: datetime) -> None:
+        self.valider_drapeau_date(date)
+        self.historique.ajouter_action(Action.RESTAURER, [date])
+
+    def annuler_action(self) -> None:
         if not self.historique.est_possible_retour_arriere():
             return
 
-        dates = self.historique.retourner_en_arriere()
-        self.valider_drapeau_dates(dates)
+        action, dates = self.historique.retourner_en_arriere()
+        if action is Action.SUPPRIMER:
+            self.valider_drapeau_dates(dates)
+        elif action is Action.RESTAURER:
+            self.invalider_drapeau_dates(dates)
 
-    def retablir_invalidation_date(self) -> None:
+    def retablir_action(self) -> None:
         if not self.historique.est_possible_retour_avant():
             return
 
-        dates = self.historique.retourner_en_avant()
-        self.invalider_drapeau_dates(dates)
+        action, dates = self.historique.retourner_en_avant()
+        if action is Action.SUPPRIMER:
+            self.invalider_drapeau_dates(dates)
+        elif action is Action.RESTAURER:
+            self.valider_drapeau_dates(dates)
 
     def invalider_dates(self, masque: list[datetime]) -> None:
         self.invalider_drapeau_dates(masque)
-        self.historique.ajouter_action(self.dataframe.loc[masque].index)
+        self.historique.ajouter_action(Action.SUPPRIMER, self.dataframe.loc[masque].index)
+
+    def restaurer_dates(self, masque: list[datetime]) -> None:
+        self.valider_drapeau_dates(masque)
+        self.historique.ajouter_action(Action.RESTAURER, self.dataframe.loc[masque].index)
 
     def est_tout_invalide(self) -> bool:
         colonnes = [self.nom_colonne_smps, self.nom_colonne_cpc]
