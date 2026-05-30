@@ -203,8 +203,7 @@ class Donnees:
         dataframe.to_csv(chemin_absolu)
         self.logger.info(f"Fichier final exporté : {chemin_absolu}.")
 
-    def exporter_fichier_drapeaux_csv(self, chemin_absolu_flags) -> None:
-        # FIXME : Problème de nom de fichier lors de l'export.
+    def exporter_fichier_drapeaux_csv(self, chemin_absolu_drapeaux) -> None:
         donnees_invalides = self.obtenir_donnees_invalides().obtenir_dataframe()
 
         if donnees_invalides.empty:
@@ -212,9 +211,9 @@ class Donnees:
             return
 
         df_aeris = self.construire_dataframe_aeris(donnees_invalides)
-        self.sauvegarder_fichiers_par_jour(df_aeris, chemin_absolu_flags)
+        df_aeris.to_csv(chemin_absolu_drapeaux, index=False)
 
-        self.logger.info(f"Fichiers flags AERIS sauvegardés : {chemin_absolu_flags}.")
+        self.logger.info(f"Fichier drapeaux enregistré : {chemin_absolu_drapeaux}.")
 
     def construire_dataframe_aeris(self, donnees_invalides) -> pd.DataFrame:
         """
@@ -231,7 +230,7 @@ class Donnees:
         c'est ça le format AERIS
         """
         intervalles = []
-        dates = donnees_invalides.index.sort_values()
+        dates = donnees_invalides.index
 
         debut_intervalle = dates[0]
         fin_intervalle = dates[0]
@@ -263,43 +262,6 @@ class Donnees:
         df_aeris["end_date"] = pd.to_datetime(df_aeris["end_date"])
 
         return df_aeris
-
-    def sauvegarder_fichiers_par_jour(self, df_aeris: pd.DataFrame, chemin_absolu_flags: str) -> None:
-        dossier = os.path.dirname(chemin_absolu_flags)
-        nom_base = os.path.splitext(os.path.basename(chemin_absolu_flags))[0]  # nom sans extension
-
-        premier_jour = df_aeris["start_date"].iloc[0].date()
-        dernier_jour = df_aeris["start_date"].iloc[-1].date()
-
-        jour_courant = datetime.combine(premier_jour, datetime.min.time())
-        dernier_jour_dt = datetime.combine(dernier_jour, datetime.min.time())
-
-        while jour_courant <= dernier_jour_dt:
-            df_jour = df_aeris[
-                (df_aeris["start_date"] >= jour_courant)
-                & (df_aeris["start_date"] < jour_courant + pd.Timedelta(days=1))
-            ]
-
-            if not df_jour.empty:
-                self.ecrire_fichier_aeris(df_jour, dossier, nom_base, jour_courant)
-
-            jour_courant += pd.Timedelta(days=1)
-
-    def ecrire_fichier_aeris(self, df_jour: pd.DataFrame, dossier: str, nom_base: str, jour: datetime) -> None:
-        str_date = jour.strftime("%Y%m%d")
-        # nom = ce que l'utilisateur a écrit + la date du jour
-        nom_fichier = f"{nom_base}_{str_date}.csv"
-        chemin_fichier = os.path.join(dossier, nom_fichier)
-
-        with open(chemin_fichier, "w", newline="", encoding="utf-8") as f:
-            # f.write("sep=,\n")  #force Excel à utiliser la virgule
-            f.write("start_date,end_date,flag\n")
-            for enr in df_jour.itertuples():
-                f.write(f"{enr.start_date},{enr.end_date},{enr.flag}\n")
-
-        self.logger.info(f"Fichier flags AERIS sauvegardé : {chemin_fichier}")
-
-    """exporter le fichier tel quel avec la colonne smps_flag, pour pouvoir reprendre le travail dessus plus tard"""
 
     def enregistrer_fichier_csv(self, chemin_absolu_enregistrement) -> None:
         self.dataframe.to_csv(chemin_absolu_enregistrement)
