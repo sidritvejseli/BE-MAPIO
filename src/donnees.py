@@ -184,10 +184,9 @@ class Donnees:
 
         self.convertir_donnees_en_float()
 
-        # FIXME : Le chargement ne doit pas écraser les drapeaux déjà existants.
-        self.ajouter_drapeaux()
+        self.ajouter_drapeau_sauvegarde()
+        self.ajouter_drapeau_pollution()
 
-        # FIXME : Si le fichier ne contient pas de colonne pollution, le programme plante.
         self.dataframe = self.supprimer_lignes_polluees().dataframe
 
         self.logger.info(f"Fichier {self.nom_fichier} chargé.")
@@ -205,6 +204,7 @@ class Donnees:
         self.logger.info(f"Fichier final exporté : {chemin_absolu}.")
 
     def exporter_fichier_drapeaux_csv(self, chemin_absolu_flags) -> None:
+        # FIXME : Problème de nom de fichier lors de l'export.
         donnees_invalides = self.obtenir_donnees_invalides().obtenir_dataframe()
 
         if donnees_invalides.empty:
@@ -467,5 +467,14 @@ class Donnees:
         # En cas d'erreur, la chaîne de caractères est remplacée
         # par Not A Number, en raison du drapeau "coerce".
 
-    def ajouter_drapeaux(self) -> None:
+    def ajouter_drapeau_sauvegarde(self) -> None:
+        if self.nom_colonne_drapeau_sauvegarde in self.dataframe.columns:
+            return
+
         self.dataframe[self.nom_colonne_drapeau_sauvegarde] = 0
+
+    def ajouter_drapeau_pollution(self) -> None:
+        if self.nom_drapeau_pollution in self.dataframe.columns:
+            return
+
+        self.dataframe[self.nom_drapeau_pollution] = 0
