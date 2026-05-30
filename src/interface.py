@@ -398,7 +398,7 @@ class Interface:
         elif methode_enregistrement is self.MethodeEnregistrement.EXPORTER_DRAPEAUX:
             self.donnees.exporter_fichier_drapeaux_csv(chemin_absolu_sauvegarde)
 
-        messagebox.showinfo("Succès", f"{methode_enregistrement.etiquette} :\n{chemin_absolu_sauvegarde}")
+        # messagebox.showinfo("Succès", f"{methode_enregistrement.etiquette} :\n{chemin_absolu_sauvegarde}")
 
     def fermer_fichier(self):
         if self.donnees.est_vide():

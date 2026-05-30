@@ -207,11 +207,11 @@ class Donnees:
         donnees_invalides = self.obtenir_donnees_invalides().obtenir_dataframe()
 
         if donnees_invalides.empty:
-            self.logger.info("Aucune donnée invalidée à sauvegarder.")
-            return
+            drapeaux = DataFrame(columns=["start_date", "end_date", "flag"])
+        else:
+            drapeaux = self.construire_dataframe_aeris(donnees_invalides)
 
-        df_aeris = self.construire_dataframe_aeris(donnees_invalides)
-        df_aeris.to_csv(chemin_absolu_drapeaux, index=False)
+        drapeaux.to_csv(chemin_absolu_drapeaux, index=False)
 
         self.logger.info(f"Fichier drapeaux enregistré : {chemin_absolu_drapeaux}.")
 
