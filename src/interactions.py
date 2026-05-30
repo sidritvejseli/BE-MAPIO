@@ -12,6 +12,7 @@ from pandas import DataFrame
 
 
 from donnees import Donnees
+from historique import Action
 
 
 class Interactions:
@@ -93,9 +94,9 @@ class Interactions:
         y_max = self.rect_y2
 
         # selection du mode
-        if mode == "supprimer":
+        if mode is Action.SUPPRIMER:
             source = donnees.obtenir_donnees_valides()  # cible point valide
-        else:
+        elif mode is Action.RESTAURER:
             source = donnees.obtenir_donnees_invalides()  # cible point invalide
 
         # on filtre les points qui sont dans le rectangle
@@ -112,10 +113,10 @@ class Interactions:
         if masque.empty:
             return False
 
-        if mode == "supprimer":
+        if mode is Action.SUPPRIMER:
             # si correspond au masque , on le vire
             donnees.invalider_dates(masque)
-        else:
+        elif mode is Action.RESTAURER:
             # remet le flag a 0 au lieu de 1
             donnees.restaurer_dates(masque)
 
@@ -123,11 +124,11 @@ class Interactions:
 
     # Invalide tous les points valides contenus dans le rectangle def supprimer_plage_rectangle(self, donnees: Donnees) -> bool:
     def supprimer_plage_rectangle(self, donnees: Donnees):
-        return self.mode_rectangle(donnees, "supprimer")
+        return self.mode_rectangle(donnees, Action.SUPPRIMER)
 
     # on cherche les point invalide =1 et on les remet valides  =0
     def restaurer_plage_rectangle(self, donnees: Donnees):
-        return self.mode_rectangle(donnees, "restaurer")
+        return self.mode_rectangle(donnees, Action.RESTAURER)
 
     def zoomer_rectangle(self, ax_2d):
 

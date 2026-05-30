@@ -601,9 +601,9 @@ class Interface:
             return
 
         # selon le mode  on supprime ou restaure
-        if mode == "supprimer":
+        if mode is Action.SUPPRIMER:
             rafraichir = self.interactions.supprimer_plage_rectangle(self.donnees)
-        else:
+        elif mode is Action.RESTAURER:
             rafraichir = self.interactions.restaurer_plage_rectangle(self.donnees)
 
         # si des points modifier on redessine le graphe
@@ -623,10 +623,10 @@ class Interface:
             self.mettre_a_jour_historique()
 
     def supprimer_plage(self):
-        self.mode_plage("supprimer")
+        self.mode_plage(Action.SUPPRIMER)
 
     def restaurer_plage(self):
-        self.mode_plage("restaurer")
+        self.mode_plage(Action.RESTAURER)
 
     def annuler(self):
         self.donnees.annuler_action()
