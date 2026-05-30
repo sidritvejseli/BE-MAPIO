@@ -1,12 +1,13 @@
 # Le chemin est relatif au répertoire dans lequel on se place en exécutant le programme.
 repertoires:
-  chemin_donnees: "data/"           
-  chemin_resultats: "resultats/"     
-  chemin_drapeaux: "resultats/drapeaux/"    
+  chemin_chargement: "data/"
+  chemin_sauvegarde: "sauvegarde/"
+  chemin_export_final: "resultats/final/"
+  chemin_export_drapeaux: "resultats/drapeaux/"
 
 noms_colonnes:
-  drapeau_pollution: "pollution_flag"   
-  drapeau_sauvegarde: "smps_flag"            
+  drapeau_pollution: "pollution_flag"
+  drapeau_sauvegarde: "smps_flag"
   drapeau_smps: "smps_concTotal"
   drapeau_cpc: "cpc_conc"
   drapeau_prefixe_particules: "smps_d_"

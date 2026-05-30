@@ -26,9 +26,10 @@ class ConfigurationUtilisateur(Configuration):
 
         repertoires = self.fichier_configuration.get("repertoires", {})
 
-        self.chemin_donnees = repertoires.get("chemin_donnees", "")
-        self.chemin_resultats = repertoires.get("chemin_resultats", "")
-        self.chemin_drapeaux = repertoires.get("chemin_drapeaux", "")
+        self.chemin_chargement = repertoires.get("chemin_chargement", "")
+        self.chemin_sauvegarde = repertoires.get("chemin_sauvegarde", "")
+        self.chemin_export_final = repertoires.get("chemin_export_final", "")
+        self.chemin_export_drapeaux = repertoires.get("chemin_export_drapeaux", "")
 
         noms_colonnes = self.fichier_configuration.get("noms_colonnes", {})
 

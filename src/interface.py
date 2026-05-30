@@ -111,9 +111,31 @@ class Interface:
                     ("Charger un fichier", None, self.charger_fichier),
                     ("Fermer sans enregistrer", None, self.fermer_fichier),
                     None,
-                    ("Enregistrer sous", None, self.enregistrer_fichier),
-                    ("Exporter final", None, self.exporter_fichier_final),
-                    ("Exporter drapeaux", None, self.exporter_fichier_drapeaux),  # nouveau
+                    (
+                        "Enregistrer sous",
+                        None,
+                        lambda: self.enregistrer_fichier(
+                            self.MethodeEnregistrement.SAUVEGARDER_COURANT,
+                            self.configuration_utilisateur.chemin_sauvegarde,
+                        ),
+                    ),
+                    None,
+                    (
+                        "Exporter données finales",
+                        None,
+                        lambda: self.enregistrer_fichier(
+                            self.MethodeEnregistrement.EXPORTER_FINAL,
+                            self.configuration_utilisateur.chemin_export_final,
+                        ),
+                    ),
+                    (
+                        "Exporter drapeaux",
+                        None,
+                        lambda: self.enregistrer_fichier(
+                            self.MethodeEnregistrement.EXPORTER_DRAPEAUX,
+                            self.configuration_utilisateur.chemin_export_drapeaux,
+                        ),
+                    ),
                     None,
                     ("Quitter", None, self.quitter_programme),
                 ],
@@ -270,7 +292,7 @@ class Interface:
 
         # Chemin absolu vers le dossier de données, calculé par rapport à l'emplacement
         # de main.py pour éviter tout bug si le programme est lancé depuis un autre répertoire.
-        chemin_relatif_initial = self.chemin_repertoire_parent / self.configuration_utilisateur.chemin_donnees
+        chemin_relatif_initial = self.chemin_repertoire_parent / self.configuration_utilisateur.chemin_chargement
 
         chemin_absolu_chargement = filedialog.askopenfilename(
             initialdir=chemin_relatif_initial,
@@ -342,64 +364,41 @@ class Interface:
 
     # Barre des menus déroulants.
 
-    def exporter_fichier_final(self):
-        dossier_resultats = self.configuration_utilisateur.chemin_resultats
+    class MethodeEnregistrement(Enum):
+        SAUVEGARDER_COURANT = (1, "Sauvegarder le projet")
+        EXPORTER_FINAL = (2, "Exporter les données filtrées")
+        EXPORTER_DRAPEAUX = (3, "Exporter les drapeaux")
 
+        def __init__(self, value, etiquette):
+            self._value_ = value
+            self.etiquette = etiquette
+
+    def enregistrer_fichier(self, methode_enregistrement: MethodeEnregistrement, chemin_par_defaut: str):
         if self.donnees.est_vide():
             messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
             return
 
         # sauvegarde du fichier filtre (lignes valides uniquement)
-        chemin_absolu_export = filedialog.asksaveasfilename(
-            title="Sauvegarder les données filtrées",
-            initialdir=dossier_resultats,
+        chemin_absolu_sauvegarde = filedialog.asksaveasfilename(
+            title=methode_enregistrement.etiquette,
+            initialdir=chemin_par_defaut,
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv")],
         )
 
-        if not chemin_absolu_export:
+        if not chemin_absolu_sauvegarde:
             return
 
-        self.donnees.exporter_fichier_final_csv(chemin_absolu_export)
-        messagebox.showinfo("Succès", f"Fichier final exporté :\n{chemin_absolu_export}")
+        if methode_enregistrement is self.MethodeEnregistrement.SAUVEGARDER_COURANT:
+            self.donnees.enregistrer_fichier_csv(chemin_absolu_sauvegarde)
 
-    def exporter_fichier_drapeaux(self):
-        if self.donnees.est_vide():
-            messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
-            return
+        elif methode_enregistrement is self.MethodeEnregistrement.EXPORTER_FINAL:
+            self.donnees.exporter_fichier_final_csv(chemin_absolu_sauvegarde)
 
-        chemin_absolu_flags = filedialog.asksaveasfilename(
-            title="Sauvegarder le fichier des flags",
-            initialdir=self.configuration_utilisateur.chemin_drapeaux,
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv")],
-        )
+        elif methode_enregistrement is self.MethodeEnregistrement.EXPORTER_DRAPEAUX:
+            self.donnees.exporter_fichier_drapeaux_csv(chemin_absolu_sauvegarde)
 
-        if not chemin_absolu_flags:
-            return
-
-        self.donnees.exporter_fichier_drapeaux_csv(chemin_absolu_flags)
-        messagebox.showinfo("Succès", f"Fichiers flags sauvegardés dans :\n{chemin_absolu_flags}")
-
-    def enregistrer_fichier(self):
-
-        if self.donnees.est_vide():
-            messagebox.showwarning("Attention", "Aucune donnée à exporter.")
-            return
-
-        chemin_absolu_enregistrement = filedialog.asksaveasfilename(
-            title="Exporter le fichier de travail",
-            initialdir=self.configuration_utilisateur.chemin_resultats,
-            initialfile=self.donnees.nom_fichier,
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv")],
-        )
-
-        if not chemin_absolu_enregistrement:
-            return
-
-        self.donnees.enregistrer_fichier_csv(chemin_absolu_enregistrement)
-        messagebox.showinfo("Succès", f"Fichier enregistré :\n{chemin_absolu_enregistrement}")
+        messagebox.showinfo("Succès", f"{methode_enregistrement.etiquette} :\n{chemin_absolu_sauvegarde}")
 
     def fermer_fichier(self):
         if self.donnees.est_vide():

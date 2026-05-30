@@ -129,6 +129,12 @@ class Donnees:
 
         return drapeaux_sauvegarde
 
+    def supprimer_colonne_pollution(self) -> Donnees:
+        donnees_sans_pollution = copy.copy(self)
+        donnees_sans_pollution.dataframe = donnees_sans_pollution.dataframe.drop(columns=[self.nom_drapeau_pollution])
+
+        return donnees_sans_pollution
+
     def supprimer_lignes_polluees(self) -> Donnees:
         lignes_non_polluees = copy.copy(self)
         lignes_non_polluees.dataframe = lignes_non_polluees.dataframe.loc[
@@ -177,8 +183,11 @@ class Donnees:
         self.dataframe = pd.read_csv(self.chemin_absolu, parse_dates=["datetime"], index_col="datetime")
 
         self.convertir_donnees_en_float()
+
+        # FIXME : Le chargement ne doit pas écraser les drapeaux déjà existants.
         self.ajouter_drapeaux()
 
+        # FIXME : Si le fichier ne contient pas de colonne pollution, le programme plante.
         self.dataframe = self.supprimer_lignes_polluees().dataframe
 
         self.logger.info(f"Fichier {self.nom_fichier} chargé.")
@@ -189,8 +198,9 @@ class Donnees:
         self.initialiser_donnees()
 
     def exporter_fichier_final_csv(self, chemin_absolu) -> None:
-        donnees_valides = self.obtenir_donnees_valides().supprimer_drapeaux_sauvegarde()
-        dataframe = donnees_valides.obtenir_dataframe().drop(columns=[self.nom_drapeau_pollution], errors="ignore")
+        donnees_valides = self.obtenir_donnees_valides().supprimer_drapeaux_sauvegarde().supprimer_colonne_pollution()
+        dataframe = donnees_valides.obtenir_dataframe()
+
         dataframe.to_csv(chemin_absolu)
         self.logger.info(f"Fichier final exporté : {chemin_absolu}.")
 
@@ -201,12 +211,12 @@ class Donnees:
             self.logger.info("Aucune donnée invalidée à sauvegarder.")
             return
 
-        df_aeris = self._construire_dataframe_aeris(donnees_invalides)
-        self._sauvegarder_fichiers_par_jour(df_aeris, chemin_absolu_flags)
+        df_aeris = self.construire_dataframe_aeris(donnees_invalides)
+        self.sauvegarder_fichiers_par_jour(df_aeris, chemin_absolu_flags)
 
         self.logger.info(f"Fichiers flags AERIS sauvegardés : {chemin_absolu_flags}.")
 
-    def _construire_dataframe_aeris(self, donnees_invalides) -> pd.DataFrame:
+    def construire_dataframe_aeris(self, donnees_invalides) -> pd.DataFrame:
         """
         L'encadrant nous a demander de Construire un DataFrame au format AERIS à partir des données invalidées.
 
@@ -254,7 +264,7 @@ class Donnees:
 
         return df_aeris
 
-    def _sauvegarder_fichiers_par_jour(self, df_aeris: pd.DataFrame, chemin_absolu_flags: str) -> None:
+    def sauvegarder_fichiers_par_jour(self, df_aeris: pd.DataFrame, chemin_absolu_flags: str) -> None:
         dossier = os.path.dirname(chemin_absolu_flags)
         nom_base = os.path.splitext(os.path.basename(chemin_absolu_flags))[0]  # nom sans extension
 
@@ -271,11 +281,11 @@ class Donnees:
             ]
 
             if not df_jour.empty:
-                self._ecrire_fichier_aeris(df_jour, dossier, nom_base, jour_courant)
+                self.ecrire_fichier_aeris(df_jour, dossier, nom_base, jour_courant)
 
             jour_courant += pd.Timedelta(days=1)
 
-    def _ecrire_fichier_aeris(self, df_jour: pd.DataFrame, dossier: str, nom_base: str, jour: datetime) -> None:
+    def ecrire_fichier_aeris(self, df_jour: pd.DataFrame, dossier: str, nom_base: str, jour: datetime) -> None:
         str_date = jour.strftime("%Y%m%d")
         # nom = ce que l'utilisateur a écrit + la date du jour
         nom_fichier = f"{nom_base}_{str_date}.csv"
@@ -291,12 +301,9 @@ class Donnees:
 
     """exporter le fichier tel quel avec la colonne smps_flag, pour pouvoir reprendre le travail dessus plus tard"""
 
-    def enregistrer_fichier_csv(self, chemin_absolu_export) -> None:
-        self.dataframe.to_csv(chemin_absolu_export)
-
-        self.logger.info(f"Fichier exporté {self.nom_fichier} sauvegardé en {chemin_absolu_export}.")
-
-    """------------------------------------------------"""
+    def enregistrer_fichier_csv(self, chemin_absolu_enregistrement) -> None:
+        self.dataframe.to_csv(chemin_absolu_enregistrement)
+        self.logger.info(f"Fichier exporté {self.nom_fichier} sauvegardé en {chemin_absolu_enregistrement}.")
 
     def obtenir_nombre_dates(self) -> int:
         return self.dataframe.shape[0]
