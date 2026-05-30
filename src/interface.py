@@ -247,6 +247,8 @@ class Interface:
             ),
         ]
 
+        # FIXME : Corriger le tight_layout de l'onglet récapitulatif qui ne se charge que après actualisation.
+
         self.barre_onglets: BarreOnglets = BarreOnglets(self.application, self.description_barre_onglets)
         self.barre_onglets.construire_barre_onglets()
 
@@ -737,7 +739,6 @@ class Interface:
             self.concentrations_maximum[nom_colonne_concentration],
         )  # dessine les points
 
-        # FIXME : Vérifier si l'initialisation de l'infobulle se fait au bon endroit.
         self.infobulle = self.graphe_2d_smps.ax.annotate(
             "",
             xy=(0, 0),
@@ -793,7 +794,7 @@ class Interface:
         )
 
         if doit_rafraichir:
-            self.mettre_a_jour_trace_graphe_2d(self.graphe_2d_smps)
+            self.barre_onglets.obtenir_toile(self.graphe_2d_smps).draw_idle()
 
     # Bug corriger : après avoir dessine un rectangle, un clic gauche pour l annuler
     def repondre_apres_clic_souris(self, evenement: Event):

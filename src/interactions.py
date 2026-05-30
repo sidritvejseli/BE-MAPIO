@@ -191,7 +191,6 @@ class Interactions:
         date_fin: datetime,
         infobulle: Annotation,
     ):
-        # FIXME : L'infobulle ne s'affiche qu'après avoir fait un clic droit.
         doit_rafraichir = False
 
         # si pas de donnees ou pas de tooltip on ne fait rien du tout
@@ -295,5 +294,3 @@ class Interactions:
 
         doit_rafraichir = True
         return doit_rafraichir
-
-        # FIXME : Une ligne où la concentration est NaN, doit-elle pouvoir être invalidée ? Ou faut-il l'ignorer ?

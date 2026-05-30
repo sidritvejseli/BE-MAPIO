@@ -160,16 +160,14 @@ class Donnees:
 
     def soustraire_donnees(self, donnees_a_soustraire: Donnees) -> Donnees:
         donnees_soustraites = copy.deepcopy(self)
-        # FIXME : Par souci d'optimisation, la copie complète est-elle nécessaire ?
-
+        # La copie complète est nécessaire ici car on modifie les valeurs du DataFrame.
         donnees_soustraites.obtenir_dataframe().loc[donnees_a_soustraire.obtenir_dataframe().index] = pd.NA
 
         return donnees_soustraites
 
     def completer_valeurs_manquantes_jour(self, date_debut: datetime, date_fin: datetime) -> Donnees:
         jour_et_valeurs_manquantes = copy.deepcopy(self)
-        # FIXME : Par souci d'optimisation, la copie complète est-elle nécessaire ?
-
+        # La copie complète est nécessaire ici car on modifie les valeurs du DataFrame.
         plage = pd.date_range(start=date_debut, end=date_fin, freq="5min")
 
         jour_et_valeurs_manquantes.dataframe = jour_et_valeurs_manquantes.dataframe.reindex(plage)

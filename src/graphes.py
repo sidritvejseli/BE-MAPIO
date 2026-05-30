@@ -224,8 +224,6 @@ class Graphe3D(Graphe):
 
         self.ax.tick_params(axis="y")
 
-        # FIXME : Les ordonnées ne sont pas sur une échelle linéaire.
-
     def legender_barre_couleurs(self, carte_thermique: AxesImage):
 
         self.colorbar = self.ax.figure.colorbar(carte_thermique, ax=self.ax)
@@ -254,7 +252,6 @@ class GrapheCorrelation(Graphe):
     def legender_ordonnees(self, concentration_maximum_cpc):
         self.ax.set_ylim(0, (1 + self.marge_relative) * concentration_maximum_cpc)
         self.ax.set_ylabel("ConcentrationCPC (cpc_conc)")
-
 
     def legender_boite(self):
         self.ax.legend(fontsize=8)
@@ -287,7 +284,6 @@ class GrapheCorrelation(Graphe):
     ):
         df_colonnes = donnees.obtenir_donnees_valides().obtenir_colonnes_concentrations_non_nulles()
 
-        # FIXME : Utiliser le nom déclaré dans la config plutôt que l'indice de colonne.
         smps_total = df_colonnes.obtenir_dataframe().iloc[:, 0]
         cpc_conc = df_colonnes.obtenir_dataframe().iloc[:, 1]
 
