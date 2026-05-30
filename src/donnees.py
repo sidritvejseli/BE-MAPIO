@@ -7,7 +7,7 @@ import os
 import pandas as pd
 
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from pandas import DataFrame, Index
 from typing import TypeAlias
 
@@ -219,6 +219,9 @@ class Donnees:
 
     def obtenir_minuit_premiere_date(self) -> datetime:
         return self.obtenir_minuit_date(self.obtenir_premiere_date())
+
+    def obtenir_minuit_derniere_date(self) -> datetime:
+        return self.obtenir_minuit_date(self.obtenir_derniere_date() + timedelta(days=1))
 
     def obtenir_noms_colonnes(self) -> Index:
         return self.dataframe.columns
