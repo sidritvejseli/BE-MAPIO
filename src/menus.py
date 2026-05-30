@@ -179,6 +179,3 @@ class Onglet:
             toile.get_tk_widget().pack(fill="both", expand=True)
 
             self.toiles.append(toile)
-
-
-# FIXME : Corriger l'affichage des graphes qui est coupé sur les bords sur Mac.

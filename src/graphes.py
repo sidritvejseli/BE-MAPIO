@@ -287,11 +287,13 @@ class GrapheCorrelation(Graphe):
         smps_total = df_colonnes.obtenir_dataframe().iloc[:, 0]
         cpc_conc = df_colonnes.obtenir_dataframe().iloc[:, 1]
 
-        xy = np.vstack([cpc_conc, smps_total])
+        if len(smps_total) > 2:
+            xy = np.vstack([cpc_conc, smps_total])
+            # couleurs qui changent avec si la densité de points est elevée
+            z = gaussian_kde(xy)(xy)
 
-        # couleurs qui changent avec si la densité de points est elevée
-        z = gaussian_kde(xy)(xy)
-        # FIXME : Si le graphe contient un unique point valide, la corrélation imprime une erreur.
+        else:
+            z = "C0"
 
         self.ax.scatter(
             smps_total,
