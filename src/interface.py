@@ -600,7 +600,6 @@ class Interface:
     def mode_plage(self, mode: str):
         # aucun rectangle dessiner on infore l'utilisateur
 
-        # FIXME : Si on sélectionne la marge d'un jour, alors les points du jour précédent/suivant sont sélectionnés.
         if not self.interactions.rectangle_actif:
             messagebox.showinfo(
                 "Info",
@@ -610,9 +609,9 @@ class Interface:
 
         # selon le mode  on supprime ou restaure
         if mode is Action.SUPPRIMER:
-            rafraichir = self.interactions.supprimer_plage_rectangle(self.donnees)
+            rafraichir = self.interactions.supprimer_plage_rectangle(self.donnees, self.date_debut, self.date_fin)
         elif mode is Action.RESTAURER:
-            rafraichir = self.interactions.restaurer_plage_rectangle(self.donnees)
+            rafraichir = self.interactions.restaurer_plage_rectangle(self.donnees, self.date_debut, self.date_fin)
 
         # si des points modifier on redessine le graphe
         if rafraichir:

@@ -80,7 +80,7 @@ class Interactions:
 
             self.rectangle_selector.set_active(True)  # reactive le widget pour pouvoir dessiner un nouveau rectangle
 
-    def mode_rectangle(self, donnees: Donnees, mode: str):
+    def mode_rectangle(self, donnees: Donnees, mode: Action, date_debut: datetime, date_fin: datetime):
         # Si aucun rectangle dessine, on ne fait rien
         if not self.rectangle_actif:
             self.logger.info(f"L'action est impossible : aucun rectangle sélectionné.")
@@ -88,8 +88,12 @@ class Interactions:
 
         # conversion des cordonnees x en data
         # replace(tzinfo=None) pour pas que pandas plante (fuseau  horraire pas attendu)
-        date_debut = mdates.num2date(self.rect_x1).replace(tzinfo=None)
-        date_fin = mdates.num2date(self.rect_x2).replace(tzinfo=None)
+        x_min = mdates.num2date(self.rect_x1).replace(tzinfo=None)
+        x_max = mdates.num2date(self.rect_x2).replace(tzinfo=None)
+
+        date_debut_selection = max(date_debut, min(x_min, date_fin))
+        date_fin_selection = max(date_debut, min(x_max, date_fin))
+
         y_min = self.rect_y1
         y_max = self.rect_y2
 
@@ -101,7 +105,7 @@ class Interactions:
 
         # on filtre les points qui sont dans le rectangle
         masque = (
-            source.obtenir_dates(date_debut, date_fin)
+            source.obtenir_dates(date_debut_selection, date_fin_selection)
             .obtenir_concentration_smps_intervalle(y_min, y_max)
             .obtenir_colonne_concentration_smps_courante_non_nulle()
             .obtenir_colonne_dates()
@@ -123,12 +127,12 @@ class Interactions:
         return True
 
     # Invalide tous les points valides contenus dans le rectangle def supprimer_plage_rectangle(self, donnees: Donnees) -> bool:
-    def supprimer_plage_rectangle(self, donnees: Donnees):
-        return self.mode_rectangle(donnees, Action.SUPPRIMER)
+    def supprimer_plage_rectangle(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
+        return self.mode_rectangle(donnees, Action.SUPPRIMER, date_debut, date_fin)
 
     # on cherche les point invalide =1 et on les remet valides  =0
-    def restaurer_plage_rectangle(self, donnees: Donnees):
-        return self.mode_rectangle(donnees, Action.RESTAURER)
+    def restaurer_plage_rectangle(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
+        return self.mode_rectangle(donnees, Action.RESTAURER, date_debut, date_fin)
 
     def zoomer_rectangle(self, ax_2d):
 
