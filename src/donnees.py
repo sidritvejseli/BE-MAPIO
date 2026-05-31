@@ -173,11 +173,14 @@ class Donnees:
 
         return jour_et_valeurs_manquantes
 
-    def charger_fichier_csv(self, chemin_absolu_chargement) -> None:
+    def charger_fichier_csv(self, chemin_absolu_chargement) -> bool:
         self.chemin_absolu = chemin_absolu_chargement
         self.nom_fichier = os.path.basename(self.chemin_absolu)
 
-        self.dataframe = pd.read_csv(self.chemin_absolu, parse_dates=["datetime"], index_col="datetime")
+        try:
+            self.dataframe = pd.read_csv(self.chemin_absolu, parse_dates=["datetime"], index_col="datetime")
+        except:
+            return False
 
         self.convertir_donnees_en_float()
 
@@ -187,6 +190,8 @@ class Donnees:
         self.dataframe = self.supprimer_lignes_polluees().dataframe
 
         self.logger.info(f"Fichier {self.nom_fichier} chargé.")
+
+        return True
 
     def fermer_fichier_csv(self) -> None:
         self.logger.info(f"Fichier {self.nom_fichier} fermé.")

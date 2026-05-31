@@ -308,23 +308,18 @@ class Interface:
             return
 
         # Si un fichier est déjà chargé, on demande confirmation avant de le remplacer
-        if not self.donnees.est_vide():
-            if not messagebox.askyesno(
-                "Confirmer", "Un fichier est déjà chargé. Voulez-vous le fermer et charger un nouveau fichier ?"
-            ):
-                return
-            self.donnees.fermer_fichier_csv()
-            self.date_debut = None
-            self.date_fin = None
-            self.teneur_maximum = None
-            self.concentrations_maximum = {
-                self.configuration_utilisateur.drapeau_smps: None,
-                self.configuration_utilisateur.drapeau_cpc: None,
-            }
-            self.xlim_original = None
-            self.ylim_original = None
+        if not self.donnees.est_vide() and not messagebox.askyesno(
+            "Confirmer", "Un fichier est déjà chargé. Voulez-vous le fermer et charger un nouveau fichier ?"
+        ):
+            return
 
-        self.donnees.charger_fichier_csv(chemin_absolu_chargement)
+        self.remettre_variables_par_defaut()
+
+        succes = self.donnees.charger_fichier_csv(chemin_absolu_chargement)
+
+        if not succes:
+            messagebox.showwarning("Attention", "Fichier au mauvais format.")
+            return
 
         self.teneur_maximum = self.donnees.obtenir_particules().obtenir_valeur_maximum()
 
@@ -396,6 +391,9 @@ class Interface:
         if not messagebox.askyesno("Confirmer", "Fermer sans enregistrer ?"):
             return
 
+        self.remettre_variables_par_defaut()
+
+    def remettre_variables_par_defaut(self):
         self.donnees.fermer_fichier_csv()
         self.date_minimum = None
         self.date_debut = None
@@ -414,7 +412,7 @@ class Interface:
         self.ylim_original = None
         self.interactions.rectangle_selector.set_active(False)  # pas de fichier pas de selction de rectangle
 
-        self.actualiser_graphes_onglet_actif()
+        self.initialiser_graphes_onglets()
 
         self.mettre_a_jour_historique()
 
