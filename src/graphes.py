@@ -2,7 +2,6 @@ import logging
 from matplotlib.colors import LogNorm, Normalize
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 import matplotlib.dates as mdates
 import matplotlib.ticker as mticker

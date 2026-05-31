@@ -9,7 +9,6 @@ import pandas as pd
 
 from datetime import datetime, timedelta
 from pandas import DataFrame, Index
-from typing import TypeAlias
 
 
 from historique import Historique, Action

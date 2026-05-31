@@ -32,7 +32,8 @@ class Interactions:
         self.rect_x2 = None
         self.rect_y1 = None
         self.rect_y2 = None
-        self.rectangle_actif = False  # True = un rectangle est dessiné et prêt
+        self.est_en_mouvement_rectangle = False  # True = un rectangle est dessiné et prêt
+        self.est_valide_rectangle = False  # True = un rectangle est dessiné et prêt
 
     def initialiser_rectangle_selector(self, ax_2d):  #: Axes
         self.rectangle_selector = RectangleSelector(
@@ -58,12 +59,12 @@ class Interactions:
 
     # utile pour apres relacher (stock les infos)
     def enregistrement_rectangle(self, clique, relache):
-
         self.rect_x1 = min(clique.xdata, relache.xdata)
         self.rect_x2 = max(clique.xdata, relache.xdata)
         self.rect_y1 = min(clique.ydata, relache.ydata)
         self.rect_y2 = max(clique.ydata, relache.ydata)
-        self.rectangle_actif = True
+        self.est_en_mouvement_rectangle = False
+        self.est_valide_rectangle = True
         # self.logger.info("Rectangle sélectionné.")
 
     # remet tout a zero
@@ -72,7 +73,8 @@ class Interactions:
         self.rect_x1 = self.rect_x2 = None
         self.rect_y1 = self.rect_y2 = None
 
-        self.rectangle_actif = False  # aucun rect nest dessiner pour l'instant
+        self.est_en_mouvement_rectangle = False  # aucun rect nest dessiner pour l'instant
+        self.est_valide_rectangle = False
 
         if self.rectangle_selector is not None:  # verif si rectangle selector existe avant de le manipuler
             # efface le dessin du rectangle sur le graphe
@@ -82,7 +84,7 @@ class Interactions:
 
     def mode_rectangle(self, donnees: Donnees, mode: Action, date_debut: datetime, date_fin: datetime):
         # Si aucun rectangle dessine, on ne fait rien
-        if not self.rectangle_actif:
+        if not self.est_valide_rectangle:
             self.logger.info(f"L'action est impossible : aucun rectangle sélectionné.")
             return False
 
@@ -137,7 +139,7 @@ class Interactions:
     def zoomer_rectangle(self, ax_2d):
 
         # si pas de rectangle , on fait rien
-        if not self.rectangle_actif:
+        if not self.est_valide_rectangle:
             return False
 
         ax_2d.set_xlim(self.rect_x1, self.rect_x2)
@@ -248,6 +250,8 @@ class Interactions:
         date_fin: datetime,
     ):
         doit_rafraichir = False
+
+        self.est_en_mouvement_rectangle = True
 
         # Clic hors du graphe : on ignore.
         if evenement.inaxes != ax_2d or evenement.xdata is None:
