@@ -213,7 +213,7 @@ class Interface:
             None,
             ("Facteur", self.demander_facteur),
             None,
-            ("Actualiser", self.actualiser_onglet_actif),
+            ("Recalculer graphes", self.initialiser_graphes_onglets),
         ]
 
         self.barre_outils_validation = BarreOutils(self.application, self.description_barre_outils_validation)
@@ -270,7 +270,7 @@ class Interface:
         # Gestion de l'actualisation de l'onglet actif uniquement.
 
         self.barre_onglets.barre_onglets.bind(
-            "<<NotebookTabChanged>>", lambda evenement: self.actualiser_onglet_actif()
+            "<<NotebookTabChanged>>", lambda evenement: self.actualiser_graphes_onglet_actif()
         )
 
         # Raccourcis clavier.
@@ -346,7 +346,7 @@ class Interface:
         self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
         self.date_maximum = self.donnees.obtenir_minuit_derniere_date()
 
-        self.actualiser_onglet_actif()
+        self.initialiser_graphes_onglets()
 
         self.mettre_a_jour_etiquette_barre_outils_jour()
         self.mettre_a_jour_etiquette_barre_outils_validation()
@@ -414,7 +414,7 @@ class Interface:
         self.ylim_original = None
         self.interactions.rectangle_selector.set_active(False)  # pas de fichier pas de selction de rectangle
 
-        self.actualiser_onglet_actif()
+        self.actualiser_graphes_onglet_actif()
 
         self.mettre_a_jour_historique()
 
@@ -450,7 +450,7 @@ class Interface:
         elif action is Action.RESTAURER:
             self.donnees.restaurer_dates(selection)
 
-        self.actualiser_onglet_actif()
+        self.actualiser_graphes_onglet_actif()
 
         self.mettre_a_jour_historique()
 
@@ -463,7 +463,7 @@ class Interface:
         self.date_debut = self.donnees.obtenir_premiere_date()
         self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
 
-        self.actualiser_onglet_actif()
+        self.actualiser_graphes_onglet_actif()
 
         self.mettre_a_jour_etiquette_barre_outils_jour()
 
@@ -474,7 +474,7 @@ class Interface:
         self.date_debut = self.temps_suivant.ajouter_pas_heures(self.date_debut)
         self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
 
-        self.actualiser_onglet_actif()
+        self.actualiser_graphes_onglet_actif()
 
         self.mettre_a_jour_etiquette_barre_outils_jour()
 
@@ -485,7 +485,7 @@ class Interface:
         self.date_debut = self.temps_suivant.soustraire_pas_heures(self.date_debut)
         self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
 
-        self.actualiser_onglet_actif()
+        self.actualiser_graphes_onglet_actif()
 
         self.mettre_a_jour_etiquette_barre_outils_jour()
 
@@ -496,7 +496,7 @@ class Interface:
         self.date_debut = self.donnees.obtenir_derniere_date()
         self.date_fin = self.temps_graphe.ajouter_pas_heures_moins_une_seconde(self.date_debut)
 
-        self.actualiser_onglet_actif()
+        self.actualiser_graphes_onglet_actif()
 
         self.mettre_a_jour_etiquette_barre_outils_jour()
 
@@ -557,7 +557,7 @@ class Interface:
 
         # si des points modifier on redessine le graphe
         if rafraichir:
-            self.actualiser_onglet_actif()
+            self.actualiser_graphes_onglet_actif()
             self.mettre_a_jour_historique()
 
     def supprimer_plage(self):
@@ -568,12 +568,12 @@ class Interface:
 
     def annuler(self):
         self.donnees.annuler_action()
-        self.actualiser_onglet_actif()
+        self.actualiser_graphes_onglet_actif()
         self.mettre_a_jour_historique()
 
     def retablir(self):
         self.donnees.retablir_action()
-        self.actualiser_onglet_actif()
+        self.actualiser_graphes_onglet_actif()
         self.mettre_a_jour_historique()
 
     def demander_facteur(self):
@@ -586,9 +586,30 @@ class Interface:
         self.concentrations_maximum[self.configuration_utilisateur.drapeau_smps] *= facteur
         self.concentrations_maximum[self.configuration_utilisateur.drapeau_cpc] *= facteur
 
-        self.actualiser_onglet_actif()
+        self.actualiser_graphes_onglet_actif()
 
-    def actualiser_onglet_actif(self):
+    def initialiser_graphes_onglets(self):
+        self.tracer_graphe_2d(
+            self.graphe_2d_smps, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_smps
+        )
+        self.tracer_graphe_2d(
+            self.graphe_2d_cpc, self.date_debut, self.date_fin, self.configuration_utilisateur.drapeau_cpc
+        )
+
+        self.tracer_graphe_3d(self.graphe_3d, self.date_debut, self.date_fin)
+
+        self.tracer_graphe_correlation(self.graphe_correlation_onglet_correlation)
+
+        self.tracer_graphe_2d(
+            self.graphe_2d_recapitulatif,
+            self.date_minimum,
+            self.date_maximum,
+            self.configuration_utilisateur.drapeau_smps,
+        )
+        self.tracer_graphe_3d(self.graphe_3d_recapitulatif, self.date_minimum, self.date_maximum)
+        self.tracer_graphe_correlation(self.graphe_correlation_recapitulatif)
+
+    def actualiser_graphes_onglet_actif(self):
         indice_onglet_actif = self.barre_onglets.barre_onglets.index("current")
         nom_onglet = self.description_barre_onglets[indice_onglet_actif][0]
 
@@ -603,19 +624,6 @@ class Interface:
 
             case "Graphe 3D":
                 self.tracer_graphe_3d(self.graphe_3d, self.date_debut, self.date_fin)
-
-            case "Corrélation":
-                self.tracer_graphe_correlation(self.graphe_correlation_onglet_correlation)
-
-            case "Récapitulatif":
-                self.tracer_graphe_2d(
-                    self.graphe_2d_recapitulatif,
-                    self.date_minimum,
-                    self.date_maximum,
-                    self.configuration_utilisateur.drapeau_smps,
-                )
-                self.tracer_graphe_3d(self.graphe_3d_recapitulatif, self.date_minimum, self.date_maximum)
-                self.tracer_graphe_correlation(self.graphe_correlation_recapitulatif)
 
     def mettre_a_jour_etiquette_barre_outils_validation(self):
         if self.donnees.est_vide() or self.date_debut is None:
@@ -738,7 +746,7 @@ class Interface:
         )
 
         if doit_rafraichir:
-            self.actualiser_onglet_actif()
+            self.actualiser_graphes_onglet_actif()
             self.mettre_a_jour_historique()
 
     # Raccourcis clavier.
