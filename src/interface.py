@@ -6,23 +6,18 @@ from datetime import datetime
 from enum import Enum
 from matplotlib.backend_bases import Event
 from matplotlib.text import Annotation
+from pathlib import Path
 from tkinter import filedialog, messagebox
 from tkinter.simpledialog import askfloat
-from pathlib import Path
 
+
+from configuration import ConfigurationUtilisateur, ConfigurationProgramme
 from donnees import Donnees
 from graphes import Graphe2D, GrapheSMPS, GrapheCPC, Graphe3D, GrapheCorrelation
 from historique import Action
 from interactions import Interactions
-from configuration import ConfigurationUtilisateur, ConfigurationProgramme
-from menus import (
-    DescriptionBarreMenus,
-    DescriptionBarreOutils,
-    DescriptionBarreOnglets,
-    BarreMenus,
-    BarreOutils,
-    BarreOnglets,
-)
+from menus import DescriptionBarreMenus, DescriptionBarreOutils, DescriptionBarreOnglets
+from menus import BarreMenus, BarreOutils, BarreOnglets
 from temps import Temps
 
 
@@ -33,7 +28,9 @@ class Interface:
 
         self.application = tk.Tk()
 
+        #
         # Importation de la configuration.
+        #
 
         self.chemin_repertoire_parent = Path(__file__).resolve().parent.parent
 
@@ -44,12 +41,16 @@ class Interface:
             self.chemin_repertoire_parent / "configuration_programme.yaml"
         )
 
+        #
         # Gestion de la temporalité.
+        #
 
         self.temps_graphe = Temps(self.configuration_programme.pas_heures_graphe)
         self.temps_suivant = Temps(self.configuration_programme.pas_heures_suivant)
 
+        #
         # Gestion des données.
+        #
 
         self.donnees = Donnees(
             self.configuration_utilisateur.drapeau_smps,
@@ -59,7 +60,10 @@ class Interface:
             self.configuration_utilisateur.drapeau_pollution,
         )
 
-        # Graphe 2D.
+        #
+        # Graphes 2D.
+        #
+
         self.graphe_2d_smps: GrapheSMPS = GrapheSMPS()
         self.graphe_2d_cpc: GrapheCPC = GrapheCPC()
         self.graphe_2d_recapitulatif: GrapheSMPS = GrapheSMPS()
@@ -72,28 +76,35 @@ class Interface:
         self.xlim_original = None
         self.ylim_original = None
 
-        # Graphe 3D
+        #
+        # Graphes 3D
+        #
 
         self.graphe_3d: Graphe3D = Graphe3D(self.configuration_programme.echelle_logarithmique_taille_particules)
         self.graphe_3d_recapitulatif: Graphe3D = Graphe3D(
             self.configuration_programme.echelle_logarithmique_taille_particules
         )
-        # Pour garder une échelle constante de couleur du graphe 3D, on garde en mémoire la valeur maximum.
         self.teneur_maximum = None
+        # Remarque : Pour garder une échelle constante de couleur du graphe 3D lorsque l'on change de jour,
+        # on garde en mémoire la valeur maximum.
 
-        # Graphe de corrélation.
+        #
+        # Graphes de corrélation.
+        #
 
         self.graphe_correlation_onglet_correlation: GrapheCorrelation = GrapheCorrelation()
         self.graphe_correlation_recapitulatif: GrapheCorrelation = GrapheCorrelation()
 
-        # Pour garder une échelle constante du graphe de corrélation,
-        # on garde en mémoire la valeur maximum des abscisses et des ordonnées.
         self.concentrations_maximum: dict[str, float] = {
             self.configuration_utilisateur.drapeau_smps: None,
             self.configuration_utilisateur.drapeau_cpc: None,
         }
+        # Remarque : Pour garder une échelle constante du graphe de corrélation,
+        # on garde en mémoire la valeur maximum des abscisses et des ordonnées.
 
+        #
         # Construction de l'application.
+        #
 
         self.application.title(self.configuration_programme.titre_fenetre)
         self.application.geometry(
@@ -101,7 +112,9 @@ class Interface:
         )
         self.application.resizable(True, True)
 
+        #
         # Barre des menus déroulants.
+        #
 
         self.description_barre_menus: DescriptionBarreMenus = [
             (
@@ -185,7 +198,9 @@ class Interface:
         self.barre_menus = BarreMenus(self.application, self.description_barre_menus)
         self.barre_menus.construire_barre_menus()
 
+        #
         # Barre des outils du jour.
+        #
 
         self.description_barre_outils_jour: DescriptionBarreOutils = [
             ("|◀ Premier", self.sauter_au_premier_jour),
@@ -202,7 +217,9 @@ class Interface:
         self.barre_outils_jour.construire_etiquette()
         self.mettre_a_jour_etiquette_barre_outils_jour()
 
+        #
         # Barre des outils de validation.
+        #
 
         self.description_barre_outils_validation: DescriptionBarreOutils = [
             ("Supprimer plage", self.supprimer_plage),
@@ -221,7 +238,9 @@ class Interface:
         self.barre_outils_validation.construire_etiquette()
         self.mettre_a_jour_etiquette_barre_outils_validation()
 
+        #
         # Barre des onglets.
+        #
 
         self.description_barre_onglets: DescriptionBarreOnglets = [
             (
@@ -249,14 +268,21 @@ class Interface:
         self.barre_onglets: BarreOnglets = BarreOnglets(self.application, self.description_barre_onglets)
         self.barre_onglets.construire_barre_onglets()
 
+        #
         # Onglets contenus dans la barre des onglets.
+        #
 
         self.barre_onglets.construire_onglets()
 
+        #
         # Initialisation de l'onglet historique.
+        #
+
         self.mettre_a_jour_historique()
 
+        #
         # Gestion des interactions avec les graphes.
+        #
 
         self.interactions = Interactions()
 
@@ -267,37 +293,55 @@ class Interface:
         )
         self.barre_onglets.obtenir_toile(self.graphe_2d_smps).mpl_connect("motion_notify_event", self.info_point)
 
+        #
         # Gestion de l'actualisation de l'onglet actif uniquement.
+        #
 
         self.barre_onglets.barre_onglets.bind(
             "<<NotebookTabChanged>>", lambda evenement: self.actualiser_graphes_onglet_actif()
         )
+        # Remarque : Par souci d'optimisation, on n'actualise que l'onglet actif.
+        # Ainsi, l'actualisation est appellée dès qu'on change d'onglet actif.
 
+        #
         # Raccourcis clavier.
+        #
 
-        # Le lien entre le raccourci clavier et sa fonction appelée par Tkinter est sensible à la casse de la touche.
         self.description_raccourcis_clavier = [
             ("<Control-z>", lambda evenement: self.annuler()),
             ("<Control-Z>", lambda evenement: self.annuler()),
             ("<Control-Shift-z>", lambda evenement: self.retablir()),
             ("<Control-Shift-Z>", lambda evenement: self.retablir()),
         ]
+        # Remarque : Le lien entre le raccourci clavier et sa fonction appelée par Tkinter
+        # est sensible à la casse de la touche.
+        # Il faut créer un raccourci pour la touche minuscule et majuscule.
 
         self.construire_raccourcis_clavier()
 
+    #
+    #
     # Main.
+    #
+    #
 
     def construire_interface(self):
         self.application.mainloop()
 
+    #
+    #
     # Barre des menus déroulants.
+    #
+    #
 
     def charger_fichier(self):
-        # chemin_relatif_initial = self.configuration_utilisateur.chemin_donnees
+        chemin_relatif_initial = self.configuration_utilisateur.chemin_chargement
 
-        # Chemin absolu vers le dossier de données, calculé par rapport à l'emplacement
-        # de main.py pour éviter tout bug si le programme est lancé depuis un autre répertoire.
-        chemin_relatif_initial = self.chemin_repertoire_parent / self.configuration_utilisateur.chemin_chargement
+        # Remarque : Le chemin relatif initial est calculé par rapport
+        # au répertoire dans lequel se situe le terminal lors de l'exécution.
+        #
+        # Pour obtenir le chemin absolu, il suffit de placer avant le chemin relatif :
+        # self.chemin_repertoire_parent / ...
 
         chemin_absolu_chargement = filedialog.askopenfilename(
             initialdir=chemin_relatif_initial,
@@ -307,7 +351,7 @@ class Interface:
         if not chemin_absolu_chargement:
             return
 
-        # Si un fichier est déjà chargé, on demande confirmation avant de le remplacer
+        # Si un fichier est déjà chargé, on demande confirmation avant de le remplacer.
         if not self.donnees.est_vide() and not messagebox.askyesno(
             "Confirmer", "Un fichier est déjà chargé. Voulez-vous le fermer et charger un nouveau fichier ?"
         ):
@@ -315,10 +359,15 @@ class Interface:
 
         self.remettre_variables_par_defaut()
 
-        succes = self.donnees.charger_fichier_csv(chemin_absolu_chargement)
+        est_succes = self.donnees.charger_fichier_csv(chemin_absolu_chargement)
 
-        if not succes:
+        if not est_succes:
             messagebox.showwarning("Attention", "Fichier au mauvais format.")
+            return
+
+        if self.donnees.est_vide():
+            messagebox.showwarning("Attention", "Le fichier ne contient aucune donnée.")
+            self.remettre_variables_par_defaut()
             return
 
         self.teneur_maximum = self.donnees.obtenir_particules().obtenir_valeur_maximum()
@@ -331,10 +380,8 @@ class Interface:
             self.donnees.obtenir_colonne_concentration_cpc().obtenir_valeur_maximum()
         )
 
-        if self.donnees.est_vide():
-            return
-
-        self.interactions.rectangle_selector.set_active(True)  # active le rectangle quand un fichier charger
+        # Activation du rectangle quand un fichier est chargé.
+        self.interactions.rectangle_selector.set_active(True)
 
         self.date_minimum = self.donnees.obtenir_minuit_premiere_date()
         self.date_debut = self.donnees.obtenir_minuit_premiere_date()
@@ -346,7 +393,11 @@ class Interface:
         self.mettre_a_jour_etiquette_barre_outils_jour()
         self.mettre_a_jour_etiquette_barre_outils_validation()
 
+    #
+    #
     # Barre des menus déroulants.
+    #
+    #
 
     class MethodeEnregistrement(Enum):
         SAUVEGARDER_COURANT = (1, "Sauvegarder le projet")
@@ -357,15 +408,14 @@ class Interface:
             self._value_ = value
             self.etiquette = etiquette
 
-    def enregistrer_fichier(self, methode_enregistrement: MethodeEnregistrement, chemin_par_defaut: str):
+    def enregistrer_fichier(self, methode_enregistrement: MethodeEnregistrement, chemin_relatif_initial: str):
         if self.donnees.est_vide():
             messagebox.showwarning("Attention", "Aucune donnée à sauvegarder.")
             return
 
-        # sauvegarde du fichier filtre (lignes valides uniquement)
         chemin_absolu_sauvegarde = filedialog.asksaveasfilename(
             title=methode_enregistrement.etiquette,
-            initialdir=chemin_par_defaut,
+            initialdir=chemin_relatif_initial,
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv")],
         )
@@ -382,7 +432,7 @@ class Interface:
         elif methode_enregistrement is self.MethodeEnregistrement.EXPORTER_DRAPEAUX:
             self.donnees.exporter_fichier_drapeaux_csv(chemin_absolu_sauvegarde)
 
-        # messagebox.showinfo("Succès", f"{methode_enregistrement.etiquette} :\n{chemin_absolu_sauvegarde}")
+        messagebox.showinfo("Succès", f"{methode_enregistrement.etiquette} :\n{chemin_absolu_sauvegarde}")
 
     def fermer_fichier(self):
         if self.donnees.est_vide():
@@ -395,22 +445,28 @@ class Interface:
 
     def remettre_variables_par_defaut(self):
         self.donnees.fermer_fichier_csv()
+
         self.date_minimum = None
         self.date_debut = None
         self.date_fin = None
         self.date_maximum = None
+
         self.mettre_a_jour_etiquette_barre_outils_jour()
         self.mettre_a_jour_etiquette_barre_outils_validation()
+
         self.teneur_maximum = None
         self.concentrations_maximum: dict[str, float] = {
             self.configuration_utilisateur.drapeau_smps: None,
             self.configuration_utilisateur.drapeau_cpc: None,
         }
+
         self.infobulle = None
 
         self.xlim_original = None
         self.ylim_original = None
-        self.interactions.rectangle_selector.set_active(False)  # pas de fichier pas de selction de rectangle
+
+        # Si pas de fichier ouvert, alors pas de sélection active.
+        self.interactions.rectangle_selector.set_active(False)
 
         self.initialiser_graphes_onglets()
 
@@ -421,7 +477,11 @@ class Interface:
             self.application.quit()
             self.application.destroy()
 
+    #
+    #
     # Actions.
+    #
+    #
 
     class ZoneAction(Enum):
         TOUTES = 1
@@ -452,7 +512,11 @@ class Interface:
 
         self.mettre_a_jour_historique()
 
+    #
+    #
     # Barre des outils du jour.
+    #
+    #
 
     def sauter_au_premier_jour(self):
         if self.donnees.est_vide():
@@ -503,13 +567,12 @@ class Interface:
             messagebox.showinfo("Info", "Aucun rectangle sélectionné.\n Cliquez d'abord sur 'Sélectionner plage' ")
             return
 
-        # Sauvegarde les limites du graphe après le trace(pour dezzommer et avoir le meme graphe quavant)
+        # On sauvegarde les limites du graphe après le premier zoom, afin de pouvoir y revenir quand on dézoome.
         if self.xlim_original is None:
             self.xlim_original = self.graphe_2d_smps.ax.get_xlim()
         if self.ylim_original is None:
             self.ylim_original = self.graphe_2d_smps.ax.get_ylim()
 
-        # delegue le zoome a interaction
         rafraichir = self.interactions.zoomer_rectangle(self.graphe_2d_smps.ax)
 
         if rafraichir:
@@ -519,7 +582,7 @@ class Interface:
         if self.xlim_original is None or self.ylim_original is None:
             return
 
-        # remet les nouvelle limite
+        # On remet en place les anciennes limites du graphe.
         self.graphe_2d_smps.ax.set_xlim(self.xlim_original)
         self.graphe_2d_smps.ax.set_ylim(self.ylim_original)
 
@@ -535,11 +598,13 @@ class Interface:
 
         self.barre_outils_jour.modifier_etiquette(f"Jour affiché : {self.date_debut.strftime("%Y-%m-%d")}")
 
+    #
+    #
     # Barre des outils de validation.
+    #
+    #
 
-    def mode_plage(self, mode: str):
-        # aucun rectangle dessiner on infore l'utilisateur
-
+    def mode_plage(self, mode: Action):
         if not self.interactions.est_valide_rectangle:
             messagebox.showinfo(
                 "Info",
@@ -547,13 +612,12 @@ class Interface:
             )
             return
 
-        # selon le mode  on supprime ou restaure
         if mode is Action.SUPPRIMER:
             rafraichir = self.interactions.supprimer_plage_rectangle(self.donnees, self.date_debut, self.date_fin)
         elif mode is Action.RESTAURER:
             rafraichir = self.interactions.restaurer_plage_rectangle(self.donnees, self.date_debut, self.date_fin)
 
-        # si des points modifier on redessine le graphe
+        # Si des points ont été modifiés, alors il faut retracer le graphe.
         if rafraichir:
             self.actualiser_graphes_onglet_actif()
             self.mettre_a_jour_historique()
@@ -632,7 +696,11 @@ class Interface:
             "Dessinez un rectangle sur le graphe, puis cliquez sur 'Supprimer plage'."
         )
 
+    #
+    #
     # Onglets.
+    #
+    #
 
     def mettre_a_jour_trace_graphe_2d(self, graphe_2d: Graphe2D):
         self.barre_onglets.obtenir_toile(graphe_2d).draw()
@@ -661,7 +729,7 @@ class Interface:
             date_debut,
             date_fin,
             self.concentrations_maximum[nom_colonne_concentration],
-        )  # dessine les points
+        )
 
         self.infobulle = self.graphe_2d_smps.ax.annotate(
             "",
@@ -704,11 +772,15 @@ class Interface:
         historique += self.donnees.historique.obtenir_journal()
         self.barre_onglets.modifier_texte("Historique", historique)
 
+    #
+    #
     # Interactions.
+    #
+    #
 
-    # Bug corrige : rectangledessine + relache sur un point,l'infobulle reste affichée
     def info_point(self, evenement: Event):
-        # quand rectangle actif , priorite
+        # Quand le rectangle de sélection est actif, la priorité est donnée à la sélection.
+        # Sinon, puisque l'infobulle prend du temps à tracer, la sélection perd en fluidité.
         if self.interactions.est_en_mouvement_rectangle:
             return
 
@@ -724,15 +796,14 @@ class Interface:
         if doit_rafraichir:
             self.mettre_a_jour_trace_graphe_2d_differee(self.graphe_2d_smps)
 
-    # Bug corriger : après avoir dessine un rectangle, un clic gauche pour l annuler
     def repondre_apres_clic_souris(self, evenement: Event):
+        # Après avoir dessiné un rectangle, il suffit d'un clic gauche pour le réinitialiser.
         if (
             self.interactions.rectangle_selector is not None
             and self.interactions.est_en_mouvement_rectangle
             and evenement.button == 1
         ):
-            # evenement.button != 3 : le clic droit passe toujours, meme si rectangle dessine
-            self.interactions.reinitialiser_rectangle()  # remettre rectangle_actif a false si clique gauche(1)
+            self.interactions.reinitialiser_rectangle()
             return
 
         doit_rafraichir = self.interactions.repondre_apres_clic_souris(
@@ -747,7 +818,11 @@ class Interface:
             self.actualiser_graphes_onglet_actif()
             self.mettre_a_jour_historique()
 
+    #
+    #
     # Raccourcis clavier.
+    #
+    #
 
     def construire_raccourcis_clavier(self):
         for raccourci, fonction_appelee in self.description_raccourcis_clavier:

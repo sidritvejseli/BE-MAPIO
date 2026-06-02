@@ -1,11 +1,16 @@
 fenetre:
+
   titre_fenetre: "Outil de validation SMPS — MAP-IO"
   largeur_fenetre: 1920
   hauteur_fenetre: 1080
 
+
 temps:
+
   pas_heures_graphe: 24
   pas_heures_suivant: 24
 
+
 graphe3D:
+
   echelle_logarithmique_taille_particules: true

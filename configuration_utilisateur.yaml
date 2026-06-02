@@ -1,11 +1,18 @@
-# Le chemin est relatif au répertoire dans lequel on se place en exécutant le programme.
+# Le chemin relatif initial est calculé par rapport
+# au répertoire dans lequel se situe le terminal lors de l'exécution.
+#
+# Le répertoire choisi doit être au préalable créé, sinon le programme ne pourra pas l'ouvrir.
+
 repertoires:
+
   chemin_chargement: "data/"
   chemin_sauvegarde: "sauvegarde/"
   chemin_export_final: "resultats/final/"
   chemin_export_drapeaux: "resultats/drapeaux/"
 
+
 noms_colonnes:
+
   drapeau_pollution: "pollution_flag"
   drapeau_sauvegarde: "smps_flag"
   drapeau_smps: "smps_concTotal"
