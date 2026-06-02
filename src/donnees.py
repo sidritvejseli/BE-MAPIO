@@ -30,9 +30,7 @@ class Donnees:
         self.nom_colonne_cpc: str = nom_colonne_cpc
 
         self.nom_colonne_drapeau_sauvegarde: str = nom_colonne_drapeau_sauvegarde
-
         self.nom_drapeau_prefixe_particules: str = nom_drapeau_prefixe_particules
-
         self.nom_drapeau_pollution: str = nom_drapeau_pollution
 
         self.initialiser_donnees()
@@ -143,7 +141,9 @@ class Donnees:
         return lignes_non_polluees
 
     def supprimer_donnees_manquantes_colonne_concentration(self, nom_colonne_concentration: str):
-        donnees_supprimees = copy.deepcopy(self)
+        donnees_supprimees = copy.copy(self)
+        # La copie complète est nécessaire ici car on modifie les valeurs du DataFrame.
+        donnees_supprimees.dataframe = donnees_supprimees.dataframe.copy(deep=True)
         donnees_supprimees.dataframe = donnees_supprimees.dataframe.dropna(subset=[nom_colonne_concentration])
 
         return donnees_supprimees
@@ -158,15 +158,17 @@ class Donnees:
         return self.dataframe.max().max()
 
     def soustraire_donnees(self, donnees_a_soustraire: Donnees) -> Donnees:
-        donnees_soustraites = copy.deepcopy(self)
+        donnees_soustraites = copy.copy(self)
         # La copie complète est nécessaire ici car on modifie les valeurs du DataFrame.
+        donnees_soustraites.dataframe = donnees_soustraites.dataframe.copy(deep=True)
         donnees_soustraites.obtenir_dataframe().loc[donnees_a_soustraire.obtenir_dataframe().index] = pd.NA
 
         return donnees_soustraites
 
     def completer_valeurs_manquantes_jour(self, date_debut: datetime, date_fin: datetime) -> Donnees:
-        jour_et_valeurs_manquantes = copy.deepcopy(self)
+        jour_et_valeurs_manquantes = copy.copy(self)
         # La copie complète est nécessaire ici car on modifie les valeurs du DataFrame.
+        jour_et_valeurs_manquantes.dataframe = jour_et_valeurs_manquantes.dataframe.copy(deep=True)
         plage = pd.date_range(start=date_debut, end=date_fin, freq="5min")
 
         jour_et_valeurs_manquantes.dataframe = jour_et_valeurs_manquantes.dataframe.reindex(plage)
@@ -355,8 +357,10 @@ class Donnees:
     # Le DataFrame du champ donnees est donc partagé par ces deux objets.
     # Si on modifie les valeurs de ce DataFrame dans un des deux objets,
     # alors on modifie les valeurs de l'autre objet également.
+    #
     # C'est le comportement souhaité par souci d'optimisation.
-    # Si l'on souhaite copier réellement l'objet, remplacer copy.copy() par copy.deepcopy().
+    # Si l'on souhaite copier réellement l'objet, il faut copier le dataframe à l'aide de :
+    # ... .copy(deep=True)
 
     def est_valide_date(self, date: datetime) -> bool:
         return self.dataframe.loc[date, self.nom_colonne_drapeau_sauvegarde] == 0
@@ -418,7 +422,9 @@ class Donnees:
         self.dataframe[[self.nom_colonne_smps, self.nom_colonne_cpc]] *= facteur
 
     def convertir_titre_particules_en_float(self) -> Donnees:
-        titre_particules_en_float = copy.deepcopy(self)
+        titre_particules_en_float = copy.copy(self)
+        # La copie complète est nécessaire ici car on modifie les valeurs du DataFrame.
+        titre_particules_en_float.dataframe = titre_particules_en_float.dataframe.copy(deep=True)
         titre_particules_en_float.dataframe.columns = [
             float(colonne.split("_")[2]) for colonne in self.dataframe.columns
         ]
