@@ -7,10 +7,10 @@ fenetre:
 
 temps:
 
-  pas_heures_graphe: 24
-  pas_heures_suivant: 24
+  pas_heures_graphe: 24 # Contrôle le nombre d'heures contenues dans une unique fenêtre.
+  pas_heures_suivant: 24 # Contrôle le nombre d'heures duquel la fenêtre se décale quand on clique sur suivant ou précédent.
 
 
 graphe3D:
 
-  echelle_logarithmique_taille_particules: true
+  echelle_logarithmique_taille_particules: true # Contrôle si les couleurs du Graphe3D sont affichées linéairement ou logarithmiquement.

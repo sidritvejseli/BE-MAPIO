@@ -139,12 +139,10 @@ class Onglet:
     def __init__(self):
         # Un Widget peut être, entre autres, un Frame ou un Text.
 
-        # Un widget conteneur...
-        self.conteneur: Widget = None
-        # ...le widget contenu dans cet onglet...
-        self.widget: Widget = None
-        # ...et potentiellement la ou les deux toile/s contenue/s dans le widget.
+        self.conteneur: Widget = None  # Un widget conteneur...
+        self.widget: Widget = None  # ...le widget contenu dans cet onglet...
         self.toiles: list[FigureCanvasTkAgg] = [None, None]
+        # ...et potentiellement la ou les deux toile/s contenue/s dans le widget.
 
     def construire_onglet_texte(self):
         self.widget = tk.Text(self.conteneur, padx=self.taille_marge_largeur, pady=self.taille_marge_hauteur)

@@ -1,16 +1,15 @@
 import logging
-from matplotlib.colors import LogNorm, Normalize
-import matplotlib.pyplot as plt
-import numpy as np
-
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+import numpy as np
 
 
 from datetime import datetime, timedelta
+from matplotlib.colors import LogNorm, Normalize
 from matplotlib.image import AxesImage
-from sklearn.linear_model import LinearRegression
 from scipy.stats import gaussian_kde
+from sklearn.linear_model import LinearRegression
 
 
 from donnees import Donnees

@@ -20,31 +20,34 @@ class Interactions:
     def __init__(self):
         self.logger = logging.getLogger()
 
-        # distances calculees entre chaque point et la souris
         self.distances_point_souris: DataFrame = None
 
-        # points visibles a l'ecran
-        self.points_valides: Donnees = None
+        self.points_valides: Donnees = None  # Points visibles à l'écran.
 
-        # RectangleSelector pour la sélection de plage
-        self.rectangle_selector = None
+        self.rectangle_selector: RectangleSelector = None
         self.rect_x1 = None
         self.rect_x2 = None
         self.rect_y1 = None
         self.rect_y2 = None
-        self.est_en_mouvement_rectangle = False  # True = un rectangle est dessiné et prêt
-        self.est_valide_rectangle = False  # True = un rectangle est dessiné et prêt
+        self.est_en_mouvement_rectangle = False  # True = un rectangle est en train d'être modifié.
+        self.est_valide_rectangle = False  # True = un rectangle est dessiné et prêt.
 
-    def initialiser_rectangle_selector(self, ax_2d):  #: Axes
+    #
+    #
+    # Rectangle de sélection.
+    #
+    #
+
+    def initialiser_rectangle_selector(self, ax_2d):
         self.rectangle_selector = RectangleSelector(
-            ax_2d,  # graphe ou il dessine
-            self.enregistrement_rectangle,  # quand on relache la souris , il fait ça
-            useblit=True,  # trouver sur internet (redessine que le rectangle pas le graphe)
-            button=[1],  # clic gauche
+            ax_2d,
+            self.enregistrement_rectangle,  # Fonction appelée quand la souris est relâchée.
+            useblit=True,  # On redessine uniquement le rectangle, et pas le graphe.
+            button=[1],  # Clic gauche.
             minspanx=5,
-            minspany=5,  # taille min de laxe x et y
+            minspany=5,  # Taille minimum des axes.
             spancoords="pixels",
-            interactive=True,  # affiche le rectangle pendant le glisser
+            interactive=True,  # Le rectangle est affiché pendant sa modification.
             props=dict(
                 facecolor="red",
                 edgecolor="darkred",
@@ -55,9 +58,9 @@ class Interactions:
         )
         self.rectangle_selector.set_active(
             False
-        )  # on desactive le rectangle pour lactiver seulement qaund le fichier est charger
+        )  # On désactive le rectangle pour l'activer uniquement quand le fichier est chargé.
 
-    # utile pour apres relacher (stock les infos)
+    # Stockage des informations utiles du rectangle.
     def enregistrement_rectangle(self, clique, relache):
         self.rect_x1 = min(clique.xdata, relache.xdata)
         self.rect_x2 = max(clique.xdata, relache.xdata)
@@ -65,31 +68,27 @@ class Interactions:
         self.rect_y2 = max(clique.ydata, relache.ydata)
         self.est_en_mouvement_rectangle = False
         self.est_valide_rectangle = True
-        # self.logger.info("Rectangle sélectionné.")
 
-    # remet tout a zero
+    # Réinitialisation des informations du rectangle.
     def reinitialiser_rectangle(self):
-        # effache les cordonner des 4 coins a none
         self.rect_x1 = self.rect_x2 = None
         self.rect_y1 = self.rect_y2 = None
 
-        self.est_en_mouvement_rectangle = False  # aucun rect nest dessiner pour l'instant
+        self.est_en_mouvement_rectangle = False
         self.est_valide_rectangle = False
 
-        if self.rectangle_selector is not None:  # verif si rectangle selector existe avant de le manipuler
-            # efface le dessin du rectangle sur le graphe
+        if self.rectangle_selector is not None:
             self.rectangle_selector.clear()
-
-            self.rectangle_selector.set_active(True)  # reactive le widget pour pouvoir dessiner un nouveau rectangle
+            self.rectangle_selector.set_active(
+                True
+            )  # On réactive le widget pour pouvoir dessiner un nouveau rectangle.
 
     def mode_rectangle(self, donnees: Donnees, mode: Action, date_debut: datetime, date_fin: datetime):
-        # Si aucun rectangle dessine, on ne fait rien
         if not self.est_valide_rectangle:
             self.logger.info(f"L'action est impossible : aucun rectangle sélectionné.")
             return False
 
-        # conversion des cordonnees x en data
-        # replace(tzinfo=None) pour pas que pandas plante (fuseau  horraire pas attendu)
+        # Conversion des coordonnées en dates.
         x_min = mdates.num2date(self.rect_x1).replace(tzinfo=None)
         x_max = mdates.num2date(self.rect_x2).replace(tzinfo=None)
 
@@ -99,13 +98,12 @@ class Interactions:
         y_min = self.rect_y1
         y_max = self.rect_y2
 
-        # selection du mode
         if mode is Action.SUPPRIMER:
             source = donnees.obtenir_donnees_valides()  # cible point valide
         elif mode is Action.RESTAURER:
             source = donnees.obtenir_donnees_invalides()  # cible point invalide
 
-        # on filtre les points qui sont dans le rectangle
+        # On filtre les points hors rectangle.
         masque = (
             source.obtenir_dates(date_debut_selection, date_fin_selection)
             .obtenir_concentration_smps_intervalle(y_min, y_max)
@@ -113,32 +111,33 @@ class Interactions:
             .obtenir_colonne_dates()
             .obtenir_dataframe()
         )
-        # efface rectangle avant de modif
+
         self.reinitialiser_rectangle()
 
         if masque.empty:
             return False
 
         if mode is Action.SUPPRIMER:
-            # si correspond au masque , on le vire
             donnees.invalider_dates(masque)
+
         elif mode is Action.RESTAURER:
-            # remet le flag a 0 au lieu de 1
             donnees.restaurer_dates(masque)
 
         return True
 
-    # Invalide tous les points valides contenus dans le rectangle def supprimer_plage_rectangle(self, donnees: Donnees) -> bool:
     def supprimer_plage_rectangle(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
         return self.mode_rectangle(donnees, Action.SUPPRIMER, date_debut, date_fin)
 
-    # on cherche les point invalide =1 et on les remet valides  =0
     def restaurer_plage_rectangle(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
         return self.mode_rectangle(donnees, Action.RESTAURER, date_debut, date_fin)
 
-    def zoomer_rectangle(self, ax_2d):
+    #
+    #
+    # Zoom.
+    #
+    #
 
-        # si pas de rectangle , on fait rien
+    def zoomer_rectangle(self, ax_2d):
         if not self.est_valide_rectangle:
             return False
 
@@ -148,7 +147,13 @@ class Interactions:
         self.reinitialiser_rectangle()
         return True
 
-    # calcule la distance normalisee entre chaque point et la souris
+    #
+    #
+    # Infobulle.
+    #
+    #
+
+    # Calcul de la distance normalisée entre chaque point et la souris.
     def calculer_distances(self, evenement: Event, donnees: Donnees, ax_2d: Axes) -> DataFrame:
         x_points = mdates.date2num(donnees.obtenir_colonne_dates().obtenir_dataframe())
         y_points = donnees.obtenir_colonne_concentration_smps().obtenir_dataframe()
@@ -156,7 +161,7 @@ class Interactions:
         x_souris = evenement.xdata
         y_souris = evenement.ydata
 
-        # coordonnees de la souris
+        # Coordonnées de la souris
         x_limite = ax_2d.get_xlim()
         y_limite = ax_2d.get_ylim()
 
@@ -169,20 +174,14 @@ class Interactions:
 
         return distances
 
-    # --------- Calcule des distances
-
-    # retourne la date du point le plus proche de la souris
     def trouver_date_plus_proche(self) -> datetime:
         return self.distances_point_souris.idxmin()
 
     def maj_donnees_affichees(self, donnees: Donnees, date_debut: datetime, date_fin: datetime):
         self.points_valides = donnees.obtenir_dates(date_debut, date_fin)
 
-    # recalcule les distances entre les points valides et la souris
     def maj_distances(self, evenement: Event, ax_2d: Axes):
         self.distances_point_souris = self.calculer_distances(evenement, self.points_valides, ax_2d)
-
-    # -----infobulle
 
     def info_point(
         self,
@@ -195,7 +194,6 @@ class Interactions:
     ):
         doit_rafraichir = False
 
-        # si pas de donnees ou pas de tooltip on ne fait rien du tout
         if donnees.est_vide() or infobulle is None:
             return doit_rafraichir
 
@@ -208,7 +206,6 @@ class Interactions:
 
         self.maj_donnees_affichees(donnees, date_debut, date_fin)
 
-        # si toutes les concentrations sont NaN il n'y a rien a afficher
         if self.points_valides.est_tout_na_concentration():
             return doit_rafraichir
 
@@ -225,12 +222,11 @@ class Interactions:
             infobulle.set_visible(False)
             return doit_rafraichir
 
-        # recupere la concentration du point le plus proche
+        # On récupère la concentration du point le plus proche.
         concentration = (
             self.points_valides.obtenir_colonne_concentration_smps().obtenir_date(date_plus_proche).obtenir_dataframe()
         )
 
-        # met a jour le texte et la position du tooltip sur le graphe
         infobulle.set_text(f"{date_plus_proche.strftime('%d/%m %H:%M')}\nConc : {concentration:.1f}")
 
         # Positionnement de l'infobulle sur le graphe.
@@ -239,7 +235,11 @@ class Interactions:
 
         return doit_rafraichir
 
-    # ------Gestion des clic
+    #
+    #
+    # Gestion des clics.
+    #
+    #
 
     def repondre_apres_clic_souris(
         self,
